@@ -1,0 +1,14 @@
+footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: darkslategrey;
+    color: white;
+    height: 10%;
+    text-align: center;
+}
+
+footer a {
+    color:white;
+}
