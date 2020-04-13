@@ -8,36 +8,22 @@
         {{ form.hidden_tag() }}
 
         {# Логин #}
-        <p>
-            {{ form.login(class="form-control", placeholder=form.login.label.text) }}<br>
-            {% for error in form.login.errors %}
-                <div class="alert alert-danger" role="alert">
-                    {{ error }}
-                </div>
-            {% endfor %}
-        </p>
+        {{ form.login(class="form-control", placeholder=form.login.label.text) }}<br>
+        {% for error in form.login.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+
 
         {# Пароль #}
-        <p>
-            {{ form.password(class="form-control", placeholder=form.password.label.text) }}<br>
-            {% for error in form.password.errors %}
-                <div class="alert alert-danger" role="alert">
-                    {{ error }}
-                </div>
-            {% endfor %}
-        </p>
+        {{ form.password(class="form-control", placeholder=form.password.label.text) }}<br>
+        {% for error in form.password.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
 
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
     </form>
-
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
 {% endblock %}

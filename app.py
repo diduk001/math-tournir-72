@@ -1,7 +1,8 @@
 from flask import Flask, render_template, current_app, redirect, request
 
 from config import config
-from forms import LoginForm, SignUpMemberForm, SignUpTeamForm
+from db_interface import *
+from forms import SignUpForm, LoginForm
 
 app = Flask(__name__)
 with app.app_context():
@@ -27,6 +28,7 @@ def index():
 
 
 # Вход и профиль (профиль открывается только тогда, когда пользователь авторизован)
+
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
     # Переменная для отладки, значения:
@@ -51,14 +53,46 @@ def profile():
 
 
 # Регистрация
+
 @app.route("/sign_up", methods=["GET", "POST"])
 def sign_up():
-    if request.method == "GET":
-        params = dict()
-        params["title"] = "Регистрация"
-        params["form_team"] = SignUpTeamForm()
-        params["form_member"] = SignUpMemberForm()
-        return render_template("signup.html", **params)
+    sign_up_form = SignUpForm()
+    params = dict()
+    params["title"] = "Регистрация"
+    params["form"] = sign_up_form
+
+    if sign_up_form.validate_on_submit():
+        if check_login(request.form.get("team-login")):
+            return render_template("sign_up.html", **params, used_login=True)
+
+        print(repr(request.form.get("team-grade")))
+        user = User(
+            login=request.form.get("team-login"),
+            team_name=request.form.get("team-team_name"),
+            grade=int(request.form.get("team-grade")),
+
+            member1=(request.form.get("member1-name_field"),
+                     request.form.get("member1-surname"),
+                     request.form.get("member1-school")),
+
+            member2=(request.form.get("member2-name_field"),
+                     request.form.get("member2-surname"),
+                     request.form.get("member2-school")),
+
+            member3=(request.form.get("member3-name_field"),
+                     request.form.get("member3-surname"),
+                     request.form.get("member3-school")),
+
+            member4=(request.form.get("member4-name_field"),
+                     request.form.get("member4-surname"),
+                     request.form.get("member4-school"))
+        )
+
+        user.set_password(request.form.get("team-password"))
+        add_user(user)
+        return redirect("/login")
+
+    return render_template("sign_up.html", **params)
 
 
 @app.route('/rules')
@@ -78,9 +112,6 @@ def penalty():
     return "Я захотел поспать и поэтому не сделал эту страницу"
 
 
-def main():
-    app.run(port=8080, host='127.0.0.1')
-
-
 if __name__ == '__main__':
-    main()
+    app.debug = True
+    app.run(port=8080, host='127.0.0.1')
