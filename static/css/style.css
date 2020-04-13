@@ -1,12 +1,19 @@
-footer {
-    position: fixed;
-    left: 0;
+#page-container {
+    position: relative;
+    min-height: 100vh;
+}
+
+#content-wrap {
+    padding-bottom: 5rem;
+}
+
+#footer {
+    background: darkslategrey;
+    color: white;
+    position: absolute;
     bottom: 0;
     width: 100%;
-    background-color: darkslategrey;
-    color: white;
-    height: 10%;
-    text-align: center;
+    height: 5rem;
 }
 
 footer a {
