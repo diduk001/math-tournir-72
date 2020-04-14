@@ -17,6 +17,7 @@ class User:
         self.login = login
         check_type("login", login, str)
 
+        self.id = int
         self.hashed_password = str
 
         self.team_name = team_name
@@ -78,3 +79,24 @@ class User:
     def check_password(self, password):
         check_type("password", password, str)
         return check_password_hash(self.hashed_password, password)
+
+    def __str__(self):
+        fields = [f"login {self.login}",
+                  f"team_name {self.team_name}",
+                  f"grade {str(self.grade)}",
+                  f"Member 1 {self.member1}",
+                  f"Member 2 {self.member2}",
+                  f"Member 3 {self.member3}",
+                  f"Member 4 {self.member4}"]
+
+        try:
+            fields.insert(1, f"hashed password " + self.hashed_password)
+        except AttributeError:
+            pass
+
+        try:
+            fields.insert(0, "id " + str(self.id))
+        except AttributeError:
+            pass
+
+        return " | ".join(fields)

@@ -1,19 +1,36 @@
-from flask import Flask, render_template, current_app, redirect, request
 import json
 
-from config import config
+from flask import Flask, render_template, current_app, redirect, request
+from flask_login import LoginManager, logout_user, login_required, login_user, current_user
+
+import config
 from db_interface import *
 from forms import SignUpForm, LoginForm
 
+# Создание приложения
+
 app = Flask(__name__)
+
+# Создание секретного ключа
+
 app.config['SECRET_KEY'] = "0d645377e31ab6b5847ec817bac4aaf8"
-    
+
+# Создание и инициализация менеджера входа
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Конфигурация приложения (см.файл config.py)
+
 with app.app_context():
-    config(current_app)
+    config.config(current_app)
+
 
 
 
 # Вызов обработчика базового шаблона base.html
+# Это только для дебага, удалите в релизе
+
 @app.route("/base")
 @app.route("/base.html")
 def base():
@@ -24,6 +41,7 @@ def base():
 
 
 # Главная страница
+
 @app.route("/")
 def index():
     params = dict()
@@ -40,20 +58,17 @@ def profile():
     # 1 - открывает "Вход"
     # 2 - открывает "Профиль"
 
-    debug_var = 1
+    debug_var = 0
     if debug_var == 0:
-        return "Это версия для релиза, но я её пока что не сделал"
+        try:
+            if is_auth():
+                return "ползователь не авторизован"
+            if not current_user.is_authenticated:
+                return "user is not authenticated"
+        except AttributeError:
+            return str(get_user_from_id(current_user.id))
     elif debug_var == 1:
-        form = LoginForm()
-        params = dict()
-        params["title"] = "Вход"
-        params["form"] = form
-
-        if form.validate_on_submit():
-            return redirect("/base.html")
-        return render_template("login.html", **params)
-    elif debug_var == 2:
-        return "Это профиль, но я его пока не сделал"
+        return redirect("/login")
 
 
 # Регистрация
@@ -65,11 +80,17 @@ def sign_up():
     params["title"] = "Регистрация"
     params["form"] = sign_up_form
 
+    # Проверяем, правильно ли заполнена форма
+
     if sign_up_form.validate_on_submit():
+
+        # Проверяем, не использован ли уже логин
+
         if check_login(request.form.get("team-login")):
             return render_template("sign_up.html", **params, used_login=True)
 
-        print(repr(request.form.get("team-grade")))
+        # Создания объека User
+
         user = User(
             login=request.form.get("team-login"),
             team_name=request.form.get("team-team_name"),
@@ -93,11 +114,17 @@ def sign_up():
         )
 
         user.set_password(request.form.get("team-password"))
+
+        # Добавление пользователя в базу данных
+
         add_user(user)
-        return redirect("/login")
+        login_user(user, remember=True)
+        return redirect("/")
 
     return render_template("sign_up.html", **params)
 
+
+# Страница с правилами
 
 @app.route('/rules')
 def rules():
@@ -153,12 +180,76 @@ def domino():
         return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=domino_tasks, keys=domino_keys, picked_tasks=picked_tasks, message=message)
 
 
+# Страница пенальти
+
 @app.route('/penalty')
 def penalty():
     global number_of_picked_task, picked_tasks, domino_keys, domino_tasks
     if request.method == "GET":
         return  return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=domino_tasks, keys=domino_keys, picked_tasks=picked_tasks, message=False)
     elif request.method == "POST":
+
+
+# Страница для авторизации
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    params = dict()
+    params["title"] = "Вход"
+    params["form"] = form
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        user = session.query(UserLoginData).filter(UserLoginData.login == form.login.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=True)
+            return redirect("/")
+        return render_template('login.html',
+                               invalid_parameters=True,
+                               form=form)
+    return render_template("login.html", **params)
+
+
+# Выход из аккаунта
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+
+# Функция загрузки данных пользователя из базы данных
+# user_id - id команды
+# login_data - bool, если True, то загружает данные авторизации, иначе данные о членах команды
+def load_user(user_id, login_data):
+    if login_data:
+        load_user_login_data(user_id)
+    else:
+        load_user_members_data(user_id)
+
+
+# Функция для получения данных авторизации пользователя по id
+@login_manager.user_loader
+def load_user_login_data(user_id):
+    session = db_session.create_session()
+    return session.query(UserLoginData).get(user_id)
+
+
+# Функция для получения данных о команде по id
+@login_manager.user_loader
+def load_user_members_data(user_id):
+    session = db_session.create_session()
+    return session.query(UserMemberData).get(user_id)
+
+
+# Функция возвращает True если пользователь авторизован, иначе False
+def is_auth():
+    try:
+        if not current_user.is_authenticated:
+            return False
+    except AttributeError:
+        return True
 
 
 if __name__ == '__main__':

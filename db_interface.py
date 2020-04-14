@@ -12,6 +12,7 @@ UserMemberData = users_members_data.UserMembersData
 
 # Функция добавления пользователя в базы данных
 # На вход принимается user - объект класса User из модуля
+
 def add_user(user):
     # Проверка типа аргумента
     check_type("user", user, User)
@@ -48,6 +49,7 @@ def add_user(user):
 # иначе в таблицу users_members_data
 # verbose - bool, выводить ли ошибку (если она будет)
 # kwargs - именованные аргументы, те значения, которые нужно изменить
+
 def change_val(user_id, users_login_table, verbose=False, **kwargs):
     session = db_session.create_session()
     if users_login_table:
@@ -81,6 +83,37 @@ def change_val(user_id, users_login_table, verbose=False, **kwargs):
 
 # Функция проверки логина на уникальность
 # Если логин существует в базе, возвращаем False
+
 def check_login(login):
     session = db_session.create_session()
     return session.query(UserLoginData).filter(UserLoginData.login == login).first()
+
+
+def get_user_from_id(user_id):
+    session = db_session.create_session()
+    login_data = session.query(UserLoginData).get(user_id)
+    members_data = session.query(UserMemberData).get(user_id)
+    user = User(login_data.login,
+                members_data.team_name,
+                members_data.grade,
+
+                (members_data.member1_name,
+                 members_data.member1_surname,
+                 members_data.member1_school),
+
+                (members_data.member2_name,
+                 members_data.member2_surname,
+                 members_data.member2_school),
+
+                (members_data.member3_name,
+                 members_data.member3_surname,
+                 members_data.member3_school),
+
+                (members_data.member4_name,
+                 members_data.member4_surname,
+                 members_data.member4_school))
+
+    user.id = login_data.id
+    user.hashed_password = login_data.hashed_password
+
+    return user
