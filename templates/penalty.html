@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% for task in tasks %}
+        <div class="penalty_task solved">
+            <img src={{task['content']}}>
+            <form>
+                <form method="post">
+                    <div class="form-group">
+                        <label for="name">{{task['name']}}</label>
+                        <input value={{task['name']}} id="name" name="name" hidden>
+                        <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                    </div>
+                    <button class="btn btn-primary" type="submit">Отправить</button>
+                </form>
+            </form>
+        </div>
+    {% endfor %}
+{% endblock %}

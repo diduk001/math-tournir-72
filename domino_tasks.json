@@ -1,200 +1,198 @@
-{
-	"1":
+{	"1":
 		{
 			"name": "0-0",
-			"state": "ok",
 			"number": 0,
-			"content": "static/img/sample1.png",
+			"content": "/static/domino/img/sample1.png",
 			"answer": "0"
 		},
-	"2":
+
+  	"2":
 		{
 			"name": "0-1",
-			"state": "ok",
 			"number": 0,
-			"content": "/static/img/sample2.png",
+			"content": "/static/domino/img/sample2.png",
 			"answer": "0"
 		},
 	"3":
 		{
 			"name": "0-2",
-			"state": "failed",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"4":
 		{
 			"name": "0-3",
-			"state": "first_try_failed",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"5":
 		{
 			"name": "0-4",
-			"state": "absent",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"6":
 		{
 			"name": "0-5",
-			"state": "accepted",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"7":
 		{
 			"name": "0-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"8":
 		{
 			"name": "1-1",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"9":
 		{
 			"name": "1-2",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"10":
 		{
 			"name": "1-3",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"11":
 		{
 			"name": "1-4",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"12":
 		{
 			"name": "1-5",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"13":
 		{
 			"name": "1-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"14":
 		{
 			"name": "2-2",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"15":
 		{
 			"name": "2-3",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"16":
 		{
 			"name": "2-4",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"17":
 		{
 			"name": "2-5",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"18":
 		{
 			"name": "2-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"19":
 		{
 			"name": "3-3",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"20":
 		{
 			"name": "3-4",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"21":
 		{
 			"name": "3-5",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"22":
 		{
 			"name": "3-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"23":
 		{
 			"name": "4-4",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"24":
 		{
 			"name": "4-5",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"25":
 		{
 			"name": "4-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"26":
 		{
 			"name": "5-5",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"27":
 		{
 			"name": "5-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		},
 	"28":
 		{
 			"name": "6-6",
-			"state": "ok",
 			"number": 0,
+			"content": "/static/img/sample2.png",
 			"answer": "0"
 		}
 }
