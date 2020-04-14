@@ -24,6 +24,12 @@
             </div>
         {% endfor %}
 
+        {% if invalid_parameters %}
+            <div class="alert alert-danger" role="alert">
+                Неправильный логин или пароль
+            </div>
+        {% endif %}
+
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
     </form>
 {% endblock %}
