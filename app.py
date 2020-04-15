@@ -65,13 +65,12 @@ def profile():
 
     debug_var = 0
     if debug_var == 0:
-        try:
-            if is_auth():
-                return "ползователь не авториозван"
-            if not current_user.is_authenticated:
-                return "user is not authenticated"
-        except AttributeError:
+        if is_auth():
+            # Если пользователь авторизован, возвращаем ему личный кабинет
             return str(get_user_from_id(current_user.id))
+        else:
+            # Иначе переправляем на вход
+            return redirect("/login")
     elif debug_var == 1:
         return redirect("/login")
 
@@ -88,6 +87,10 @@ def sign_up():
     # Проверяем, правильно ли заполнена форма
 
     if sign_up_form.validate_on_submit():
+
+        # Если мы нажали на кнопку "регистриция", то выходим из аккаунта
+        if is_auth():
+            logout_user()
 
         # Проверяем, не использован ли уже логин
 
@@ -123,8 +126,8 @@ def sign_up():
         # Добавление пользователя в базу данных
 
         add_user(user)
-        login_user(user, remember=True)
-        return redirect("/")
+
+        return redirect("/login")
 
     return render_template("sign_up.html", **params)
 
@@ -226,6 +229,7 @@ def logout():
 # Функция загрузки данных пользователя из базы данных
 # user_id - id команды
 # login_data - bool, если True, то загружает данные авторизации, иначе данные о членах команды
+
 def load_user(user_id, login_data):
     if login_data:
         load_user_login_data(user_id)
@@ -234,6 +238,7 @@ def load_user(user_id, login_data):
 
 
 # Функция для получения данных авторизации пользователя по id
+
 @login_manager.user_loader
 def load_user_login_data(user_id):
     session = db_session.create_session()
@@ -241,6 +246,7 @@ def load_user_login_data(user_id):
 
 
 # Функция для получения данных о команде по id
+
 @login_manager.user_loader
 def load_user_members_data(user_id):
     session = db_session.create_session()
@@ -248,6 +254,7 @@ def load_user_members_data(user_id):
 
 
 # Функция возвращает True если пользователь авторизован, иначе False
+
 def is_auth():
     try:
         if not current_user.is_authenticated:
