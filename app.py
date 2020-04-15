@@ -141,11 +141,11 @@ def sign_up():
         user.set_password(request.form.get("team-password"))
 
         # Добавление пользователя в базы данных
-        con = sqlite3.connect("tasks.db")
-        cur = con.cursor()
-        cur.execute("INSERT INTO domino_tasks(title) VALUES('{}')".format(user.team_name))
-        cur.execute("INSERT INTO penalty_tasks(title) VALUES('{}')".format(user.team_name))
-        con.close()
+        # con = sqlite3.connect("tasks.db")
+        # cur = con.cursor()
+        # cur.execute("INSERT INTO domino_tasks(title) VALUES('{}')".format(user.team_name))
+        # cur.execute("INSERT INTO penalty_tasks(title) VALUES('{}')".format(user.team_name))
+        # con.close()
         add_user(user)
 
         return redirect("/login")
