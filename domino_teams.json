@@ -1,0 +1,119 @@
+{
+		"tasks":
+			{
+				"1": {
+					"name": "0-0",
+					"state": "ok"
+				},
+				"2": {
+					"name": "0-1",
+					"state": "ok"
+				},
+				"3": {
+					"name": "0-2",
+					"state": "ok"
+				},
+				"4": {
+					"name": "0-3",
+					"state": "ok"
+				},
+				"5": {
+					"name": "0-4",
+					"state": "ok"
+				},
+				"6": {
+					"name": "0-5",
+					"state": "ok"
+				},
+				"7": {
+					"name": "0-6",
+					"state": "ok"
+				},
+				"8": {
+					"name": "1-1",
+					"state": "ok"
+				},
+				"9": {
+					"name": "1-2",
+					"state": "ok"
+				},
+				"10": {
+					"name": "1-3",
+					"state": "ok"
+				},
+				"11": {
+					"name": "1-4",
+					"state": "ok"
+				},
+				"12": {
+					"name": "1-5",
+					"state": "ok"
+				},
+				"13": {
+					"name": "1-6",
+					"state": "ok"
+				},
+				"14": {
+					"name": "2-2",
+					"state": "ok"
+				},
+				"15": {
+					"name": "2-3",
+					"state": "ok"
+				},
+				"16": {
+					"name": "2-4",
+					"state": "ok"
+				},
+				"17": {
+					"name": "2-5",
+					"state": "ok"
+				},
+				"18": {
+					"name": "2-6",
+					"state": "ok"
+				},
+				"19": {
+					"name": "3-3",
+					"state": "ok"
+				},
+				"20": {
+					"name": "3-4",
+					"state": "ok"
+				},
+				"21": {
+					"name": "3-5",
+					"state": "ok"
+				},
+				"22": {
+					"name": "3-6",
+					"state": "ok"
+				},
+				"23": {
+					"name": "4-4",
+					"state": "ok"
+				},
+				"24": {
+					"name": "4-5",
+					"state": "ok"
+				},
+				"25": {
+					"name": "4-6",
+					"state": "ok"
+				},
+				"26": {
+					"name": "5-5",
+					"state": "ok"
+				},
+				"27": {
+					"name": "5-6",
+					"state": "ok"
+				},
+				"28": {
+					"name": "6-6",
+					"state": "ok"
+				}
+},
+		"picked_tasks": [],
+		"picked_task_number": 0
+}
