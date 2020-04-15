@@ -1,5 +1,5 @@
 import json
-
+import sqlite3
 from flask import Flask, render_template, current_app, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
@@ -71,6 +71,28 @@ def profile():
         return redirect("/login")
 
 
+# Изменить состояние задачи
+
+def update(table, task, state, team):
+    con = sqlite3.connect("tasks.db")
+    cur = con.cursor()
+    que = "UPDATE {}\n".format(table)
+    que += "SET {} = '{}'\n".format(task, state)
+    que += "WHERE title = '{}'".format(team)
+    con.close()
+
+
+# Получить состояние задачи
+
+def get(table, task, team):
+    con = sqlite3.connect("tasks.db")
+    cur = con.cursor()
+    que = "SELECT t{} FROM {}\n".format(task, table)
+    que += "WHERE title == '{}'".format(team)
+    result = cur.execute(que).fetchone()[0]
+    con.close()
+    return result
+
 # Регистрация
 
 @app.route("/sign_up", methods=["GET", "POST"])
@@ -115,11 +137,16 @@ def sign_up():
 
         user.set_password(request.form.get("team-password"))
 
-        # Добавление пользователя в базу данных
-
+        # Добавление пользователя в базы данных
+        con = sqlite3.connect("tasks.db")
+        cur = con.cursor()
+        cur.execute("INSERT INTO domino_tasks(title) VALUES('{}')".format(user.team_name))
+        cur.execute("INSERT INTO penalty_tasks(title) VALUES('{}')".format(user.team_name))
+        con.close()
         add_user(user)
         login_user(user, remember=True)
         return redirect("/")
+
 
     return render_template("sign_up.html", **params)
 
@@ -133,61 +160,89 @@ def rules():
     return render_template("rules.html", **params)
 
 
+
 # Всё что нужно для домино
+
 domino_keys = list(map(str, range(1, 29)))
-tasks_names = {'0-0':'1', '0-1':'2', '0-2':'3', '0-3':'4', '0-4':'5', '0-5':'6', '0-6':'7', '1-1':'8', '1-2':'9',
+domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5', '0-5': '6', '0-6': '7', '1-1': '8', '1-2': '9',
                '1-3':'10', '1-4':'11', '1-5':'12', '1-6':'13', '2-2':'14', '2-3':'15', '2-4':'16', '2-5':'17',
                '2-6':'18', '3-3':'19', '3-4':'20', '3-5':'21', '3-6':'22', '4-4':'23', '4-5':'24', '4-6':'25',
                '5-5':'26', '5-6':'27', '6-6':'28'}
 domino_messages = {'full': "Вы уже взяли 2 задачи", 'accepted':'Вы уже решили эту задачу',
                 'failed': 'У Вас закончились попытки на сдачу этой задачи', 'absent': 'На данный момент задачи с этим номером отсутсвуют',
                 'hand': 'Вы уже взяли эту задачу'}
+with open("domino_tasks.json", 'rt') as f:
+    domino_info = json.load(f)
 number_of_domino_task = 5
-with open("domino_teams.json", "rt", encoding="utf8") as f:
-    domino_teams = json.loads(f.read())
-with open("domino_tasks.json", "rt", encoding="utf8") as f:
-    domino_tasks = json.load(f.read())
-for key in domino_keys:
-    domino_tasks[key]['number'] = number_of_domino_task
+for key in domino_info.keys():
+    domino_info[key]['number'] = number_of_domino_task
 
+# Страница домино
 
 @app.route("/domino", methods=["GET", "POST", "PATCH"])
 def domino():
-    global  domino_keys, domino_tasks, domino_messages
+    # Необходимые штуки
+    global  domino_keys, domino_messages, domino_tasks_names, domino_info
+    team = current_user.team_name
+    tasks = {}
+    for key in domino_keys:
+        tasks[key] = {'name': domino_info[key]['name'], 'state':get('domino_tasks', key, team)}
+    picked_tasks = get('domino_tasks', 'picked_tasks', team).split()
     if request.method == "GET":
-        return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=domino_tasks, keys=domino_keys, picked_tasks=picked_tasks, message=False)
+        return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks, keys=domino_keys,
+                               picked_tasks=picked_tasks, message=False, info=domino_info)
     elif request.method == "POST":
         message = False
         if request.form.get("picked"):
-            key = tasks_names[request.form.get("picked")]
+            key = domino_tasks_names[request.form.get("picked")]
+            number_of_picked_task = len(picked_tasks)
             if number_of_picked_task == 2:
                 message = domino_messages['full']
-            elif domino_tasks[key]['state'] in ['first_try_failed', 'ok']:
+            elif tasks[key]['state'] in ['first_try_failed', 'ok']:
                 picked_tasks.append(key)
-                number_of_picked_task += 1
+                domino_info[key]['number'] -= 1
             else:
-                print(domino_tasks[key]['state'])
-                message = domino_messages[domino_tasks[key]['state']]
+                message = domino_messages[tasks[key]['state']]
         elif request.form.get('name'):
-            key = tasks_names[request.form.get('name')]
+            key = domino_tasks_names[request.form.get('name')]
             verdicts = ['ok', 'first_try_failed', 'failed']
-            if domino_tasks[key]['answer'] == request.form.get('answer'):
-                domino_tasks[key]['state'] = 'accepted'
+            if domino_info[key]['answer'] == request.form.get('answer'):
+                tasks[key]['state'] = 'accepted'
             else:
-                domino_tasks[key]['state'] = verdicts[verdicts.index(domino_tasks[key]['state']) + 1]
+                tasks[key]['state'] = verdicts[verdicts.index(tasks[key]['state']) + 1]
             picked_tasks.remove(key)
-            number_of_picked_task -= 1
-        return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=domino_tasks, keys=domino_keys, picked_tasks=picked_tasks, message=message)
+            domino_info[key]['number'] += 1
+        picked_tasks = ' '.join(picked_tasks)
+        for item in tasks['state'].items():
+            update('domino_table', item[0], item[1], team)
+        return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks, keys=domino_keys, picked_tasks=picked_tasks, message=message)
 
+#Всё что нужно для пенальти
+
+penalty_keys = list(map(str, range(1, 14)))
+penalty_tasks_info = {}
+for key in penalty_keys:
+    penalty_tasks_info[key] = {'number':15, 'answer':0, 'content':'/static/domino/img/sample1.png'}
 
 # Страница пенальти
 
 @app.route('/penalty')
 def penalty():
-    global number_of_picked_task, picked_tasks, domino_keys, domino_tasks
-    if request.method == "GET":
-        return  return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=domino_tasks, keys=domino_keys, picked_tasks=picked_tasks, message=False)
-    elif request.method == "POST":
+    global penalty_tasks_info, penalty_info
+    team = current_user.team_name
+    tasks = {}
+    for key in penalty_keys:
+        tasks[key] = {'name':key, 'state':get('penalty_table', key, team)}
+    if request.method == "POST":
+        key = request.form.get('name')
+        verdicts = ['ok', 'first_try_failed', 'failed']
+        if penalty_tasks_info[key]['answer'] == request.form.get('answer'):
+            tasks[key]['state'] = 'accepted'
+        else:
+            tasks[key]['state'] = verdicts[verdicts.index(tasks[key]['state']) + 1]
+        for item in tasks['state'].items():
+            update('domino_table', item[0], item[1], team)
+    return render_template("penalty.html", title="пенальти ТЮМ72", tasks=tasks, tasks_cost=penalty_tasks_info, keys=penalty_keys)
 
 
 # Страница для авторизации
