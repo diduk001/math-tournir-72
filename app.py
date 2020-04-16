@@ -64,6 +64,8 @@ def profile():
             # Тут должна быть страница профиля
             return str(get_user_from_id(current_user.id))
         else:
+
+
             # Иначе переправляем на вход
             return redirect("/login")
     elif debug_var == 1:
