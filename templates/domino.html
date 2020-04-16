@@ -8,7 +8,7 @@
                 {% for key in keys[row * 7: row * 7 + 7] %}
                 {% set task = tasks[key] %}
                     <td class="domino_col_task">
-                        {% if task == 'ok' %}
+                        {% if task['state'] == 'ok' %}
                             <form method="post">
                                 <input class="btn btn-primary btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>

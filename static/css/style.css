@@ -36,3 +36,13 @@ td.domino_col_task{
 button.absent{
     color: grey;
 }
+
+label.accepted{
+    background color: lawngreen;
+}
+label.failed{
+    background color: crimson;
+}
+label.first_try_failed{
+    background color: gold;
+}
