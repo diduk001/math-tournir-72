@@ -1,30 +1,34 @@
 import json
+import os.path
 import sqlite3
 
-from flask import Flask, render_template, current_app, redirect, request
+from flask import Flask, render_template, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-import config
+from config import SignUpForm, LoginForm
 from db_interface import *
-from forms import SignUpForm, LoginForm
+
+
+# Класс конфигурации
+
+class ConfigClass(object):
+    SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
+    USER_ENABLE_EMAIL = False
+    USER_ENABLE_USERNAME = True
+
 
 # Создание приложения
 
 app = Flask(__name__)
 
-# Создание секретного ключа
-
-app.config['SECRET_KEY'] = "0d645377e31ab6b5847ec817bac4aaf8"
+# конфигурация
+app.config.from_object(__name__ + '.ConfigClass')
+db_session.global_init("db/login_data_members_data_session.sqlite")
 
 # Создание и инициализация менеджера входа
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-
-# Конфигурация приложения (см.файл config.py)
-
-with app.app_context():
-    config.config(current_app)
 
 
 # Вызов обработчика базового шаблона base.html
@@ -61,7 +65,7 @@ def profile():
     if debug_var == 0:
         if is_auth():
             # Тут должна быть страница профиля
-            return str(get_user_from_id(current_user.id))
+            return render_template("profile.html", **(get_cur_user().__dict__()))
         else:
             # Иначе переправляем на вход
             return redirect("/login")
@@ -72,7 +76,7 @@ def profile():
 # Изменить состояние задачи
 
 def update(table, task, state, team):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = "UPDATE {}\n".format(table)
     que += "SET {} = '{}'\n".format(task, state)
@@ -83,7 +87,7 @@ def update(table, task, state, team):
 # Получить состояние задачи
 
 def get(table, task, team):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT t{task} FROM {table} WHERE title='{team}'"
     result = cur.execute(que).fetchone()[0]
@@ -140,7 +144,7 @@ def sign_up():
         user.set_password(request.form.get("team-password"))
 
         # Добавление пользователя в базы данных
-        con = sqlite3.connect("tasks.db")
+        con = sqlite3.connect((os.path.join("db", "tasks.db")))
         cur = con.cursor()
         cur.execute("INSERT INTO domino_tasks(title) VALUES('{}')".format(user.team_name))
         cur.execute("INSERT INTO penalty_tasks(title) VALUES('{}')".format(user.team_name))
@@ -315,11 +319,15 @@ def load_user_members_data(user_id):
 # Функция возвращает True если пользователь авторизован, иначе False
 
 def is_auth():
-    try:
-        if not current_user.is_authenticated:
-            return False
-    except AttributeError:
-        return True
+    return current_user.is_authenticated
+
+
+# Возвращает объект класса User если произошла авторизация
+# Иначе None
+
+def get_cur_user():
+    if is_auth():
+        return get_user_from_id(current_user.id)
 
 
 if __name__ == '__main__':

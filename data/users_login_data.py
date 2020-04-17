@@ -14,6 +14,7 @@ class UserLoginData(SqlAlchemyBase, UserMixin):
     login = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     user_id = orm.relation("UserMembersData", back_populates='user')
+    is_authenticated = True
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)

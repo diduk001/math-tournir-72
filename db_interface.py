@@ -1,8 +1,8 @@
 # Файл, содержащий функции для работы с базами данных
 
+from config import User
+from config import check_type
 from data import db_session, users_login_data, users_members_data
-from forms import check_type
-from user import User
 
 # Назначение классов для того, чтобы не писать длинные пути
 
