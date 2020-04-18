@@ -2,20 +2,27 @@
 
 {% block content %}
     {% for key in keys %}
-        {% set state = "penalty_task" + task['state'] %}
         {% set task = tasks[key] %}
-            <div class={{state}}>
-                <img src={{task['content']}}>
-                <form>
+        {% set state = "penalty_task" + task['state'] %}
+            <div>
+                <img src={{info[key]['content']}}
+
+
+
+
+                     idth="100%" height="35%">
                     <form method="post">
                         <div class="form-group">
-                            <label for="name">{{task['name']}}. Эта задача стоит {{task_cost[key]}} б.</label>
+                            <label class={{state}} for="name">{{task['name']}}. Эта задача стоит {{info[key]['cost']}} б.</label>
                             <input value={{task['name']}} id="name" name="name" hidden>
                             <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                         </div>
-                        <button class="btn btn-primary" type="submit">Отправить</button>
+                        {% if task['state'][-2:] in ['af', 'fs', 'as'] %}
+                            <button class="btn btn-primary" type="submit" disabled>Отправить</button>
+                        {% else %}
+                            <button class="btn btn-primary" type="submit">Отправить</button>
+                        {% endif %}
                     </form>
-                </form>
             </div>
     {% endfor %}
 {% endblock %}

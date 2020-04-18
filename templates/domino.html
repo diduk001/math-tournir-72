@@ -8,27 +8,23 @@
                 {% for key in keys[row * 7: row * 7 + 7] %}
                 {% set task = tasks[key] %}
                     <td class="domino_col_task">
-                        {% if task == 'ok' %}
+                        {% if task['state'][-2:] == 'ok' %}
                             <form method="post">
                                 <input class="btn btn-primary btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>
-                        {% elif task['state'] == 'failed' %}
+                        {% elif task['state'][-2:] == 'fs' %}
                             <form method="post">
                                 <input class="btn btn-danger btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>
-                        {% elif task['state'] == 'first_try_failed' %}
+                        {% elif task['state'][-2:] == 'ff' %}
                             <form method="post">
                                 <input class="btn btn-warning btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>
-                        {% elif task['state'] == 'hand' %}
-                            <form method="post">
-                                <input class="btn btn-info btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
-                            </form>
-                        {% elif task['state'] == 'accepted' %}
+                        {% elif task['state'][-2:] == 'af' or task['state'][-2:] == 'as' %}
                             <form method="post">
                                 <input class="btn btn-success btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>
-                        {% elif task['state'] == 'absent' %}
+                        {% elif task['state'][-2:] == 'ab' %}
                             <form method="post">
                                 <input class="btn btn-secondary btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
                             </form>
@@ -41,7 +37,7 @@
     </table>
     <div class="row">
     {% for key in picked_tasks %}
-        {% set task = info[key] %}
+        {% set task = info[key[1:]] %}
         <div class="col">
             <img src={{task['content']}} width="100%" height="50%">
             <form method="post">
