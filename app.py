@@ -1,31 +1,37 @@
 import json
+import os.path
 import sqlite3
 
-from flask import Flask, render_template, current_app, redirect, request
+from flask import Flask, render_template, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-import config
+from config import SignUpForm, LoginForm
 from db_interface import *
-from forms import SignUpForm, LoginForm
+
+
+# Класс конфигурации
+
+class ConfigClass(object):
+    SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
+    USER_ENABLE_EMAIL = False
+    USER_ENABLE_USERNAME = True
+
 
 # Создание приложения
 
 app = Flask(__name__)
 
-# Создание секретного ключа
-
-app.config['SECRET_KEY'] = "0d645377e31ab6b5847ec817bac4aaf8"
+# конфигурация
+app.config.from_object(__name__ + '.ConfigClass')
+db_session.global_init("db/login_data_members_data_session.sqlite")
 
 # Создание и инициализация менеджера входа
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-# Конфигурация приложения (см.файл config.py)
+con = sqlite3.connect(os.path.join("db", "tasks.db"))
 
-with app.app_context():
-    config.config(current_app)
 
-con = sqlite3.connect("tasks.db")
 # Вызов обработчика базового шаблона base.html
 # Это только для дебага, удалите в релизе
 
@@ -60,9 +66,8 @@ def profile():
     if debug_var == 0:
         if is_auth():
             # Тут должна быть страница профиля
-            return str(get_user_from_id(current_user.id))
+            return render_template("profile.html", **(get_cur_user().__dict__()))
         else:
-
 
             # Иначе переправляем на вход
             return redirect("/login")
@@ -73,7 +78,7 @@ def profile():
 # Изменить состояние задачи
 
 def update(table, task, state, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"UPDATE {table + str(grade)}\n"
     que += f"SET {task} = '{state}'\n"
@@ -86,7 +91,7 @@ def update(table, task, state, team, grade):
 # Получить состояние задачи
 
 def get(table, task, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT {task} FROM {table + str(grade)} WHERE title='{team}'"
     result = cur.execute(que).fetchone()[0]
@@ -96,7 +101,7 @@ def get(table, task, team, grade):
 
 # Изменить таблицу результатов
 def update_results(table, points, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     current = cur.execute(f"SELECT sum FROM {table + str(grade)} WHERE title='{team}'").fetchone()[0]
     que = f"UPDATE {table + str(grade)}\n"
@@ -155,7 +160,7 @@ def sign_up():
         user.set_password(request.form.get("team-password"))
 
         # Добавление пользователя в базы данных
-        con = sqlite3.connect("tasks.db")
+        con = sqlite3.connect((os.path.join("db", "tasks.db")))
         cur = con.cursor()
         domino_table = 'domino_tasks' + str(user.grade)
         penalty_table = 'penalty_tasks' + str(user.grade)
@@ -178,13 +183,16 @@ def rules():
     params["title"] = "Правила"
     return render_template("rules.html", **params)
 
+
 # всё что нужно для игр
 
 def get_point(string):
     return string[:-2]
 
+
 def get_state(string):
     return string[-2:]
+
 
 # Всё что нужно для домино
 
@@ -196,9 +204,11 @@ domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5'
                       '2-6': '18', '3-3': '19', '3-4': '20', '3-5': '21', '3-6': '22', '4-4': '23',
                       '4-5': '24', '4-6': '25',
                       '5-5': '26', '5-6': '27', '6-6': '28'}
-domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы уже решили эту задачу', 'as': 'Вы уже решили эту задачу',
+domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы уже решили эту задачу',
+                   'as': 'Вы уже решили эту задачу',
                    'fs': 'У Вас закончились попытки на сдачу этой задачи',
-                   'absent': 'На данный момент задачи с этим номером отсутсвуют', 'hand': 'Вы уже взяли эту задачу'}
+                   'absent': 'На данный момент задачи с этим номером отсутсвуют',
+                   'hand': 'Вы уже взяли эту задачу'}
 with open("domino_tasks.json", 'rt') as f:
     domino_info = json.load(f)
 number_of_domino_task = 5
@@ -217,7 +227,8 @@ def domino():
     grade = str(current_user.grade)
     tasks = {}
     for key in domino_keys:
-        tasks[key] = {'name': domino_info[grade][key]['name'], 'state': get('domino_tasks','t' + key, team, grade)}
+        tasks[key] = {'name': domino_info[grade][key]['name'],
+                      'state': get('domino_tasks', 't' + key, team, grade)}
     print(tasks)
     picked_tasks = get('domino_tasks', 'picked_tasks', team, grade).split()
     if request.method == "GET":
@@ -241,23 +252,28 @@ def domino():
         elif request.form.get('answer'):
             key = domino_tasks_names[request.form.get('name')]
             verdicts = ['ok', 'ff', 'fs']
-            if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(tasks[key]['state']) == 'ok':
-                tasks[key]['state'] = str(sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
+            if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(
+                    tasks[key]['state']) == 'ok':
+                tasks[key]['state'] = str(
+                    sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
             elif domino_info[grade][key]['answer'] == request.form.get('answer'):
-                tasks[key]['state'] = str(max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
+                tasks[key]['state'] = str(
+                    max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
             else:
                 tasks[key]['state'] = verdicts[verdicts.index(get_state(tasks[key]['state'])) + 1]
                 if tasks[key]['state'] == 'ff':
                     tasks[key]['state'] = '0ff'
                 else:
-                    tasks[key]['state'] = str(-min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
+                    tasks[key]['state'] = str(
+                        -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
             update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
             picked_tasks.remove('t' + key)
             domino_info[grade][key]['number'] += 1
         update('domino_tasks', 'picked_tasks', " ".join(picked_tasks), team, grade)
         update('domino_tasks', 't' + key, tasks[key]['state'], team, grade)
         return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
-                               keys=domino_keys, picked_tasks=picked_tasks, message=message, info=domino_info[grade])
+                               keys=domino_keys, picked_tasks=picked_tasks, message=message,
+                               info=domino_info[grade])
 
 
 # Всё что нужно для пенальти
@@ -268,8 +284,10 @@ for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
         penalty_info[grade][key] = {'cost': 15, 'answer': '0',
-                                   'content': '/static/img/sample1.png'}
-penalty_messages = {'accepted': 'Вы уже решили эту задачу', 'failed': 'У вас закончились попытки на сдачу этой задачи'}
+                                    'content': '/static/img/sample1.png'}
+penalty_messages = {'accepted': 'Вы уже решили эту задачу',
+                    'failed': 'У вас закончились попытки на сдачу этой задачи'}
+
 
 # Страница пенальти
 
@@ -281,7 +299,7 @@ def penalty():
     grade = str(current_user.grade)
     tasks = {}
     for key in penalty_keys:
-        tasks[key] = {'name': key, 'state': get('penalty_tasks','t' + key, team, grade)}
+        tasks[key] = {'name': key, 'state': get('penalty_tasks', 't' + key, team, grade)}
     if request.method == "POST":
         key = request.form.get('name')
         verdicts = ['ok', 'ff', 'fs']
@@ -300,7 +318,8 @@ def penalty():
                 tasks[key]['state'] = '-2' + 'fs'
         update_results('penalty_tasks', get_point(tasks[key]['state']), team, grade)
         update('penalty_tasks', 't' + key, tasks[key]['state'], team, grade)
-    return render_template("penalty.html", title="пенальти ТЮМ72", tasks=tasks, keys=penalty_keys, info=penalty_info[grade])
+    return render_template("penalty.html", title="пенальти ТЮМ72", tasks=tasks, keys=penalty_keys,
+                           info=penalty_info[grade])
 
 
 # Результаты
@@ -323,7 +342,8 @@ def results(game):
     cur = con.cursor()
     results = cur.execute(f"SELECT * from {table} ORDER BY sum").fetchall()
     team_num = len(results)
-    return render_template("results.html", team=team, results=results, title=titles[game], grade=grade,
+    return render_template("results.html", team=team, results=results, title=titles[game],
+                           grade=grade,
                            info=info, number=number, team_num=team_num, keys=keys)
 
 
@@ -386,11 +406,15 @@ def load_user_members_data(user_id):
 # Функция возвращает True если пользователь авторизован, иначе False
 
 def is_auth():
-    try:
-        if not current_user.is_authenticated:
-            return False
-    except AttributeError:
-        return True
+    return current_user.is_authenticated
+
+
+# Возвращает объект класса User если произошла авторизация
+# Иначе None
+
+def get_cur_user():
+    if is_auth():
+        return get_user_from_id(current_user.id)
 
 
 if __name__ == '__main__':
