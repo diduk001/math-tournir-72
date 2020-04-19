@@ -1,28 +1,97 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% for key in keys %}
-        {% set task = tasks[key] %}
-        {% set state = "penalty_task" + task['state'] %}
-            <div>
-                <img src={{info[key]['content']}}
+    {% if state == 'not started' %}
+        <h1 id="timer"></h1>
+        <script>
+        // Set the date we're counting down to
+        let countDownDate = new Date("4 18, 2020 20:34:25").getTime();
 
+        // Update the count down every 1 second
+        let x = setInterval(function() {
 
+            // Get todays date and time
+            let now = new Date().getTime();
 
+            // Find the distance between now an the count down date
+            let distance = countDownDate - now;
 
-                     idth="100%" height="35%">
-                    <form method="post">
-                        <div class="form-group">
-                            <label class={{state}} for="name">{{task['name']}}. Эта задача стоит {{info[key]['cost']}} б.</label>
-                            <input value={{task['name']}} id="name" name="name" hidden>
-                            <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                        </div>
-                        {% if task['state'][-2:] in ['af', 'fs', 'as'] %}
-                            <button class="btn btn-primary" type="submit" disabled>Отправить</button>
-                        {% else %}
-                            <button class="btn btn-primary" type="submit">Отправить</button>
-                        {% endif %}
-                    </form>
-            </div>
-    {% endfor %}
+            // Time calculations for days, hours, minutes and seconds
+            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in an element with id="demo"
+            let message = "Cоревнование начнётся через ";
+            if (days > 0){
+                message += days + " д ";
+            }
+            message += hours + " ч "
+            + minutes + " м " + seconds + " сек";
+            document.getElementById("timer").innerHTML = message;
+            // If the count down is over, write some text
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
+            }
+        }, 1000);
+        </script>
+    {% elif state == 'ended' %}
+        <h1>Соревнование уже закончилось</h1>
+    {% else %}
+        <h1 id="timer"></h1>
+        <script>
+        // Set the date we're counting down to
+        let countDownDate = new Date("4 18, 2020 21:34:25").getTime();
+
+        // Update the count down every 1 second
+        let x = setInterval(function() {
+
+            // Get todays date and time
+            let now = new Date().getTime();
+
+            // Find the distance between now an the count down date
+            let distance = countDownDate - now;
+
+            // Time calculations for days, hours, minutes and seconds
+            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            if (seconds < 10) seconds = "0" + seconds;
+            if (minutes < 10) minutes = "0" + minutes;
+            if (hours < 10) hours = "0" + hours;
+            // Output the result in an element with id="demo"
+            let message = "До конца соревнования ";
+            message += hours + ":"
+            + minutes + ":" + seconds;
+            document.getElementById("timer").innerHTML = message;
+            // If the count down is over, write some text
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "Соревнование завершилось";
+            }
+        }, 1000);
+        </script>
+        {% for key in keys %}
+            {% set task = tasks[key] %}
+            {% set state = "penalty_task" + task['state'] %}
+                <div>
+                    <img src={{info[key]['content']}} width="100%" height="35%">
+                        <form method="post">
+                            <div class="form-group">
+                                <label class={{state}} for="name">{{task['name']}}. Эта задача стоит {{info[key]['cost']}} б.</label>
+                                <input value={{task['name']}} id="name" name="name" hidden>
+                                <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                            </div>
+                            {% if task['state'][-2:] in ['af', 'fs', 'as'] %}
+                                <button class="btn btn-primary" type="submit" disabled>Отправить</button>
+                            {% else %}
+                                <button class="btn btn-primary" type="submit">Отправить</button>
+                            {% endif %}
+                        </form>
+                </div>
+        {% endfor %}
+    {% endif %}
 {% endblock %}
