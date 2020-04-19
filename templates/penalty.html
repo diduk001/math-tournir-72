@@ -3,9 +3,12 @@
 {% block content %}
     {% if state == 'not started' %}
         <h1 id="timer"></h1>
+        <p hidden id="start_time">{{start_time}}</p>
         <script>
         // Set the date we're counting down to
-        let countDownDate = new Date("4 18, 2020 20:34:25").getTime();
+        let start_time = document.getElementById("start_time");
+        let time = start_time.innerHTML;
+        let countDownDate = new Date(time).getTime();
 
         // Update the count down every 1 second
         let x = setInterval(function() {
@@ -41,9 +44,12 @@
         <h1>Соревнование уже закончилось</h1>
     {% else %}
         <h1 id="timer"></h1>
+        <p hidden id="end_time">{{end_time}}</p>
         <script>
         // Set the date we're counting down to
-        let countDownDate = new Date("4 18, 2020 21:34:25").getTime();
+        let end_time = document.getElementById("end_time");
+        let time = end_time.innerHTML;
+        let countDownDate = new Date(time).getTime();
 
         // Update the count down every 1 second
         let x = setInterval(function() {

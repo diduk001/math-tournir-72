@@ -193,8 +193,8 @@ def get_state(string):
 
 
 # Всё что нужно для домино
-domino_start_time = datetime.datetime(2020, 4, 18, 21, 14, 30)
-domino_end_time = datetime.datetime(2020, 4, 18, 21, 15, 30)
+domino_start_time = datetime.datetime(2020, 4, 19, 21, 14, 30)
+domino_end_time = datetime.datetime(2020, 4, 19, 21, 15, 30)
 domino_keys = list(map(str, range(1, 29)))
 domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5', '0-5': '6',
                       '0-6': '7', '1-1': '8', '1-2': '9',
@@ -224,10 +224,14 @@ def domino():
     grade = str(current_user.grade)
     time = datetime.datetime.now()
     if domino_start_time > time:
-        return render_template("domino.html", title="Домино ТЮМ72", state='not started')
+        start_time = f"{domino_start_time.month} {domino_start_time.day} {domino_start_time.year} "
+        start_time += f"{domino_start_time.hour}:{domino_start_time.minute}:{domino_start_time.second}"
+        return render_template("domino.html", title="Домино ТЮМ72", state='not started', start_time=start_time)
     elif time > domino_end_time:
         return render_template("domino.html", title="Домино ТЮМ72", state='ended')
     else:
+        end_time = f"{domino_end_time.month} {domino_end_time.day} {domino_end_time.year}"
+        end_time += f"{domino_end_time.hour}:{domino_end_time.minute}:{domino_end_time.second}"
         state = 'in progress'
         tasks = {}
         for key in domino_keys:
@@ -246,7 +250,8 @@ def domino():
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
-                                   picked_tasks=picked_tasks, message=False, info=domino_info[grade], state=state)
+                                   picked_tasks=picked_tasks, message=False, info=domino_info[grade],
+                                   state=state, end_time=end_time)
         elif request.method == "POST":
             message = False
             if request.form.get("picked"):
@@ -280,8 +285,8 @@ def domino():
             update('domino_tasks', 'picked_tasks', " ".join(picked_tasks), team, grade)
             update('domino_tasks', 't' + key, tasks[key]['state'], team, grade)
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
-                                   keys=domino_keys, picked_tasks=picked_tasks, message=message, info=domino_info[grade],
-                                   state=state)
+                                   keys=domino_keys, picked_tasks=picked_tasks, message=message,
+                                   info=domino_info[grade], state=state, end_time=end_time)
 
 
 # Всё что нужно для пенальти
@@ -307,10 +312,14 @@ def penalty():
     grade = str(current_user.grade)
     time = datetime.datetime.now()
     if penalty_start_time > time:
-        return render_template("penalty.html", title="Пенальти ТЮМ72", state='not started')
+        start_time = f"{penalty_start_time.month} {penalty_start_time.day} {penalty_start_time.year} "
+        start_time += f"{penalty_start_time.hour}:{penalty_start_time.minute}:{penalty_start_time.second}"
+        return render_template("penalty.html", title="Пенальти ТЮМ72", state='not started', start_time=start_time)
     elif time > penalty_end_time:
         return render_template("penalty.html", title="Пенальти ТЮМ72", state='ended')
     else:
+        end_time = f"{penalty_end_time.month} {penalty_end_time.day} {penalty_end_time.year} "
+        end_time += f"{penalty_end_time.hour}:{penalty_end_time.minute}:{penalty_end_time.second}"
         state = 'in progress'
         tasks = {}
         for key in penalty_keys:
@@ -334,7 +343,7 @@ def penalty():
             update_results('penalty_tasks', get_point(tasks[key]['state']), team, grade)
             update('penalty_tasks', 't' + key, tasks[key]['state'], team, grade)
         return render_template("penalty.html", title="Пенальти ТЮМ72", tasks=tasks, keys=penalty_keys,
-                               info=penalty_info[grade], state=state)
+                               info=penalty_info[grade], state=state, end_time=end_time)
 
 
 # Результаты
