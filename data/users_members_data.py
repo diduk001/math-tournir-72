@@ -31,3 +31,5 @@ class UserMembersData(SqlAlchemyBase):
     user_id = sqlalchemy.Column(sqlalchemy.Integer,
                                 sqlalchemy.ForeignKey("users_login_data.id"))
     user = orm.relation('UserLoginData')
+
+    is_authenticated = True
