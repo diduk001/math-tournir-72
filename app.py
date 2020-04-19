@@ -2,7 +2,7 @@ import json
 import os.path
 import sqlite3
 import datetime
-from flask import Flask, render_template, current_app, redirect, request
+from flask import Flask, render_template, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
 from config import SignUpForm, LoginForm
@@ -29,7 +29,6 @@ db_session.global_init("db/login_data_members_data_session.sqlite")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-con = sqlite3.connect(os.path.join("db", "tasks.db"))
 
 
 # Вызов обработчика базового шаблона base.html
@@ -86,18 +85,6 @@ def update(table, task, state, team, grade):
     cur.execute(que)
     con.commit()
     con.close()
-
-
-def return_datetime(datetime):
-    seconds = datetime.microseconds // 60 + datetime.seconds + datetime.days * 24 * 60 * 60
-    days = seconds // (60 * 60 * 24)
-    seconds %= (60 * 60 * 24)
-    hours = str(seconds // (60 * 60)).rjust(2, '0')
-    seconds %= (60 * 60)
-    minutes = str(seconds // 60).rjust(2, '0')
-    seconds = str(seconds % 60).rjust(2, '0')
-    return [days, hours, minutes, seconds]
-
 
 # Получить состояние задачи
 
@@ -368,9 +355,10 @@ def results(game, grade):
         number = 14
         keys = penalty_keys
     table = game + '_tasks' + str(grade)
-    con = sqlite3.connect('tasks.db')
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     results = cur.execute(f"SELECT * from {table} ORDER BY sum").fetchall()
+    con.close()
     team_num = len(results)
     return render_template("results.html", team=team, results=results, title=titles[game], grade=grade,
                            info=info, number=number, team_num=team_num, keys=keys)
