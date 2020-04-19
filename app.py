@@ -1,31 +1,37 @@
 import json
+import os.path
 import sqlite3
 import datetime
 from flask import Flask, render_template, current_app, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-import config
+from config import SignUpForm, LoginForm
 from db_interface import *
-from forms import SignUpForm, LoginForm
+
+
+# Класс конфигурации
+
+class ConfigClass(object):
+    SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
+    USER_ENABLE_EMAIL = False
+    USER_ENABLE_USERNAME = True
+
 
 # Создание приложения
 
 app = Flask(__name__)
 
-# Создание секретного ключа
-
-app.config['SECRET_KEY'] = "0d645377e31ab6b5847ec817bac4aaf8"
+# конфигурация
+app.config.from_object(__name__ + '.ConfigClass')
+db_session.global_init("db/login_data_members_data_session.sqlite")
 
 # Создание и инициализация менеджера входа
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-# Конфигурация приложения (см.файл config.py)
+con = sqlite3.connect(os.path.join("db", "tasks.db"))
 
-with app.app_context():
-    config.config(current_app)
 
-con = sqlite3.connect("tasks.db")
 # Вызов обработчика базового шаблона base.html
 # Это только для дебага, удалите в релизе
 
@@ -60,9 +66,8 @@ def profile():
     if debug_var == 0:
         if is_auth():
             # Тут должна быть страница профиля
-            return str(get_user_from_id(current_user.id))
+            return render_template("profile.html", **(get_cur_user().__dict__()))
         else:
-
 
             # Иначе переправляем на вход
             return redirect("/login")
@@ -73,7 +78,7 @@ def profile():
 # Изменить состояние задачи
 
 def update(table, task, state, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"UPDATE {table + str(grade)}\n"
     que += f"SET {task} = '{state}'\n"
@@ -95,8 +100,9 @@ def return_datetime(datetime):
 
 
 # Получить состояние задачи
+
 def get(table, task, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT {task} FROM {table + str(grade)} WHERE title='{team}'"
     result = cur.execute(que).fetchone()[0]
@@ -106,7 +112,7 @@ def get(table, task, team, grade):
 
 # Изменить таблицу результатов
 def update_results(table, points, team, grade):
-    con = sqlite3.connect("tasks.db")
+    con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     current = cur.execute(f"SELECT sum FROM {table + str(grade)} WHERE title='{team}'").fetchone()[0]
     que = f"UPDATE {table + str(grade)}\n"
@@ -165,7 +171,7 @@ def sign_up():
         user.set_password(request.form.get("team-password"))
 
         # Добавление пользователя в базы данных
-        con = sqlite3.connect("tasks.db")
+        con = sqlite3.connect((os.path.join("db", "tasks.db")))
         cur = con.cursor()
         domino_table = 'domino_tasks' + str(user.grade)
         penalty_table = 'penalty_tasks' + str(user.grade)
@@ -188,13 +194,16 @@ def rules():
     params["title"] = "Правила"
     return render_template("rules.html", **params)
 
+
 # всё что нужно для игр
 
 def get_point(string):
     return string[:-2]
 
+
 def get_state(string):
     return string[-2:]
+
 
 # Всё что нужно для домино
 domino_start_time = datetime.datetime(2020, 4, 18, 21, 14, 30)
@@ -207,9 +216,11 @@ domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5'
                       '2-6': '18', '3-3': '19', '3-4': '20', '3-5': '21', '3-6': '22', '4-4': '23',
                       '4-5': '24', '4-6': '25',
                       '5-5': '26', '5-6': '27', '6-6': '28'}
-domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы уже решили эту задачу', 'as': 'Вы уже решили эту задачу',
+domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы уже решили эту задачу',
+                   'as': 'Вы уже решили эту задачу',
                    'fs': 'У Вас закончились попытки на сдачу этой задачи',
-                   'absent': 'На данный момент задачи с этим номером отсутсвуют', 'hand': 'Вы уже взяли эту задачу'}
+                   'absent': 'На данный момент задачи с этим номером отсутсвуют',
+                   'hand': 'Вы уже взяли эту задачу'}
 with open("domino_tasks.json", 'rt') as f:
     domino_info = json.load(f)
 number_of_domino_task = 5
@@ -423,11 +434,15 @@ def load_user_members_data(user_id):
 # Функция возвращает True если пользователь авторизован, иначе False
 
 def is_auth():
-    try:
-        if not current_user.is_authenticated:
-            return False
-    except AttributeError:
-        return True
+    return current_user.is_authenticated
+
+
+# Возвращает объект класса User если произошла авторизация
+# Иначе None
+
+def get_cur_user():
+    if is_auth():
+        return get_user_from_id(current_user.id)
 
 
 if __name__ == '__main__':
