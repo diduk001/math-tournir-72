@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Таблица результатов {{title}} по {{grade}} классу</h1>
+    <table class="table table-bordered table-responsive">
+        <thead>
+            <tr>
+                <th> Место </th>
+                <th> Название </th>
+                {% for task in keys %}
+                    <th width="10%"> {{info[grade][task]['name']}} </th>
+                {% endfor %}
+                <th> Сумма </th>
+            </tr>
+        </thead>
+        {% for place in range(team_num) %}
+            <tr>
+                {% if results[place][1] == team %}
+                    <th class="table-dark"> {{place + 1}} </th>
+                    <th class="table-dark"> {{results[place][1]}} </th>
+                {% else %}
+                    <th> {{place + 1}} </th>
+                <th> {{results[place][1]}} </th>
+                {% endif %}
+                {% if title == 'Домино' %}
+                    {% set step = 3 %}
+                {% else %}
+                    {% set step = 2 %}
+                {% endif %}
+                {% for i in range(step, number + step) %}
+                    {% set state = results[place][i][-2:] %}
+                    {% set points = results[place][i][:-2] %}
+                    {% if state == 'af' %}
+                        <th class="table-success" width="30px"> {{points}} </th>
+                    {% elif state in ['ff', 'as', 'bf'] %}
+                        <th class="table-warning" width="30px"> {{points}} </th>
+                    {% elif state == 'fs' %}
+                        <th class="table-danger" width="30px"> {{points}} </th>
+                    {% else %}
+                        <th width="30px"> {{points}} </th>
+                    {% endif %}
+                {% endfor %}
+                <th width="30px"> {{results[place][-1]}} </th>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
