@@ -193,8 +193,8 @@ def get_state(string):
 
 
 # Всё что нужно для домино
-domino_start_time = datetime.datetime(2020, 4, 19, 21, 14, 30)
-domino_end_time = datetime.datetime(2020, 4, 19, 21, 15, 30)
+domino_start_time = datetime.datetime(2020, 4, 20, 16, 21, 30)
+domino_end_time = datetime.datetime(2020, 4, 20, 17, 21, 30)
 domino_keys = list(map(str, range(1, 29)))
 domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5', '0-5': '6',
                       '0-6': '7', '1-1': '8', '1-2': '9',
@@ -220,6 +220,8 @@ for grade in ['5', '6', '7']:
 def domino():
     # Необходимые штуки
     global domino_keys, domino_messages, domino_tasks_names, domino_info
+    if not is_auth():
+        return render_template("not_authenticated.html")
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
@@ -271,6 +273,8 @@ def domino():
                 verdicts = ['ok', 'ff', 'fs']
                 if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(tasks[key]['state']) == 'ok':
                     tasks[key]['state'] = str(sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
+                    if tasks[key]['name'] == '0-0':
+                        tasks[key]['state'] = '10af'
                 elif domino_info[grade][key]['answer'] == request.form.get('answer'):
                     tasks[key]['state'] = str(max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
                 else:
@@ -279,6 +283,8 @@ def domino():
                         tasks[key]['state'] = '0ff'
                     else:
                         tasks[key]['state'] = str(-min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
+                    if tasks[key]['name'] == '0-0':
+                        tasks[key]['state'] = '0fs'
                 update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
                 picked_tasks.remove('t' + key)
                 domino_info[grade][key]['number'] += 1
@@ -293,8 +299,8 @@ def domino():
 
 penalty_keys = list(map(str, range(1, 15)))
 penalty_info = {}
-penalty_start_time = datetime.datetime(2020, 4, 18, 12, 8, 30)
-penalty_end_time = datetime.datetime(2020, 4, 18, 12, 9, 30)
+penalty_start_time = datetime.datetime(2020, 4, 20, 16, 21, 30)
+penalty_end_time = datetime.datetime(2020, 4, 20, 17, 21, 30)
 for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
@@ -308,6 +314,8 @@ penalty_messages = {'accepted': 'Вы уже решили эту задачу', 
 @app.route('/penalty', methods=["GET", "POST"])
 def penalty():
     global penalty_info
+    if not is_auth():
+        return render_template("not_authenticated.html")
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
@@ -444,4 +452,5 @@ def get_cur_user():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(port=8080, host='127.0.0.1')
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
