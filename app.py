@@ -86,6 +86,7 @@ def update(table, task, state, team, grade):
     con.commit()
     con.close()
 
+
 # Получить состояние задачи
 
 def get(table, task, team, grade):
@@ -214,6 +215,8 @@ number_of_domino_task = 5
 for grade in ['5', '6', '7']:
     for key in domino_keys:
         domino_info[grade][key]['number'] = number_of_domino_task
+
+
 # Страница домино
 
 @app.route("/domino", methods=["GET", "POST"])
@@ -226,7 +229,8 @@ def domino():
     if domino_start_time > time:
         start_time = f"{domino_start_time.month} {domino_start_time.day} {domino_start_time.year} "
         start_time += f"{domino_start_time.hour}:{domino_start_time.minute}:{domino_start_time.second}"
-        return render_template("domino.html", title="Домино ТЮМ72", state='not started', start_time=start_time)
+        return render_template("domino.html", title="Домино ТЮМ72", state='not started',
+                               start_time=start_time)
     elif time > domino_end_time:
         return render_template("domino.html", title="Домино ТЮМ72", state='ended')
     else:
@@ -235,7 +239,8 @@ def domino():
         state = 'in progress'
         tasks = {}
         for key in domino_keys:
-            tasks[key] = {'name': domino_info[grade][key]['name'], 'state': get('domino_tasks','t' + key, team, grade)}
+            tasks[key] = {'name': domino_info[grade][key]['name'],
+                          'state': get('domino_tasks', 't' + key, team, grade)}
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
                 tasks[key]['state'] = '0bo'
@@ -269,16 +274,21 @@ def domino():
             elif request.form.get('answer'):
                 key = domino_tasks_names[request.form.get('name')]
                 verdicts = ['ok', 'ff', 'fs']
-                if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(tasks[key]['state']) == 'ok':
-                    tasks[key]['state'] = str(sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
+                if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(
+                        tasks[key]['state']) == 'ok':
+                    tasks[key]['state'] = str(
+                        sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
                 elif domino_info[grade][key]['answer'] == request.form.get('answer'):
-                    tasks[key]['state'] = str(max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
+                    tasks[key]['state'] = str(
+                        max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
                 else:
-                    tasks[key]['state'] = verdicts[verdicts.index(get_state(tasks[key]['state'])) + 1]
+                    tasks[key]['state'] = verdicts[
+                        verdicts.index(get_state(tasks[key]['state'])) + 1]
                     if tasks[key]['state'] == 'ff':
                         tasks[key]['state'] = '0ff'
                     else:
-                        tasks[key]['state'] = str(-min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
+                        tasks[key]['state'] = str(
+                            -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
                 update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
                 picked_tasks.remove('t' + key)
                 domino_info[grade][key]['number'] += 1
@@ -299,8 +309,10 @@ for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
         penalty_info[grade][key] = {'name': key, 'cost': 15, 'answer': '0',
-                                   'content': '/static/img/sample1.png'}
-penalty_messages = {'accepted': 'Вы уже решили эту задачу', 'failed': 'У вас закончились попытки на сдачу этой задачи'}
+                                    'content': '/static/img/sample1.png'}
+penalty_messages = {'accepted': 'Вы уже решили эту задачу',
+                    'failed': 'У вас закончились попытки на сдачу этой задачи'}
+
 
 # Страница пенальти
 
@@ -314,7 +326,8 @@ def penalty():
     if penalty_start_time > time:
         start_time = f"{penalty_start_time.month} {penalty_start_time.day} {penalty_start_time.year} "
         start_time += f"{penalty_start_time.hour}:{penalty_start_time.minute}:{penalty_start_time.second}"
-        return render_template("penalty.html", title="Пенальти ТЮМ72", state='not started', start_time=start_time)
+        return render_template("penalty.html", title="Пенальти ТЮМ72", state='not started',
+                               start_time=start_time)
     elif time > penalty_end_time:
         return render_template("penalty.html", title="Пенальти ТЮМ72", state='ended')
     else:
@@ -323,7 +336,7 @@ def penalty():
         state = 'in progress'
         tasks = {}
         for key in penalty_keys:
-            tasks[key] = {'name': key, 'state': get('penalty_tasks','t' + key, team, grade)}
+            tasks[key] = {'name': key, 'state': get('penalty_tasks', 't' + key, team, grade)}
         if request.method == "POST":
             key = request.form.get('name')
             verdicts = ['ok', 'ff', 'fs']
@@ -342,7 +355,8 @@ def penalty():
                     tasks[key]['state'] = '-2' + 'fs'
             update_results('penalty_tasks', get_point(tasks[key]['state']), team, grade)
             update('penalty_tasks', 't' + key, tasks[key]['state'], team, grade)
-        return render_template("penalty.html", title="Пенальти ТЮМ72", tasks=tasks, keys=penalty_keys,
+        return render_template("penalty.html", title="Пенальти ТЮМ72", tasks=tasks,
+                               keys=penalty_keys,
                                info=penalty_info[grade], state=state, end_time=end_time)
 
 
@@ -369,8 +383,10 @@ def results(game, grade):
     results = cur.execute(f"SELECT * from {table} ORDER BY sum").fetchall()
     con.close()
     team_num = len(results)
-    return render_template("results.html", team=team, results=results, title=titles[game], grade=grade,
+    return render_template("results.html", team=team, results=results, title=titles[game],
+                           grade=grade,
                            info=info, number=number, team_num=team_num, keys=keys)
+
 
 # Страница для авторизации
 

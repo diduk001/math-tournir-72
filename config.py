@@ -142,7 +142,7 @@ def check_type(parameter_name, var, class_):
 
 # Константные валидаторы проверки имени и наличия ввода
 
-IS_NAME_VALIDATOR = [Regexp(regex="^[А-Я][а-я]+", message="Неверный формат записи")]
+IS_NAME_VALIDATOR = [Regexp(regex="^[А-Я+Ё][а-я+ё]+", message="Неверный формат записи")]
 DATA_REQUIRED_VALIDATOR = [InputRequired(message="Это поле обязательно для заполения")]
 
 
