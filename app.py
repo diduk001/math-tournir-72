@@ -210,7 +210,7 @@ def anti_cheat():
         team = current_user.team_name
         cur_time = datetime.datetime.now()
         last_time = datetime.datetime(*get_last_time(team))
-        if cur_time - last_time > datetime.timedelta(seconds=5):
+        if cur_time - last_time > datetime.timedelta(seconds=15):
             if game_status('domino', cur_time) == 'in_progress' and last_time > domino_start_time:
                 update_cheater_status(team, 'domino')
             elif game_status('penalty', cur_time) == 'in_progress' and last_time > penalty_start_time:
@@ -577,4 +577,5 @@ def get_cur_user():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(port=8080, host='127.0.0.1')
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
