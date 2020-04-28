@@ -5,22 +5,25 @@
 
     <div class="container">
         <div class="row">
-            <div class="col-sm">
-                <a href="./5" type="button" class="btn btn-primary">5 класс</a></div>
-            <div class="col-sm">
-                <a href="./6" type="button" class="btn btn-primary">6 класс</a></div>
-            <div class="col-sm">
-                <a href="./7" type="button" class="btn btn-primary">7 класс</a></div>
+            {% for grd in ['5', '6', '7'] %}
+                {% set a_grd = "./" + grd %}
+                {% if grd == grade %}
+                    <div class="col-sm">
+                        <a href={{a_grd}} type="button" class="btn btn-primary">{{grd}} класс</a></div>
+                {% else %}
+                    <div class="col-sm">
+                        <a href={{a_grd}} type="button" class="btn btn-secondary">{{grd}} класс</a></div>
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
 
     <br>
-
-    <table class="table table-bordered table-responsive">
+    <table class="table table-bordered table-responsive" id="results">
         <thead>
         <tr>
-            <th> Место</th>
-            <th> Название</th>
+            <th class="position"> Текущее место</th>
+            <th class="title"> Название</th>
             {% for task in keys %}
                 <th width="10%"> {{ info[grade][task]['name'] }} </th>
             {% endfor %}
@@ -30,11 +33,11 @@
         {% for place in range(team_num) %}
             <tr>
                 {% if results[place][1] == team %}
-                    <th class="table-dark"> {{ place + 1 }} </th>
-                    <th class="table-dark"> {{ results[place][1] }} </th>
+                    <td class="table-primary position"> {{ place + 1 }} </td>
+                    <td class="table-primary title"> {{ results[place][1] }} </td>
                 {% else %}
-                    <th> {{ place + 1 }} </th>
-                    <th> {{ results[place][1] }} </th>
+                    <td class="position"> {{ place + 1 }} </td>
+                    <td class="title"> {{ results[place][1] }} </td>
                 {% endif %}
                 {% if title == 'Домино' %}
                     {% set step = 3 %}
@@ -45,17 +48,18 @@
                     {% set state = results[place][i][-2:] %}
                     {% set points = results[place][i][:-2] %}
                     {% if state == 'af' %}
-                        <th class="table-success" width="30px"> {{ points }} </th>
+                        <td class="table-success" width="30px"> {{ points }} </td>
                     {% elif state in ['ff', 'as', 'bf'] %}
-                        <th class="table-warning" width="30px"> {{ points }} </th>
+                        <td class="table-warning" width="30px"> {{ points }} </td>
                     {% elif state == 'fs' %}
-                        <th class="table-danger" width="30px"> {{ points }} </th>
+                        <td class="table-danger" width="30px"> {{ points }} </td>
                     {% else %}
-                        <th width="30px"> {{ points }} </th>
+                        <td width="30px"> {{ points }} </td>
                     {% endif %}
                 {% endfor %}
-                <th width="30px"> {{ results[place][-1] }} </th>
+                <td width="30px"> {{ results[place][-1] }} </td>
             </tr>
         {% endfor %}
     </table>
+
 {% endblock %}

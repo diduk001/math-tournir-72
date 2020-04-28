@@ -72,15 +72,27 @@ button.absent{
   font-size: 16px;
 }
 
-label.accepted{
-    background color: lawngreen;
+p.accepted{
+    background color: #7CFC00;
 }
-label.failed{
+.failed{
     background color: crimson;
 }
 label.first_try_failed{
     background color: gold;
 }
-table.results{
+.title{
+    position: absolute;
+    left: 60;
+    }
+.position{
+    position: fixed;
+    width: 200px;
+}
+.outer {
+    position: fixed;
+    width: 200px;
+}
+.results{
 
 }

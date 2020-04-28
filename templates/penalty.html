@@ -87,13 +87,25 @@
                     <img src={{info[key]['content']}} width="100%" height="35%">
                         <form method="post">
                             <div class="form-group">
-                                <label class={{state}} for="name">{{task['name']}}. Эта задача стоит {{info[key]['cost']}} б.</label>
-                                <input value={{task['name']}} id="name" name="name" hidden>
-                                <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                {% if task['state'][-2:] in ['af', 'as'] %}
+                                    <p class="accepted">Вы уже решили эту задачу</p>
+                                {% elif task['state'][-2:] == 'fs' %}
+                                    <p class="failed">У вас закончились попытки на сдачу этой задачи</p>
+                                {% elif task['state'][-2:] == 'ff' %}
+                                    <label class="first_try_failed" for="name">{{task['name']}}. Эта задача стоит
+                                        {{info[key]['cost']}} б. У Вас осталась одна попытка на сдачу этой задачи</label>
+                                    <input value={{task['name']}} id="name" name="name" hidden>
+                                    <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                {% else %}
+                                    <label class={{state}} for="name">{{task['name']}}. Эта задача стоит
+                                        {{info[key]['cost']}} б.</label>
+                                    <input value={{task['name']}} id="name" name="name" hidden>
+                                    <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                {% endif %}
+
+
                             </div>
-                            {% if task['state'][-2:] in ['af', 'fs', 'as'] %}
-                                <button class="btn btn-primary" type="submit" disabled>Отправить</button>
-                            {% else %}
+                            {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
                                 <button class="btn btn-primary" type="submit">Отправить</button>
                             {% endif %}
                         </form>
