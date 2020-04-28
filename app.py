@@ -210,7 +210,7 @@ def anti_cheat():
         team = current_user.team_name
         cur_time = datetime.datetime.now()
         last_time = datetime.datetime(*get_last_time(team))
-        if cur_time - last_time > datetime.timedelta(seconds=15):
+        if cur_time - last_time > datetime.timedelta(seconds=5):
             if game_status('domino', cur_time) == 'in_progress' and last_time > domino_start_time:
                 update_cheater_status(team, 'domino')
             elif game_status('penalty', cur_time) == 'in_progress' and last_time > penalty_start_time:
