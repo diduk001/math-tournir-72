@@ -312,6 +312,8 @@ number_of_domino_task = 2
 for grade in ['5', '6', '7']:
     for key in domino_keys:
         domino_info[grade][key]['number'] = number_of_domino_task
+
+
 # Страница домино
 
 @app.route("/domino", methods=["GET", "POST"])
@@ -406,8 +408,10 @@ for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
         penalty_info[grade][key] = {'name': key, 'cost': 15, 'answer': '0',
-                                   'content': '/static/img/sample1.png'}
-penalty_messages = {'accepted': 'Вы уже решили эту задачу', 'failed': 'У вас закончились попытки на сдачу этой задачи'}
+                                    'content': '/static/img/sample1.png'}
+penalty_messages = {'accepted': 'Вы уже решили эту задачу',
+                    'failed': 'У вас закончились попытки на сдачу этой задачи'}
+
 
 # Страница пенальти
 
@@ -481,8 +485,10 @@ def results(game, grade):
     results = cur.execute(f"SELECT * from {table} ORDER BY sum DESC").fetchall()
     con.close()
     team_num = len(results)
-    return render_template("results.html", team=team, results=results, title=titles[game], grade=grade,
+    return render_template("results.html", team=team, results=results, title=titles[game],
+                           grade=grade,
                            info=info, number=number, team_num=team_num, keys=keys)
+
 
 # Страница для авторизации
 
@@ -557,4 +563,3 @@ def get_cur_user():
 if __name__ == '__main__':
     app.debug = True
     app.run(port=8080, host='127.0.0.1')
-    

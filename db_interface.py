@@ -3,6 +3,8 @@
 from config import User
 from config import check_type
 from data import db_session, users_login_data, users_members_data
+import sqlite3
+from sqlite3 import Error
 
 # Назначение классов для того, чтобы не писать длинные пути
 
@@ -117,3 +119,118 @@ def get_user_from_id(user_id):
     user.hashed_password = login_data.hashed_password
 
     return user
+
+
+def create_connection(db_file):
+    """
+    Создать подключение к файлу базы данных
+    :param db_file: str, Путь к файлу базы данных
+    :return: Connection object/None
+    """
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except Error as e:
+        print(e)
+
+    return None
+
+
+def execute(db_file, request):
+    """
+    Выполнить запрос к таблице
+    :param db_file: str, Путь к файлу базы данных
+    :param request: str, Запрос к файлу в синтаксисе SQLite
+    :return: None
+    """
+    conn = create_connection(db_file)
+    try:
+        c = conn.cursor()
+        c.execute(request)
+    except Error as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+
+def get_data(db_file, table, condition):
+    """
+    Получить значение из столбца
+    :param db_file: str, Путь к файлу базы данных
+    :param table: str, Название таблицы
+    :param condition: str, Условие в синтаксисе SQLite3 (всё то, что идёт после WHERE)
+    :return: tuple, Кортеж со строкой, для которой выполняется условие
+    """
+    conn = create_connection(db_file)
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM {table} WHERE {condition}")
+        row = cur.fetchone()
+        return row
+    except Error as e:
+        print(e)
+    finally:
+        conn.close()
+
+    return None
+
+
+def data_exists(db_file, table, col, value):
+    """
+    Проверка на то, существует ли значение в столбце
+    :param db_file: str, Путь к файлу базы данных
+    :param table: str, Название таблицы
+    :param col: str, Столбец, значение в котором надо проверить
+    :param value: Значение, существование которого можно проверить
+    :return: True или False
+    """
+    data = get_data(db_file, table, col, f"{col}={value}")
+    return bool(data)
+
+
+def update_data(db_file, table, values, condition):
+    """
+    Обновление существующих значений
+    :param db_file: str, Путь к файлу базы данных
+    :param table: str, Название таблицы
+    :param values: dict, key - столбец, значение в котором нужно заменить;
+                         val - значение, на которое нужно заменить
+    :param condition: условие, при котором нужно заменить значение
+    :return: None
+    """
+    conn = create_connection(db_file)
+    try:
+        values_string = ','.join([f"{key}={val}" for key, val in values.items()])
+        cur = conn.cursor()
+        cur.execute(f"UPDATE {table} SET {values_string} WHERE {condition}")
+    except Error as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+
+def insert_data(db_file, table, columns, values):
+    """
+    Вставка строки в таблицы
+    :param db_file: str, Путь к файлу базы данных
+    :param table: str, Название таблицы
+    :param columns: iterable, Столбцы, в которые надо вставить значения
+    :param values: iterable, Значения, которые надо вставить в соответствующие столбцы
+    :return: None
+    """
+    conn = create_connection(db_file)
+    try:
+        columns_string = f"({','.join(list(map(str, columns)))})"
+        values_string = f"({','.join(list(map(str, values)))})"
+        cur = conn.cursor()
+        command = f"INSERT INTO {table} {columns_string} VALUES {values_string};"
+        cur.execute(command)
+    except Error as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+    return None
