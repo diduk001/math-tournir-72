@@ -44,6 +44,7 @@ def base():
 
 
 # Главная страница
+
 @app.route("/")
 def index():
     params = dict()
@@ -78,6 +79,8 @@ def profile():
         return redirect("/login")
 
 
+# Получить место команды в игре
+
 def get_place(team, game, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -88,6 +91,7 @@ def get_place(team, game, grade):
 
 
 # Изменить состояние задачи
+
 def update(table, task, state, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -100,6 +104,7 @@ def update(table, task, state, team, grade):
 
 
 # Получить состояние задачи
+
 def get_task_state(table, task, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -110,6 +115,7 @@ def get_task_state(table, task, team, grade):
 
 
 # Изменить таблицу результатов
+
 def update_results(table, points, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -121,6 +127,8 @@ def update_results(table, points, team, grade):
     con.commit()
     con.close()
 
+
+# Получить состояние игры
 
 def game_status(game, time):
     global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
@@ -141,6 +149,7 @@ def game_status(game, time):
 
 
 # Возвращает время когда команда последний раз была на сайте
+
 def get_last_time(team):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -150,6 +159,7 @@ def get_last_time(team):
 
 
 # Изменяет время когда команда последний раз была на сайте
+
 def update_last_time(team, time):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -162,6 +172,7 @@ def update_last_time(team, time):
 
 
 # Изменяет состояние честности команды
+
 def update_cheater_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -177,6 +188,7 @@ def update_cheater_status(team, game):
 
 
 #Получить состояние честности
+
 def get_cheater_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -190,6 +202,7 @@ def get_cheater_status(team, game):
 
 
 # Проверка на честность
+
 @app.route("/anti_cheat", methods=["POST"])
 def anti_cheat():
     global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
@@ -197,7 +210,7 @@ def anti_cheat():
         team = current_user.team_name
         cur_time = datetime.datetime.now()
         last_time = datetime.datetime(*get_last_time(team))
-        if cur_time - last_time > datetime.timedelta(seconds=3):
+        if cur_time - last_time > datetime.timedelta(seconds=5):
             if game_status('domino', cur_time) == 'in_progress' and last_time > domino_start_time:
                 update_cheater_status(team, 'domino')
             elif game_status('penalty', cur_time) == 'in_progress' and last_time > penalty_start_time:
@@ -207,6 +220,7 @@ def anti_cheat():
     return jsonify({'hah':'hah'})
 
 # Регистрация
+
 @app.route("/sign_up", methods=["GET", "POST"])
 def sign_up():
     sign_up_form = SignUpForm()
@@ -273,6 +287,7 @@ def sign_up():
 
 
 # Страница с правилами
+
 @app.route('/rules')
 def rules():
     params = dict()
@@ -291,8 +306,9 @@ def get_state(string):
 
 
 # Всё что нужно для домино
-domino_start_time = datetime.datetime(2020, 4, 25, 22, 21, 50)
-domino_end_time = datetime.datetime(2021, 4, 25, 20, 50, 0)
+
+domino_start_time = datetime.datetime(2020, 4, 28, 19, 8, 30)
+domino_end_time = datetime.datetime(2021, 4, 28, 19, 35, 0)
 domino_keys = list(map(str, range(1, 29)))
 domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5', '0-5': '6',
                       '0-6': '7', '1-1': '8', '1-2': '9',
@@ -349,7 +365,6 @@ def domino():
                 tasks[key]['state'] = '0ok'
             elif get_state(tasks[key]['state']) == 'bf' and domino_info[grade][key]['number'] > 0:
                 tasks[key]['state'] = '0ff'
-        print(tasks)
         picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
@@ -373,7 +388,7 @@ def domino():
             elif request.form.get('answer'):
                 key = domino_tasks_names[request.form.get('name')]
                 verdicts = ['ok', 'ff', 'fs']
-                if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in picked_tasks:
+                if get_state(tasks[key]['state']) in ['ok', 'ff'] and 't' + key in picked_tasks:
                     if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
                         if tasks[key]['name'] == '0-0':
@@ -402,8 +417,8 @@ def domino():
 
 penalty_keys = list(map(str, range(1, 17)))
 penalty_info = {}
-penalty_start_time = datetime.datetime(2020, 4, 20, 19, 45, 0)
-penalty_end_time = datetime.datetime(2021, 4, 20, 20, 3, 0)
+penalty_start_time = datetime.datetime(2020, 4, 28, 19, 37, 0)
+penalty_end_time = datetime.datetime(2021, 4, 28, 20, 30, 0)
 for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:

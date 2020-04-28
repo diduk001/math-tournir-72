@@ -4,7 +4,7 @@ import db_interface
 
 blueprint = Blueprint('tasks_api', __name__, template_folder='templates')
 
-# Ключ ждя API
+# Ключ для API
 
 TOTALLY_RIGHT_APIKEY = "01a2f11083248dd087f371518c37a0be2e340abe62c61dc5fcccd1dab1539fe0"
 
