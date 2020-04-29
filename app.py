@@ -1,11 +1,15 @@
-import json
-import os.path
-import sqlite3
 import datetime
+import json
+import os
+import os.path
+
+import requests
 from flask import Flask, render_template, redirect, request
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-from config import SignUpForm, LoginForm
+from api import api_blueprint, TOTALLY_RIGHT_APIKEY
+from config import SERVER_URL, SignUpForm, LoginForm, AddTaskForm, VALID_DOMINO_TASKS_NUMBERS, \
+    VALID_PENALTY_TASKS_NUMBERS
 from db_interface import *
 
 
@@ -15,6 +19,7 @@ class ConfigClass(object):
     SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
     USER_ENABLE_EMAIL = False
     USER_ENABLE_USERNAME = True
+    UPLOAD_FOLDER = './static/img/uploads/'
 
 
 # Создание приложения
@@ -24,11 +29,16 @@ app = Flask(__name__)
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
 db_session.global_init("db/login_data_members_data_session.sqlite")
+app.register_blueprint(api_blueprint)
 
 # Создание и инициализация менеджера входа
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# set с допущенными расширениями
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', "gif"}
 
 
 # Вызов обработчика базового шаблона base.html
@@ -181,6 +191,52 @@ def rules():
     params = dict()
     params["title"] = "Правила"
     return render_template("rules.html", **params)
+
+
+# API
+
+@app.route('/0d645377e31ab6b5847ec817bac4aaf8')
+def api():
+    return render_template("api.html", form=AddTaskForm())
+
+
+# Обработчик API
+
+@app.route("/YLQDELQDYLQDELQD", methods=["POST"])
+def YLQDELQDYLQDELQD():
+    task = request.form["task"]
+    grade = request.form["grade"]
+    game_type = request.form["game_type"]
+    answer = request.form["answer"]
+    if game_type == "domino" and task not in VALID_DOMINO_TASKS_NUMBERS:
+        return "номер задачи и тип игры не совпадают"
+    if game_type == "penalty" and task not in VALID_PENALTY_TASKS_NUMBERS:
+        return "номер задачи и тип игры не совпадают"
+    file = request.files['info']
+    if file and allowed_file(file.filename):
+        filename = task + '.' + get_extension(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        url = SERVER_URL + '/api'
+        params = {"apikey": TOTALLY_RIGHT_APIKEY,
+                  "request_type": "add_task",
+                  "game_type": game_type,
+                  "grade": grade,
+                  "task": task,
+                  "answer": answer,
+                  "info": info}
+        print(url)
+        r = requests.get(url, params=params)
+        print(r.content)
+        print(r.url)
+        # print(requests.get(url, params=params))
+        # print(requests.get(url, params=params).content)
+
+        return """задача добавлена <a href="/0d645377e31ab6b5847ec817bac4aaf8">добавить ещё одну 
+        задачу</a>"""
+    else:
+        return """файл не прошёл проверку"""
 
 
 # всё что нужно для игр
@@ -458,6 +514,20 @@ def get_cur_user():
         return get_user_from_id(current_user.id)
 
 
+#  Проверка на то, разрешено ли загружать такой файл
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+# Получить расширение по типу файла
+
+def get_extension(filename):
+    if '.' not in filename:
+        return None
+    return filename.rsplit('.', 1)[1]
+
+
 if __name__ == '__main__':
-    app.debug = True
     app.run(port=8080, host='127.0.0.1')

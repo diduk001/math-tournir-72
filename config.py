@@ -1,3 +1,6 @@
+# URL для совершения запросов
+SERVER_URL = "http://127.0.0.1:5000"
+
 # Файл, содержащий класс пользователя
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -125,6 +128,14 @@ class User:
                 }
 
 
+# Кортежи, в которых указаны валидные данные
+
+VALID_REQUEST_TYPES = ("check_task", "get_task", "add_task")
+VALID_GAME_TYPES = ("domino", "penalty")
+VALID_GRADES = (5, 6, 7)
+VALID_PENALTY_TASKS_NUMBERS = tuple([str(i) for i in range(1, 15)])
+VALID_DOMINO_TASKS_NUMBERS = tuple([f"{i}-{j}" for i in range(7) for j in range(i, 7)])
+
 # Файл, содержащий формы для входа и регистрации
 
 from flask_wtf import FlaskForm
@@ -140,10 +151,23 @@ def check_type(parameter_name, var, class_):
     assert isinstance(var, class_), f"{parameter_name} is not {class_}"
 
 
+def is_task_validator(form, field):
+    game_type = form.game_type.data
+    task = field.data
+    if game_type == "domino":
+        if task not in VALID_DOMINO_TASKS_NUMBERS:
+            raise ValidationError("Not valid task")
+    elif game_type == "penalty":
+        if task not in VALID_PENALTY_TASKS_NUMBERS:
+            raise ValidationError("Not valid task")
+
+
 # Константные валидаторы проверки имени и наличия ввода
 
 IS_NAME_VALIDATOR = [Regexp(regex="^[А-Я+Ё][а-я+ё]+", message="Неверный формат записи")]
 DATA_REQUIRED_VALIDATOR = [InputRequired(message="Это поле обязательно для заполения")]
+IS_TASK_VALIDATOR = [is_task_validator]
+FILENAME_VALIDATOR = [Regexp(regex="^[\w\(\)\+\.\=\-]+\.(jpg|png|jpeg|gif|)$")]
 
 
 # Форма для входа
@@ -181,3 +205,13 @@ class SignUpForm(FlaskForm):
     member3 = FormField(SignUpMemberForm)
     member4 = FormField(SignUpMemberForm)
     submit = SubmitField("Регистрация")
+
+
+class AddTaskForm(FlaskForm):
+    grade = SelectField("Класс", choices=[("5", "5"), ("6", "6"), ("7", "7")])
+    game_type = SelectField("Класс", choices=[("domino", "Домино"), ("penalty", "Пенальти")])
+    task = StringField("Номер задачи", validators=DATA_REQUIRED_VALIDATOR + IS_TASK_VALIDATOR)
+    answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
+    info = FileField("Загрузить условие - изображение с расширением *.jpg/*.jpeg/*.png/*.gif",
+                     validators=FILENAME_VALIDATOR)
+    submit = SubmitField("Добавить задачу")

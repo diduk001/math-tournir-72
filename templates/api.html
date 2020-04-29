@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Добавление задачи</title>
+</head>
+<body>
+<h1>Добавление задачи</h1>
+<form action={{ url_for("YLQDELQDYLQDELQD") }} method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.grade.label }}<br>
+        {{ form.grade }}<br>
+        {% for error in form.grade.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.game_type.label }}<br>
+        {{ form.game_type }}<br>
+        {% for error in form.game_type.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.answer.label }}<br>
+        {{ form.answer }}<br>
+        {% for error in form.answer.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.task.label }}<br>
+        {{ form.task }}<br>
+        {% for error in form.task.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </p>
+    <p>
+        {{ form.info.label }}<br>
+        {{ form.info }}<br>
+        {% for error in form.info.errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+</body>
+</html>
