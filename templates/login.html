@@ -7,6 +7,8 @@
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
 
+        <p style="color: red">Необходимо ввести и логин, и пароль</p>
+
         {# Логин #}
         {{ form.login(class="form-control", placeholder=form.login.label.text) }}<br>
         {% for error in form.login.errors %}
@@ -31,5 +33,6 @@
         {% endif %}
 
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        <p><a type="button" class="btn btn-link" href="./forgot_password">Забыли пароль?</a></p>
     </form>
 {% endblock %}

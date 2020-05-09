@@ -2,14 +2,16 @@ import datetime
 import json
 import os
 import os.path
+from hashlib import md5
 
 import requests
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, send_file
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-from api import api_blueprint, TOTALLY_RIGHT_APIKEY
-from config import SERVER_URL, SignUpForm, LoginForm, AddTaskForm, VALID_DOMINO_TASKS_NUMBERS, \
+from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
+from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
+    StartEndTimeForm
 from db_interface import *
 
 
@@ -84,6 +86,22 @@ def profile():
         return redirect("/login")
 
 
+# Страница для забывчивых
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def recover_password():
+    if request.method == "GET":
+        form = ForgotPassword()
+        params = dict()
+        params["form"] = form
+        return render_template("forgot_password.html", **params)
+    else:
+        email = request.form.get("email")
+        return "иванован доделай это"
+
+        # Тут иванован должен дописать
+
+
 # Изменить состояние задачи
 
 def update(table, task, state, team, grade):
@@ -147,6 +165,7 @@ def sign_up():
         user = User(
             login=request.form.get("team-login"),
             team_name=request.form.get("team-team_name"),
+            email=request.form.get("team-email"),
             grade=int(request.form.get("team-grade")),
 
             member1=(request.form.get("member1-name_field"),
@@ -173,8 +192,8 @@ def sign_up():
         cur = con.cursor()
         domino_table = 'domino_tasks' + str(user.grade)
         penalty_table = 'penalty_tasks' + str(user.grade)
-        cur.execute("INSERT into {}(title) values ('{}')".format(domino_table, user.team_name))
-        cur.execute("INSERT into {}(title) values ('{}')".format(penalty_table, user.team_name))
+        cur.execute(f"INSERT into {domino_table}(title) values (?)", (user.team_name,))
+        cur.execute(f"INSERT into {penalty_table}(title) values (?)", (user.team_name,))
         con.commit()
         con.close()
         add_user(user)
@@ -193,31 +212,50 @@ def rules():
     return render_template("rules.html", **params)
 
 
-# API
+# Допуск к кабинету админа
 
-@app.route('/0d645377e31ab6b5847ec817bac4aaf8')
-def api():
-    return render_template("api.html", form=AddTaskForm())
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_pass():
+    if request.method == "GET":
+        return send_file("./templates/admin_pass.html")
+    elif request.method == "POST":
+        password = request.form.get("password")
+        password = password.strip()
+        if hash_md5(password) == "8d5a568735a2195fbdcd900507c48c6d":  # hash_md5(";353!tyum")
+            return redirect("/52df6a777d579a6fc8b787b049824b41")
+        return "Пароль неправильный! <br> <a " \
+               "href=\"./21232f297a57a5a743894a0e4a801fc3\">Вернуться обратно</a>"
 
 
-# Обработчик API
+# Пункт управления для админов
 
-@app.route("/YLQDELQDYLQDELQD", methods=["POST"])
-def YLQDELQDYLQDELQD():
-    task = request.form["task"]
-    grade = request.form["grade"]
-    game_type = request.form["game_type"]
-    answer = request.form["answer"]
+@app.route('/52df6a777d579a6fc8b787b049824b41', methods=['GET'])
+def admin_room():
+    params = dict()
+    params["add_task_form"] = AddTaskForm()
+    params["start_end_time_form"] = StartEndTimeForm()
+    params["ban_team_form"] = BanTeamForm()
+    return render_template("admin_room.html", **params)
+
+
+# Страничка с результатом добавления задачи
+
+@app.route('/cdb63e6a1a08307c6c44354aa37972b7', methods=['POST'])
+def add_task():
+    task = request.form.get("task")
+    grade = request.form.get("grade")
+    game_type = request.form.get("game_type")
+    answer = request.form.get("answer")
     if game_type == "domino" and task not in VALID_DOMINO_TASKS_NUMBERS:
         return "номер задачи и тип игры не совпадают"
     if game_type == "penalty" and task not in VALID_PENALTY_TASKS_NUMBERS:
         return "номер задачи и тип игры не совпадают"
-    file = request.files['info']
+    file = request.files.get('info')
+
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
                   "request_type": "add_task",
@@ -233,10 +271,55 @@ def YLQDELQDYLQDELQD():
         # print(requests.get(url, params=params))
         # print(requests.get(url, params=params).content)
 
-        return """задача добавлена <a href="/0d645377e31ab6b5847ec817bac4aaf8">добавить ещё одну 
-        задачу</a>"""
+        return """задача добавлена <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+        обратно</a>"""
     else:
         return """файл не прошёл проверку"""
+
+
+# Страничка с результатом изменением времени соревнований
+
+@app.route('/8770a9a6c5ab1b00a4e0293d9ebd7bec', methods=['POST'])
+def start_end_time():
+    global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
+
+    try:
+        game_type = request.form.get("game_type")
+        time_start = request.form.get("time_start")
+        time_end = request.form.get("time_end")
+        time_format = "%d.%m.%Y %H:%M:%S"
+    except Exception as e:
+        return "Исключение: " + str(e)
+
+    try:
+        datetime_start = datetime.datetime.strptime(time_start, time_format)
+        datetime_end = datetime.datetime.strptime(time_end, time_format)
+    except ValueError:
+        return "Время не соответствует формату"
+
+    if game_type == "domino":
+        domino_start_time = datetime_start
+        domino_end_time = datetime_end
+    elif game_type == "penalty":
+        penalty_start_time = datetime_start
+        penalty_end_time = datetime_end
+
+    return """Вы установили время и дату соревнования (если я не ошибся). <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+        обратно</a>"""
+
+
+# Страничка с результатом бана команды
+
+@app.route('/1551c97a3794c5257e7ed3c5b816a825', methods=['POST'])
+def ban_team():
+    return "ban team"
+
+
+# Функция хэширования
+
+def hash_md5(s):
+    h = md5(bytes(s, encoding="utf-8"))
+    return h.hexdigest()
 
 
 # всё что нужно для игр

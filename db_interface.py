@@ -27,6 +27,10 @@ def add_user(user):
     login_data.login = user.login
     login_data.hashed_password = user.hashed_password
 
+    login_data.email = user.email
+    login_data.hashed_email = user.email
+
+    login_data.is_approved = user.is_approved
     # Заполнение данных о составе
 
     member_data = users_members_data.UserMembersData()
@@ -84,6 +88,7 @@ def get_user_from_id(user_id):
     login_data = session.query(UserLoginData).get(user_id)
     members_data = session.query(UserMemberData).get(user_id)
     user = User(login_data.login,
+                login_data.email,
                 members_data.team_name,
                 members_data.grade,
 
