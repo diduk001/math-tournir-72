@@ -1,10 +1,11 @@
 # Файл, содержащий функции для работы с базами данных
 
+import sqlite3
+from sqlite3 import Error
+
 from config import User
 from config import check_type
 from data import db_session, users_login_data, users_members_data
-import sqlite3
-from sqlite3 import Error
 
 # Назначение классов для того, чтобы не писать длинные пути
 
@@ -26,6 +27,10 @@ def add_user(user):
     login_data.login = user.login
     login_data.hashed_password = user.hashed_password
 
+    login_data.email = user.email
+    login_data.hashed_email = user.email
+
+    login_data.is_approved = user.is_approved
     # Заполнение данных о составе
 
     member_data = users_members_data.UserMembersData()
@@ -54,30 +59,17 @@ def add_user(user):
 
 def change_val(user_id, users_login_table, verbose=False, **kwargs):
     session = db_session.create_session()
-    if users_login_table:
-        user = session.query(UserLoginData).filter(UserLoginData.id == user_id).first()
-        for key, val in kwargs:
-            try:
-                user.key = val
-                session.commit()
-            except Exception as e:
-                if verbose:
-                    print(e)
-            else:
-                if verbose:
-                    print(f"SUCCESS UserLoginData.{key}={val}")
-    else:
-        user = session.query(UserMemberData).filter(UserMemberData.id == user_id).first()
-        for key, val in kwargs:
-            try:
-                user.key = val
-                session.commit()
-            except Exception as e:
-                if verbose:
-                    print(e)
-            else:
-                if verbose:
-                    print(f"SUCCESS UserLoginData.{key}={val}")
+    user = session.query(UserLoginData).filter(UserLoginData.id == user_id).first()
+    for key, val in kwargs:
+        try:
+            user.key = val
+            session.commit()
+        except Exception as e:
+            if verbose:
+                print(e)
+        else:
+            if verbose:
+                print(f"SUCCESS UserLoginData.{key}={val}")
     if verbose:
         print("END")
     return
@@ -96,6 +88,7 @@ def get_user_from_id(user_id):
     login_data = session.query(UserLoginData).get(user_id)
     members_data = session.query(UserMemberData).get(user_id)
     user = User(login_data.login,
+                login_data.email,
                 members_data.team_name,
                 members_data.grade,
 
@@ -131,7 +124,7 @@ def create_connection(db_file):
         conn = sqlite3.connect(db_file)
         return conn
     except Error as e:
-        print(e)
+        print("Creating connection SQL Error:", e)
 
     return None
 
@@ -148,29 +141,34 @@ def execute(db_file, request):
         c = conn.cursor()
         c.execute(request)
     except Error as e:
-        print(e)
+        print("Executing command SQL Error:", e)
+        print(request)
     finally:
         conn.commit()
         conn.close()
 
 
-def get_data(db_file, table, condition):
+def get_data(db_file, table, condition_col, condition_val):
     """
     Получить значение из столбца
     :param db_file: str, Путь к файлу базы данных
     :param table: str, Название таблицы
-    :param condition: str, Условие в синтаксисе SQLite3 (всё то, что идёт после WHERE)
+    :param condition_col: str, Столбец, по которому ищем строку
+    :param condition_val: Значение, по которому ищем строку
     :return: tuple, Кортеж со строкой, для которой выполняется условие
     """
+    command = f"SELECT * FROM {table} WHERE {condition_col}=(?)"
     conn = create_connection(db_file)
     try:
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM {table} WHERE {condition}")
+        cur.execute(command, (condition_val,))
         row = cur.fetchone()
         return row
     except Error as e:
-        print(e)
+        print("Get Data SQL Error:", e)
+        print(command)
     finally:
+        conn.commit()
         conn.close()
 
     return None
@@ -185,50 +183,55 @@ def data_exists(db_file, table, col, value):
     :param value: Значение, существование которого можно проверить
     :return: True или False
     """
-    data = get_data(db_file, table, col, f"{col}={value}")
+    data = get_data(db_file, table, col, value)
     return bool(data)
 
 
-def update_data(db_file, table, values, condition):
+def update_data(db_file, table, columns, values, condition_col, condition_val):
     """
     Обновление существующих значений
     :param db_file: str, Путь к файлу базы данных
     :param table: str, Название таблицы
-    :param values: dict, key - столбец, значение в котором нужно заменить;
-                         val - значение, на которое нужно заменить
-    :param condition: условие, при котором нужно заменить значение
+    :param columns: iterable, столбцы, значения в которых надо заменить
+    :param values: iterable, значения, на которые надо заменить
+    :param condition_col: str, Столбец, по которому нужно найти строку
+    :param condition_val: Значение, по которому можно найти строку
     :return: None
     """
+
+    command = f"UPDATE {table} SET {','.join([col + ' = ?' for col in columns])} WHERE " \
+              f"{condition_col}=(?)"
+    print(command)
+    print(table)
+    print(values)
     conn = create_connection(db_file)
     try:
-        values_string = ','.join([f"{key}={val}" for key, val in values.items()])
         cur = conn.cursor()
-        cur.execute(f"UPDATE {table} SET {values_string} WHERE {condition}")
+        cur.execute(command, (*values, condition_val))
     except Error as e:
-        print(e)
-    finally:
-        conn.commit()
-        conn.close()
+        print("Update Data SQL Error:", e)
+        print(command)
+    conn.commit()
+    conn.close()
 
 
-def insert_data(db_file, table, columns, values):
+def insert_data(db_file, table, values):
     """
     Вставка строки в таблицы
     :param db_file: str, Путь к файлу базы данных
     :param table: str, Название таблицы
-    :param columns: iterable, Столбцы, в которые надо вставить значения
     :param values: iterable, Значения, которые надо вставить в соответствующие столбцы
     :return: None
     """
+
+    command = f"INSERT INTO {table} VALUES ( {','.join(['?' for _ in range(len(values))])} )"
     conn = create_connection(db_file)
     try:
-        columns_string = f"({','.join(list(map(str, columns)))})"
-        values_string = f"({','.join(list(map(str, values)))})"
         cur = conn.cursor()
-        command = f"INSERT INTO {table} {columns_string} VALUES {values_string};"
-        cur.execute(command)
+        cur.execute(command, values)
     except Error as e:
-        print(e)
+        print("Insert Data SQL Error:", e)
+        print(command)
     finally:
         conn.commit()
         conn.close()

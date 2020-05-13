@@ -1,11 +1,16 @@
+import datetime
 import json
+import os
 import os.path
 import sqlite3
-import datetime
+from hashlib import md5
 from flask import Flask, render_template, redirect, request, jsonify
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
-from config import SignUpForm, LoginForm
+from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
+    VALID_PENALTY_TASKS_NUMBERS
+from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
+    StartEndTimeForm
 from db_interface import *
 
 
@@ -15,6 +20,7 @@ class ConfigClass(object):
     SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
     USER_ENABLE_EMAIL = False
     USER_ENABLE_USERNAME = True
+    UPLOAD_FOLDER = './static/img/uploads/'
 
 
 # Создание приложения
@@ -24,11 +30,16 @@ app = Flask(__name__)
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
 db_session.global_init("db/login_data_members_data_session.sqlite")
+app.register_blueprint(api_blueprint)
 
 # Создание и инициализация менеджера входа
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# set с допущенными расширениями
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', "gif"}
 
 
 # Вызов обработчика базового шаблона base.html
@@ -78,7 +89,6 @@ def profile():
     elif debug_var == 1:
         return redirect("/login")
 
-
 # Получить место команды в игре
 
 def get_place(team, game, grade):
@@ -88,6 +98,21 @@ def get_place(team, game, grade):
     results = list(map(lambda x: x[0], cur.execute(f"SELECT title from {table} ORDER BY sum DESC").fetchall()))
     con.close()
     return results.index(team) + 1
+
+# Страница для забывчивых
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def recover_password():
+    if request.method == "GET":
+        form = ForgotPassword()
+        params = dict()
+        params["form"] = form
+        return render_template("forgot_password.html", **params)
+    else:
+        email = request.form.get("email")
+        return "иванован доделай это"
+
+        # Тут иванован должен дописать
 
 
 # Изменить состояние задачи
@@ -246,6 +271,7 @@ def sign_up():
         user = User(
             login=request.form.get("team-login"),
             team_name=request.form.get("team-team_name"),
+            email=request.form.get("team-email"),
             grade=int(request.form.get("team-grade")),
 
             member1=(request.form.get("member1-name_field"),
@@ -295,6 +321,116 @@ def rules():
     return render_template("rules.html", **params)
 
 
+# Допуск к кабинету админа
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_pass():
+    if request.method == "GET":
+        return send_file("./templates/admin_pass.html")
+    elif request.method == "POST":
+        password = request.form.get("password")
+        password = password.strip()
+        if hash_md5(password) == "8d5a568735a2195fbdcd900507c48c6d":  # hash_md5(";353!tyum")
+            return redirect("/52df6a777d579a6fc8b787b049824b41")
+        return "Пароль неправильный! <br> <a " \
+               "href=\"./21232f297a57a5a743894a0e4a801fc3\">Вернуться обратно</a>"
+
+
+# Пункт управления для админов
+
+@app.route('/52df6a777d579a6fc8b787b049824b41', methods=['GET'])
+def admin_room():
+    params = dict()
+    params["add_task_form"] = AddTaskForm()
+    params["start_end_time_form"] = StartEndTimeForm()
+    params["ban_team_form"] = BanTeamForm()
+    return render_template("admin_room.html", **params)
+
+
+# Страничка с результатом добавления задачи
+
+@app.route('/cdb63e6a1a08307c6c44354aa37972b7', methods=['POST'])
+def add_task():
+    task = request.form.get("task")
+    grade = request.form.get("grade")
+    game_type = request.form.get("game_type")
+    answer = request.form.get("answer")
+    if game_type == "domino" and task not in VALID_DOMINO_TASKS_NUMBERS:
+        return "номер задачи и тип игры не совпадают"
+    if game_type == "penalty" and task not in VALID_PENALTY_TASKS_NUMBERS:
+        return "номер задачи и тип игры не совпадают"
+    file = request.files.get('info')
+
+    if file and allowed_file(file.filename):
+        filename = task + '.' + get_extension(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        url = SERVER_URL + '/api'
+        params = {"apikey": TOTALLY_RIGHT_APIKEY,
+                  "request_type": "add_task",
+                  "game_type": game_type,
+                  "grade": grade,
+                  "task": task,
+                  "answer": answer,
+                  "info": info}
+        print(url)
+        r = requests.get(url, params=params)
+        print(r.content)
+        print(r.url)
+        # print(requests.get(url, params=params))
+        # print(requests.get(url, params=params).content)
+
+        return """задача добавлена <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+        обратно</a>"""
+    else:
+        return """файл не прошёл проверку"""
+
+
+# Страничка с результатом изменением времени соревнований
+
+@app.route('/8770a9a6c5ab1b00a4e0293d9ebd7bec', methods=['POST'])
+def start_end_time():
+    global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
+
+    try:
+        game_type = request.form.get("game_type")
+        time_start = request.form.get("time_start")
+        time_end = request.form.get("time_end")
+        time_format = "%d.%m.%Y %H:%M:%S"
+    except Exception as e:
+        return "Исключение: " + str(e)
+
+    try:
+        datetime_start = datetime.datetime.strptime(time_start, time_format)
+        datetime_end = datetime.datetime.strptime(time_end, time_format)
+    except ValueError:
+        return "Время не соответствует формату"
+
+    if game_type == "domino":
+        domino_start_time = datetime_start
+        domino_end_time = datetime_end
+    elif game_type == "penalty":
+        penalty_start_time = datetime_start
+        penalty_end_time = datetime_end
+
+    return """Вы установили время и дату соревнования (если я не ошибся). <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+        обратно</a>"""
+
+
+# Страничка с результатом бана команды
+
+@app.route('/1551c97a3794c5257e7ed3c5b816a825', methods=['POST'])
+def ban_team():
+    return "ban team"
+
+
+# Функция хэширования
+
+def hash_md5(s):
+    h = md5(bytes(s, encoding="utf-8"))
+    return h.hexdigest()
+
+
 # всё что нужно для игр
 
 def get_point(string):
@@ -324,7 +460,7 @@ domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы 
                    'hand': 'Вы уже взяли эту задачу'}
 with open("domino_tasks.json", 'rt') as f:
     domino_info = json.load(f)
-number_of_domino_task = 2
+number_of_domino_task = 5
 for grade in ['5', '6', '7']:
     for key in domino_keys:
         domino_info[grade][key]['number'] = number_of_domino_task
@@ -575,7 +711,20 @@ def get_cur_user():
         return get_user_from_id(current_user.id)
 
 
+#  Проверка на то, разрешено ли загружать такой файл
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+# Получить расширение по типу файла
+
+def get_extension(filename):
+    if '.' not in filename:
+        return None
+    return filename.rsplit('.', 1)[1]
+
+
 if __name__ == '__main__':
-    app.debug = True
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(port=8080, host='127.0.0.1')

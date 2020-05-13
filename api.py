@@ -1,32 +1,29 @@
-from flask import Blueprint, request, jsonify
 import os.path
-import db_interface
 
-blueprint = Blueprint('tasks_api', __name__, template_folder='templates')
+from flask import Blueprint, request, jsonify
+
+import db_interface
+from config import VALID_REQUEST_TYPES, VALID_GAME_TYPES, VALID_GRADES, \
+    VALID_DOMINO_TASKS_NUMBERS, VALID_PENALTY_TASKS_NUMBERS
+
+api_blueprint = Blueprint('api', __name__, template_folder='templates')
 
 # Ключ для API
 
 TOTALLY_RIGHT_APIKEY = "01a2f11083248dd087f371518c37a0be2e340abe62c61dc5fcccd1dab1539fe0"
-
-# Кортежи, в которых указаны валидные данные
-
-VALID_REQUEST_TYPES = ("check_task", "get_task", "add_task")
-VALID_GAME_TYPES = ("domino", "penalty")
-VALID_GRADES = (5, 6, 7)
-VALID_PENALTY_TASKS_NUMBERS = tuple([str(i) for i in range(1, 15)])
-VALID_DOMINO_TASKS_NUMBERS = tuple([f"{i}-{j}" for i in range(7) for j in range(i, 7)])
 
 # База данных с условиями и ответами
 
 TASKS_INFO_DATABASE = os.path.join("db", "tasks_info.db")
 
 
-@blueprint.route('/api')
+@api_blueprint.route('/api')
 def api():
     """
     Функция для обработки запросов с url параметрами
     :return: None
     """
+
     apikey = request.args.get("apikey", default='', type=str)
     if not check_apikey(apikey):
         return jsonify({'error': 'Wrong api key'})
@@ -51,7 +48,8 @@ def api():
                                      '<= j <= 6'})
 
     if game_type == "penalty":
-        return jsonify({'error': 'Wrong task number. Must be i where 1 <= i <= 14'})
+        if task not in VALID_PENALTY_TASKS_NUMBERS:
+            return jsonify({'error': 'Wrong task number. Must be i where 1 <= i <= 14'})
 
     if request_type == "check_task":
         answer = request.args.get("answer", default='', type=str)
@@ -78,8 +76,7 @@ def check_task(game_type, grade, task, user_answer):
     :return: True или False
     """
     table = f"{game_type}_{grade}_info"
-    condition = f"task={task}"
-    correct_answer = db_interface.get_data(TASKS_INFO_DATABASE, table, "answer", condition)
+    correct_answer = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)[1]
     return hash(user_answer) == correct_answer
 
 
@@ -94,8 +91,7 @@ def get_task(game_type, grade, task):
     :return: str, Условие ззадачи
     """
     table = f"{game_type}_{grade}_info"
-    condition = f"task={task}"
-    info = db_interface.get_data(TASKS_INFO_DATABASE, table, "info", condition)
+    info = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)
     return info
 
 
@@ -110,13 +106,15 @@ def add_task(game_type, grade, task, ans, info):
     :return: None
     """
     table = f"{game_type}_{grade}_info"
-
-    if db_interface.data_exists(TASKS_INFO_DATABASE, table, "task", task):
-        db_interface.update_data(TASKS_INFO_DATABASE, table, {"answer": ans, "info": info},
-                                 f"task={task}")
-    else:
-        db_interface.insert_data(TASKS_INFO_DATABASE, table, ("task", "answer", "info"),
-                                 (task, hash(ans), info))
+    try:
+        if db_interface.data_exists(TASKS_INFO_DATABASE, table, "task", task):
+            db_interface.update_data(TASKS_INFO_DATABASE, table, ("answer", "info"),
+                                     (hash(ans), info), "task", task)
+        else:
+            db_interface.insert_data(TASKS_INFO_DATABASE, table, (task, hash(ans), info))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    return "ok!"
 
 
 def check_apikey(apikey):
