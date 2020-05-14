@@ -19,6 +19,8 @@ class UserLoginData(SqlAlchemyBase, UserMixin):
     hashed_email = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     is_approved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
 
+    is_banned = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True)
+
     is_authenticated = True
 
     def set_password(self, password):

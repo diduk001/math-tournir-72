@@ -11,7 +11,7 @@ from flask_login import LoginManager, logout_user, login_required, login_user, c
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm
+    StartEndTimeForm, PardonTeamForm
 from db_interface import *
 
 
@@ -76,7 +76,10 @@ def profile():
     debug_var = 0
     if debug_var == 0:
         if is_auth():
-            # Тут должна быть страница профиля
+            # Если мы забанили команду
+            if is_banned():
+                return render_template("you_are_banned.html", title="Вас дисквалифицировали")
+
             return render_template("profile.html", **(get_cur_user().__dict__()))
         else:
 
@@ -155,10 +158,18 @@ def sign_up():
         if is_auth():
             logout_user()
 
-        # Проверяем, не использован ли уже логин
+            # Проверяем, не использован ли логин и пароль
 
-        if check_login(request.form.get("team-login")):
-            return render_template("sign_up.html", **params, used_login=True)
+        is_login_used = login_used(request.form.get("team-login"))
+        is_team_name_used = team_name_used(request.form.get("team-team_name"))
+        if is_team_name_used or is_login_used:
+            if login_used:
+                params["login_used"] = True
+
+            if team_name_used:
+                params["team_name_used"] = True
+
+            return render_template("sign_up.html", **params)
 
         # Создания объека User
 
@@ -235,6 +246,7 @@ def admin_room():
     params["add_task_form"] = AddTaskForm()
     params["start_end_time_form"] = StartEndTimeForm()
     params["ban_team_form"] = BanTeamForm()
+    params["pardon_team_form"] = PardonTeamForm()
     return render_template("admin_room.html", **params)
 
 
@@ -247,9 +259,11 @@ def add_task():
     game_type = request.form.get("game_type")
     answer = request.form.get("answer")
     if game_type == "domino" and task not in VALID_DOMINO_TASKS_NUMBERS:
-        return "номер задачи и тип игры не совпадают"
+        return """номер задачи и тип игры не совпадают 
+                  <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
     if game_type == "penalty" and task not in VALID_PENALTY_TASKS_NUMBERS:
-        return "номер задачи и тип игры не совпадают"
+        return """номер задачи и тип игры не совпадают
+                  <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
     file = request.files.get('info')
 
     if file and allowed_file(file.filename):
@@ -274,7 +288,8 @@ def add_task():
         return """задача добавлена <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
         обратно</a>"""
     else:
-        return """файл не прошёл проверку"""
+        return """файл не прошёл проверку <a href="/52df6a777d579a6fc8b787b049824b41">
+                  вернуться обратно</a>"""
 
 
 # Страничка с результатом изменением времени соревнований
@@ -289,13 +304,15 @@ def start_end_time():
         time_end = request.form.get("time_end")
         time_format = "%d.%m.%Y %H:%M:%S"
     except Exception as e:
-        return "Исключение: " + str(e)
+        return "Произошла ошибка:  " + str(e) + """ <a href="/52df6a777d579a6fc8b787b049824b41">
+                вернуться обратно</a>"""
 
     try:
         datetime_start = datetime.datetime.strptime(time_start, time_format)
         datetime_end = datetime.datetime.strptime(time_end, time_format)
     except ValueError:
-        return "Время не соответствует формату"
+        return """Время не соответствует формату <a href="/52df6a777d579a6fc8b787b049824b41"> 
+                  вернуться обратно</a>"""
 
     if game_type == "domino":
         domino_start_time = datetime_start
@@ -312,7 +329,55 @@ def start_end_time():
 
 @app.route('/1551c97a3794c5257e7ed3c5b816a825', methods=['POST'])
 def ban_team():
-    return "ban team"
+    team_name = request.form.get("team_name")
+    if not team_name_used(team_name):
+        return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
+               ввели <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+
+    session = db_session.create_session()
+
+    try:
+        team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
+                                                       team_name).first().id
+        login_data = session.query(UserLoginData).filter(UserLoginData.id == team_id).first()
+        login_data.is_banned = True
+        session.commit()
+
+        return f"""Команда {team_name} отправилась в бан <a 
+                href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+    except Exception as e:
+        return f"""Произошла ошибка: {e} \n <a href="/52df6a777d579a6fc8b787b049824b41"> 
+                вернуться обратно</a>"""
+
+
+# Прощение (ну то есть прощают типа как бан но наоборот)
+
+@app.route('/7717fdf71bcc8418fb7fabcb5b9c46d2', methods=['POST'])
+def pardon():
+    team_name = request.form.get("team_name")
+    if not team_name_used(team_name):
+        return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
+                   ввели <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+
+    session = db_session.create_session()
+    team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
+                                                   team_name).first().id
+    banned = session.query(UserLoginData).filter(UserLoginData.id == team_id).first().is_banned
+
+    if not banned:
+        return f"""Команда {repr(team_name)} не дисквалифицирована. 
+                <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+
+    try:
+        login_data = session.query(UserLoginData).filter(UserLoginData.id == team_id).first()
+        login_data.is_banned = False
+        session.commit()
+
+        return f"""Команда {repr(team_name)} прощена. <a href="/52df6a777d579a6fc8b787b049824b41">
+                вернуться обратно</a>"""
+    except Exception as e:
+        return f"""Произошла ошибка: {e} \n <a href="/52df6a777d579a6fc8b787b049824b41"> 
+                        вернуться обратно</a>"""
 
 
 # Функция хэширования
@@ -362,6 +427,12 @@ for grade in ['5', '6', '7']:
 def domino():
     # Необходимые штуки
     global domino_keys, domino_messages, domino_tasks_names, domino_info
+
+    # Если мы забанили команду
+
+    if get_cur_user().is_banned:
+        return render_template("you_are_banned.html", title="Вас дисквалифицировали")
+
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
@@ -459,6 +530,12 @@ penalty_messages = {'accepted': 'Вы уже решили эту задачу',
 @app.route('/penalty', methods=["GET", "POST"])
 def penalty():
     global penalty_info
+
+    # Если мы забанили команду
+
+    if get_cur_user().is_banned:
+        return render_template("you_are_banned.html", title="Вас дисквалифицровали")
+
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
@@ -610,6 +687,17 @@ def get_extension(filename):
     if '.' not in filename:
         return None
     return filename.rsplit('.', 1)[1]
+
+
+# Проверка на то, забанен ли юзер
+
+def is_banned():
+    cur_user = get_cur_user()
+    if cur_user:
+        session = db_session.create_session()
+        login_data = session.query(UserLoginData).filter(UserLoginData.id == cur_user.id).first()
+        return login_data.is_banned
+    return None
 
 
 if __name__ == '__main__':

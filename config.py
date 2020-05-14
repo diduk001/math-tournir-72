@@ -26,6 +26,7 @@ class User:
         self.hashed_email = generate_password_hash(email)
 
         self.is_approved = False
+        self.is_banned = False
 
         self.team_name = team_name
         check_type("team name", team_name, str)
@@ -92,6 +93,8 @@ class User:
                   f"email {self.email}",
                   f"team_name {self.team_name}",
                   f"grade {str(self.grade)}",
+                  f"is banned {self.is_banned}",
+                  f"is approved {self.is_approved}",
                   f"Member 1 {self.member1}",
                   f"Member 2 {self.member2}",
                   f"Member 3 {self.member3}",
@@ -115,6 +118,9 @@ class User:
         return {"login": self.login,
                 "team_name": self.team_name,
                 "grade": self.grade,
+
+                "is_banned": self.is_banned,
+                "is_approved": self.is_approved,
 
                 "member1_name": self.member1[0],
                 "member1_surname": self.member1[1],
@@ -218,8 +224,13 @@ class SignUpForm(FlaskForm):
 # Форма для бана команды
 
 class BanTeamForm(FlaskForm):
-    game_type = SelectField("Тип игры", choices=[("domino", "Домино"), ("penalty", "Пенальти")],
-                            validators=DATA_REQUIRED_VALIDATOR)
+    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Удалить команду из соревнования")
+
+
+# Форма для пардона команды
+
+class PardonTeamForm(FlaskForm):
     team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Удалить команду из соревнования")
 
