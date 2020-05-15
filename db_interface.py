@@ -31,6 +31,8 @@ def add_user(user):
     login_data.hashed_email = user.email
 
     login_data.is_approved = user.is_approved
+
+    login_data.is_banned = user.is_banned
     # Заполнение данных о составе
 
     member_data = users_members_data.UserMembersData()
@@ -78,15 +80,26 @@ def change_val(user_id, users_login_table, verbose=False, **kwargs):
 # Функция проверки логина на уникальность
 # Если логин существует в базе, возвращаем False
 
-def check_login(login):
+def login_used(login):
     session = db_session.create_session()
-    return session.query(UserLoginData).filter(UserLoginData.login == login).first()
+    return bool(session.query(UserLoginData).filter(UserLoginData.login == login).first())
+
+
+# Функция проверки названия команды на уникальность
+# Если название существует в базе, возвращаем True
+
+def team_name_used(team_name):
+    session = db_session.create_session()
+    return bool(session.query(UserMemberData).filter(UserMemberData.team_name == team_name).first())
 
 
 def get_user_from_id(user_id):
     session = db_session.create_session()
     login_data = session.query(UserLoginData).get(user_id)
     members_data = session.query(UserMemberData).get(user_id)
+    if login_data is None or members_data is None:
+        return None
+
     user = User(login_data.login,
                 login_data.email,
                 members_data.team_name,
@@ -110,6 +123,8 @@ def get_user_from_id(user_id):
 
     user.id = login_data.id
     user.hashed_password = login_data.hashed_password
+    user.is_banned = bool(login_data.is_banned)
+    user.is_approved = bool(login_data.is_approved)
 
     return user
 

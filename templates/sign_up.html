@@ -31,6 +31,24 @@
             {% endfor %}
         </div>
 
+        {# Предупреждение об используемом логине #}
+
+        {% if login_used %}
+            <div class="alert alert-danger" role="alert">
+                Этот логин уже используется. Введие другой, пожалуйста
+            </div>
+            <br>
+        {% endif %}
+
+        {# Предупреждение об используемом названии команды #}
+
+        {% if team_name_used %}
+            <div class="alert alert-danger" role="alert">
+                Это имя команды уже занято. Пожалуйста, введите другое
+            </div>
+            <br>
+        {% endif %}
+
         {# Формы регистрации членов команды #}
 
         {% for _form in [form.member1, form.member2, form.member3, form.member4] %}
@@ -54,14 +72,6 @@
 
             </div>
         {% endfor %}
-
-        {# Предупреждение об используемом логине #}
-
-        {% if used_login %}
-            <div class="alert alert-danger" role="alert">
-                Введите другой логин
-            </div>
-        {% endif %}
 
         {# Кнопка отправки #}
 

@@ -92,6 +92,35 @@
                 </form>
             </div>
             <div class="col-sm">
+                <h3>Прощение игроков</h3>
+                <p style="color: red">Пожалуйста, вводите полностью правильное название команды</p>
+                <form action="7717fdf71bcc8418fb7fabcb5b9c46d2" method="post">
+                    <div>
+                        {{ pardon_team_form.csrf_token }}
+                    </div>
+                    {% for field in pardon_team_form if field.name != 'csrf_token' %}
+                        <div>
+                            {% if field.name == 'submit' %}
+                                {{ field(class="btn btn-primary") }}
+                            {% else %}
+                                {{ field.label() }}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+
+                            <br>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm">
                 Тут должна быть форма с ручной проверкой
             </div>
         </div>
