@@ -88,7 +88,7 @@ def get_task(game_type, grade, task):
     :param game_type: str, Тип игры (domino/penalty)
     :param grade: str/int, Параллель, для которой добавляется задача
     :param task: str/int, Номер задачи в соответствии с типом игры
-    :return: str, Условие ззадачи
+    :return: str, Условие задачи
     """
     table = f"{game_type}_{grade}_info"
     info = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)

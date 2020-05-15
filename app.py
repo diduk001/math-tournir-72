@@ -4,7 +4,8 @@ import os
 import os.path
 import sqlite3
 from hashlib import md5
-from flask import Flask, render_template, redirect, request, jsonify
+from flask import Flask, render_template, redirect, request, jsonify, send_file
+import requests
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
@@ -133,7 +134,7 @@ def update(table, task, state, team, grade):
 def get_task_state(table, task, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
-    que = f"SELECT {task} FROM {table + str(grade)} WHERE title='{team}'"
+    que = f"SELECT {task} FROM {table + str(grade)} WHERE title = '{team}'"
     result = cur.execute(que).fetchone()[0]
     con.close()
     return result
@@ -211,7 +212,6 @@ def update_cheater_status(team, game):
     con.commit()
     con.close()
 
-
 #Получить состояние честности
 
 def get_cheater_status(team, game):
@@ -235,7 +235,7 @@ def anti_cheat():
         team = current_user.team_name
         cur_time = datetime.datetime.now()
         last_time = datetime.datetime(*get_last_time(team))
-        if cur_time - last_time > datetime.timedelta(seconds=5):
+        if cur_time - last_time > datetime.timedelta(days=10000000000):
             if game_status('domino', cur_time) == 'in_progress' and last_time > domino_start_time:
                 update_cheater_status(team, 'domino')
             elif game_status('penalty', cur_time) == 'in_progress' and last_time > penalty_start_time:
@@ -438,60 +438,95 @@ def get_point(string):
 
 
 def get_state(string):
+    print(string)
     return string[-2:]
+
+# Проверка задачи
+
+def check_task(game, grade, task, user_answer):
+    url = SERVER_URL + '/api'
+    params = { "apikey": TOTALLY_RIGHT_APIKEY,
+               "request_type": "add_task",
+               "game_type": game,
+               "grade": grade,
+               "task": task[1:],
+               "answer": user_answer}
+    return requests.get(url, params=params).content
+
+# Получение условия задачи
+
+def get_task(game, grade, task):
+    url = SERVER_URL + '/api'
+    params = {"apikey": TOTALLY_RIGHT_APIKEY,
+              "request_type": "get_task",
+              "game_type": game,
+              "grade": grade,
+              "task": task[1:]}
+    print(params)
+    return requests.get(url, params=params).content
 
 
 # Всё что нужно для домино
 
 domino_start_time = datetime.datetime(2020, 4, 28, 19, 8, 30)
 domino_end_time = datetime.datetime(2021, 4, 28, 19, 35, 0)
-domino_keys = list(map(str, range(1, 29)))
-domino_tasks_names = {'0-0': '1', '0-1': '2', '0-2': '3', '0-3': '4', '0-4': '5', '0-5': '6',
-                      '0-6': '7', '1-1': '8', '1-2': '9',
-                      '1-3': '10', '1-4': '11', '1-5': '12', '1-6': '13', '2-2': '14', '2-3': '15',
-                      '2-4': '16', '2-5': '17',
-                      '2-6': '18', '3-3': '19', '3-4': '20', '3-5': '21', '3-6': '22', '4-4': '23',
-                      '4-5': '24', '4-6': '25',
-                      '5-5': '26', '5-6': '27', '6-6': '28'}
+domino_keys = list(map(lambda x: 't' + str(x), range(1, 29)))
+domino_tasks_keys_by_names = {'0-0': 't1', '0-1': 't2', '0-2': 't3', '0-3': 't4', '0-4': 't5', '0-5': 't6',
+                              '0-6': 't7', '1-1': 't8', '1-2': 't9', '1-3': 't10', '1-4': 't11', '1-5': 't12',
+                              '1-6': 't13', '2-2': 't14', '2-3': 't15', '2-4': 't16', '2-5': 't17', '2-6': 't18',
+                              '3-3': 't19', '3-4': 't20', '3-5': 't21', '3-6': 't22', '4-4': 't23', '4-5': 't24',
+                              '4-6': 't25', '5-5': 't26', '5-6': 't27', '6-6': 't28'}
+domino_tasks_names_by_keys = {'t1': '0-0', 't2': '0-1', 't3': '0-2', 't4': '0-3', 't5': '0-4', 't6': '0-5',
+                              't7': '0-6', 't8': '1-1', 't9': '1-2', 't10': '1-3', 't11': '1-4', 't12': '1-5',
+                              't13': '1-6', 't14': '2-2', 't15': '2-3', 't16': '2-4', 't17': '2-5', 't18': '2-6',
+                              't19': '3-3', 't20': '3-4', 't21': '3-5', 't22': '3-6', 't23': '4-4', 't24': '4-5',
+                              't25': '4-6', 't26': '5-5', 't27': '5-6', 't28' : '6-6'}
 domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы уже решили эту задачу',
                    'as': 'Вы уже решили эту задачу',
                    'fs': 'У Вас закончились попытки на сдачу этой задачи',
                    'absent': 'На данный момент задачи с этим номером отсутсвуют',
                    'hand': 'Вы уже взяли эту задачу'}
-with open("domino_tasks.json", 'rt') as f:
-    domino_info = json.load(f)
 number_of_domino_task = 5
+domino_info = {'5':{}, '6':{}, '7':{}}
 for grade in ['5', '6', '7']:
-    for key in domino_keys:
-        domino_info[grade][key]['number'] = number_of_domino_task
-
+    for i in range(1, 29):
+        domino_info[grade][f't{i}'] = {'name': domino_tasks_names_by_keys[f't{i}'], 'number': number_of_domino_task}
 
 # Страница домино
 
 @app.route("/domino", methods=["GET", "POST"])
 def domino():
     # Необходимые штуки
-    global domino_keys, domino_messages, domino_tasks_names, domino_info
+    global domino_keys, domino_messages, domino_tasks_keys_by_names, domino_tasks_names_by_keys, domino_info
+    # Если пользователь не вошёл в аккаунт команды/игрока, то мы сообщаем ему об этом
     if not is_auth():
         return render_template("not_authenticated.html")
+    # Если пользователь нарушил правила, то мы сообщаем ему об этом
     if get_cheater_status(current_user.team_name, 'domino'):
         return render_template("cheater.html")
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
+    # Если игра ещё не началась, то мы показывает отсчёт до начала
     if game_status('domino', time) == 'not_started':
         start_time = f"{domino_start_time.month} {domino_start_time.day} {domino_start_time.year} "
         start_time += f"{domino_start_time.hour}:{domino_start_time.minute}:{domino_start_time.second}"
         return render_template("domino.html", title="Домино ТЮМ72", state='not started', start_time=start_time)
+    # Если игра уже закончилась то мы сообщаем об этом
     elif game_status('domino', time) == 'ended':
         return render_template("domino.html", title="Домино ТЮМ72", state='ended')
+    # Иначе отображаем игру
     else:
-        end_time = f"{domino_end_time.month} {domino_end_time.day} {domino_end_time.year} "
-        end_time += f"{domino_end_time.hour}:{domino_end_time.minute}:{domino_end_time.second}"
+        # Время окончание игры
+        end_time = f"{domino_end_time.month} {domino_end_time.day} {domino_end_time.year} {domino_end_time.hour}" \
+                   f":{domino_end_time.minute}:{domino_end_time.second}"
+        # Игра в процессе
         state = 'in progress'
+        # Формируем информацию о состоянии задач у пользователя
         tasks = {}
         for key in domino_keys:
-            tasks[key] = {'name': domino_info[grade][key]['name'], 'state': get_task_state('domino_tasks', 't' + key, team, grade)}
+            tasks[key] = {'name': domino_info[grade][key]['name'], 'state': get_task_state('domino_tasks', key, team, grade)}
+        # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
                 tasks[key]['state'] = '0bo'
@@ -501,36 +536,54 @@ def domino():
                 tasks[key]['state'] = '0ok'
             elif get_state(tasks[key]['state']) == 'bf' and domino_info[grade][key]['number'] > 0:
                 tasks[key]['state'] = '0ff'
-        picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
+        # Формируем информацию о задачах, которые сейчас "на руках" у пользователя
+        keys_of_picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
+        picked_tasks = []
+        for key in keys_of_picked_tasks:
+            picked_tasks.append({'name': domino_tasks_names_by_keys[key], 'content':get_task('domino', grade, key)})
+        # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
                                    picked_tasks=picked_tasks, message=False, info=domino_info[grade],
                                    state=state, end_time=end_time)
+        # Иначе пользователь сдал или взял "на руки" задачу
         elif request.method == "POST":
+            # Сообщение об ошибке
             message = False
+            # Если пользователь попытался взять задачу
             if request.form.get("picked"):
-                key = domino_tasks_names[request.form.get("picked")]
+                key = domino_tasks_keys_by_names[request.form.get("picked")]
                 number_of_picked_task = len(picked_tasks)
+                # У пользователя уже 2 задачи "на руках", сообщаем, что больше взять нельзя
                 if number_of_picked_task == 2:
                     message = domino_messages['full']
-                elif 't' + key in picked_tasks:
+                # Выбранная задача уже "на руках" у пользователя, сообщаем об этом
+                elif key in keys_of_picked_tasks:
                     message = domino_messages['hand']
+                # Пользователь может взять задачу, выдаём её
                 elif get_state(tasks[key]['state']) in ['ff', 'ok']:
-                    picked_tasks.append('t' + key)
+                    picked_tasks.append(key)
                     domino_info[grade][key]['number'] -= 1
+                # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:
                     message = domino_messages[get_state(tasks[key]['state'])]
+            # Пользователь сдаёт задачу
             elif request.form.get('answer'):
-                key = domino_tasks_names[request.form.get('name')]
+                key = domino_tasks_keys_by_names[request.form.get('name')]
                 verdicts = ['ok', 'ff', 'fs']
-                if get_state(tasks[key]['state']) in ['ok', 'ff'] and 't' + key in picked_tasks:
-                    if domino_info[grade][key]['answer'] == request.form.get('answer') and get_state(tasks[key]['state']) == 'ok':
+                # Если всё нормально и пользователь не попытался багануть сайт
+                if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in picked_tasks:
+                    result = check_task('domino', grade, key, request.form.get('answer'))
+                    # Если пользователь решил задачу с первой попытки
+                    if result and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
                         if tasks[key]['name'] == '0-0':
                             tasks[key]['state'] = '10af'
-                    elif domino_info[grade][key]['answer'] == request.form.get('answer'):
+                    # Если пользователь решил задачу со второй попытки
+                    elif result:
                         tasks[key]['state'] = str(max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
+                    # Если пользователь решил задачу неправильно
                     else:
                         tasks[key]['state'] = verdicts[verdicts.index(get_state(tasks[key]['state'])) + 1]
                         if tasks[key]['state'] == 'ff':
@@ -539,11 +592,13 @@ def domino():
                             tasks[key]['state'] = str(-min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
                         if tasks[key]['name'] == '0-0':
                             tasks[key]['state'] = '0fs'
+                    # Обновление бд, возвращение задачи на "игровой стол"
                     update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
-                    update('domino_tasks', 't' + key, tasks[key]['state'], team, grade)
-                    picked_tasks.remove('t' + key)
+                    update('domino_tasks', key, tasks[key]['state'], team, grade)
+                    picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
             update('domino_tasks', 'picked_tasks', " ".join(picked_tasks), team, grade)
+            # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys, picked_tasks=picked_tasks, message=message,
                                    info=domino_info[grade], state=state, end_time=end_time)
@@ -551,15 +606,14 @@ def domino():
 
 # Всё что нужно для пенальти
 
-penalty_keys = list(map(str, range(1, 17)))
+penalty_keys = list(map(lambda x: 't' + str(x), range(1, 17)))
 penalty_info = {}
 penalty_start_time = datetime.datetime(2020, 4, 28, 19, 37, 0)
 penalty_end_time = datetime.datetime(2021, 4, 28, 20, 30, 0)
 for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
-        penalty_info[grade][key] = {'name': key, 'cost': 15, 'answer': '0',
-                                    'content': '/static/img/sample1.png'}
+        penalty_info[grade][key] = {'name': key[1:], 'cost': 15}
 penalty_messages = {'accepted': 'Вы уже решили эту задачу',
                     'failed': 'У вас закончились попытки на сдачу этой задачи'}
 
@@ -570,45 +624,60 @@ penalty_messages = {'accepted': 'Вы уже решили эту задачу',
 @app.route('/penalty', methods=["GET", "POST"])
 def penalty():
     global penalty_info
+    # Если пользователь не вошёл в аккаунт команды/игрока, то мы сообщаем ему об этом
     if not is_auth():
         return render_template("not_authenticated.html")
-    if get_cheater_status(current_user.team_name, 'penalty'):
+    # Если пользователь нарушил правила, то мы сообщаем ему об этом
+    if get_cheater_status(current_user.team_name, 'domino'):
         return render_template("cheater.html")
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
+    # Если игра ещё не началась, то мы показывает отсчёт до начала
     if game_status('penalty', time) == 'not_started':
         start_time = f"{penalty_start_time.month} {penalty_start_time.day} {penalty_start_time.year} "
         start_time += f"{penalty_start_time.hour}:{penalty_start_time.minute}:{penalty_start_time.second}"
         return render_template("penalty.html", title="Пенальти ТЮМ72", state='not started', start_time=start_time)
+    # Если игра уже закончилась то мы сообщаем об этом
     elif game_status('penalty', time) == 'ended':
         return render_template("penalty.html", title="Пенальти ТЮМ72", state='ended')
+    # Иначе отображаем игру
     else:
         end_time = f"{penalty_end_time.month} {penalty_end_time.day} {penalty_end_time.year} "
         end_time += f"{penalty_end_time.hour}:{penalty_end_time.minute}:{penalty_end_time.second}"
         state = 'in progress'
         tasks = {}
+        # Формируем информацию о состоянии задач пользователя
         for key in penalty_keys:
-            tasks[key] = {'name': key, 'state': get_task_state('penalty_tasks', 't' + key, team, grade)}
+            tasks[key] = {'name': key[1:], 'state': get_task_state('penalty_tasks', key, team, grade)}
+        # Если пользователь сдал задачу
         if request.method == "POST":
-            key = request.form.get('name')
+            key = 't' + request.form.get('name')
             verdicts = ['ok', 'ff', 'fs']
+            # Если пользователь не попытался багануть сайт
             if get_state(tasks[key]['state']) in ['ok', 'ff']:
-                if penalty_info[grade][key]['answer'] == request.form.get('answer'):
+                result = check_task('penalty', grade, key, request.form.get('answer'))
+                # Если пользователь сдал задачу правильно
+                if result:
+                    # Если пользователь сдал задачу правильно с первой попытки
                     if get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(penalty_info[grade][key]['cost']) + 'af'
                         if penalty_info[grade][key]['cost'] > 5:
                             penalty_info[grade][key]['cost'] -= 1
+                    # Если пользователь сдал задачу правильно со второй попытки
                     else:
                         tasks[key]['state'] = '3' + 'as'
+                # Если пользователь сдал задачу неправильно
                 else:
                     tasks[key]['state'] = verdicts[verdicts.index(get_state(tasks[key]['state'])) + 1]
                     if tasks[key]['state'] == 'ff':
                         tasks[key]['state'] = '0' + 'ff'
                     else:
                         tasks[key]['state'] = '-2' + 'fs'
+                # обновление бд
                 update_results('penalty_tasks', get_point(tasks[key]['state']), team, grade)
-                update('penalty_tasks', 't' + key, tasks[key]['state'], team, grade)
+                update('penalty_tasks', key, tasks[key]['state'], team, grade)
+        # отображение страницы
         return render_template("penalty.html", title="Пенальти ТЮМ72", tasks=tasks, keys=penalty_keys,
                                info=penalty_info[grade], state=state, end_time=end_time)
 
