@@ -1,15 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Введите пароль</title>
-</head>
-<body>
-<h1>Введите пароль</h1>
-<form method="post">
-    <label for="password">Пароль </label>
-    <input type="text" id="password" name="password" required>
-    <input type="submit" value="Отправить">
-</form>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+    <meta charset="utf-8">
+    <h1 align="center"> Введите пароль </h1>
+    <div class="form-group" align="center">
+        <form method="post">
+            <label for="admin_pass">Введите пароль администратора</label>
+            <br>
+            <br>
+            <input name="admin_pass" id="admin_pass" type="password" class="form=control" required>
+            <br>
+            <br>
+            <input type="submit" value="Отправить" class="btn btn-primary">
+        </form>
+    </div>
+{% endblock %}

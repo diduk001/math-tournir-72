@@ -194,8 +194,8 @@ class LoginForm(FlaskForm):
 # Форма для регистрации члена команды с полями имени, фамилии, школы
 
 class SignUpMemberForm(Form):
-    name_field = StringField("Имя", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
     surname = StringField("Фамилия", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
+    name_field = StringField("Имя", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
     school = StringField("Школа", validators=DATA_REQUIRED_VALIDATOR)
 
 

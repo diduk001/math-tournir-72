@@ -4,7 +4,7 @@ import os.path
 from hashlib import md5
 
 import requests
-from flask import Flask, render_template, redirect, request, send_file, jsonify
+from flask import Flask, render_template, redirect, request, jsonify, make_response, flash
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
@@ -345,19 +345,25 @@ def rules():
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_pass():
     if request.method == "GET":
-        return send_file("./templates/admin_pass.html")
-    elif request.method == "POST":
-        password = request.form.get("password")
+        admin_cookie = request.cookies.get("ac3308b31764fc2774d1df8d3ba92f0d")  # Входили ли
+        if admin_cookie and admin_cookie == "ddb5f9b4be9fa7bb3b16a6e3a19f237c":  # Если уже входили
+            return admin_room()  # Возвращаем кабинет админа
+        else:
+            return render_template("admin_pass.html", title="Авторизуйтесь, пожалуйста")
+    else:
+        password = request.form.get("admin_pass")
         password = password.strip()
-        if hash_md5(password) == "8d5a568735a2195fbdcd900507c48c6d":  # hash_md5(";353!tyum")
-            return redirect("/52df6a777d579a6fc8b787b049824b41")
-        return "Пароль неправильный! <br> <a " \
-               "href=\"./21232f297a57a5a743894a0e4a801fc3\">Вернуться обратно</a>"
+        if hash_md5(password) == "9ef668352a9addb7d462668c012602d5":  # hash_md5("IloveFmschool!")
+            resp = make_response(admin_room())
+            resp.set_cookie('ac3308b31764fc2774d1df8d3ba92f0d', 'ddb5f9b4be9fa7bb3b16a6e3a19f237c')
+            return resp
+        else:
+            flash("Неправильный пароль!")
+            return render_template("admin_pass.html", title="Авторизуйтесь, пожалуйста")
 
 
 # Пункт управления для админов
 
-@app.route('/52df6a777d579a6fc8b787b049824b41', methods=['GET'])
 def admin_room():
     params = dict()
     params["add_task_form"] = AddTaskForm()

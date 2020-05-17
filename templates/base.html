@@ -65,15 +65,27 @@
             <script>
                 let online = true;
                 let a = 0;
-                setInterval(function() {
+                setInterval(function () {
                     let now = new Date().getTime();
-                    if (online){
+                    if (online) {
                         $.post('/anti_cheat', {time: "hah"});
                     }
                 }, 500000);
-                window.onfocus = function(){ online = true; }
-                window.onblur = function(){ online = false; }
+                window.onfocus = function () {
+                    online = true;
+                }
+                window.onblur = function () {
+                    online = false;
+                }
             </script>
+            <br>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="alert alert-danger">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             {% block content %}{% endblock %}
         </main>
     </div>
