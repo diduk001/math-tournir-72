@@ -54,31 +54,35 @@ class User:
         try:
             self.name2, self.surname2, self.school2 = member2
         except ValueError:
-            raise ValueError(f"member1 tuple {member2} length is {len(member2)}, but must be len 3")
+            raise ValueError(f"member3 tuple {member2} length is {len(member2)}, but must be len 3")
 
         try:
             self.name3, self.surname3, self.school3 = member3
         except ValueError:
-            raise ValueError(f"member1 tuple {member3} length is {len(member3)}, but must be len 3")
+            raise ValueError(f"member2 tuple {member3} length is {len(member3)}, but must be len 3")
 
         try:
             self.name4, self.surname4, self.school4 = member4
         except ValueError:
-            raise ValueError(f"member1 tuple {member4} length is {len(member4)}, but must be len 3")
+            raise ValueError(f"member4 tuple {member4} length is {len(member4)}, but must be len 3")
 
     # метод, возвращающий имена участников
     # surname - параметр, отвечающий за то, есть ли фамилия
-    def get_names(self, surname=True):
-        if surname:
-            return (self.name1 + ' ' + self.surname1,
-                    self.name2 + ' ' + self.surname2,
-                    self.name3 + ' ' + self.surname3,
-                    self.name4 + ' ' + self.surname4)
-        else:
-            return (self.name1,
-                    self.name2,
-                    self.name3,
-                    self.name4)
+    def get_names(self, surname_flag=True):
+        name_surname = ((self.name1, self.surname1),
+                        (self.name2, self.surname2),
+                        (self.name3, self.surname3),
+                        (self.name4, self.surname4))
+        ans = list()
+        for name, surname in name_surname:
+            if name is None or surname is None:
+                continue
+
+            if surname_flag:
+                ans.append(' '.join([name, surname]))
+            else:
+                ans.append(name)
+        return tuple(ans)
 
     def set_password(self, password):
         check_type("password", password, str)
@@ -209,7 +213,7 @@ class SignUpTeamForm(Form):
     grade = SelectField("Класс", choices=[(5, 5), (6, 6), (7, 7)], coerce=int)
 
 
-# Глобальная форма с формой регистрацией команды
+# Всеобобщающая форма с формой регистрацией команды
 
 class SignUpForm(FlaskForm):
     team = FormField(SignUpTeamForm)
@@ -218,6 +222,14 @@ class SignUpForm(FlaskForm):
     member2 = FormField(SignUpMemberForm)
     member3 = FormField(SignUpMemberForm)
     member4 = FormField(SignUpMemberForm)
+    submit = SubmitField("Регистрация")
+
+
+# Всеобобщающая форма для регистрации команды из одного человека
+
+class SignUpPlayerForm(FlaskForm):
+    team = FormField(SignUpTeamForm)
+    member = FormField(SignUpMemberForm)
     submit = SubmitField("Регистрация")
 
 
@@ -244,6 +256,8 @@ class AddTaskForm(FlaskForm):
     answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
     info = FileField("Загрузить условие - изображение с расширением *.jpg/*.jpeg/*.png/*.gif",
                      validators=FILENAME_VALIDATOR)
+    manual_check = BooleanField("Задача проверяется вручную")
+    ans_picture = BooleanField("Ответом является рисунок (тогда задача проверяется вручную)")
     submit = SubmitField("Добавить задачу")
 
 

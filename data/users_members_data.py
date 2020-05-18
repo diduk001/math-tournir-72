@@ -16,17 +16,17 @@ class UserMembersData(SqlAlchemyBase):
     member1_surname = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     member1_school = sqlalchemy.Column(sqlalchemy.String, nullable=False)
 
-    member2_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member2_surname = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member2_school = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    member2_name = sqlalchemy.Column(sqlalchemy.String)
+    member2_surname = sqlalchemy.Column(sqlalchemy.String)
+    member2_school = sqlalchemy.Column(sqlalchemy.String)
 
-    member3_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member3_surname = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member3_school = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    member3_name = sqlalchemy.Column(sqlalchemy.String)
+    member3_surname = sqlalchemy.Column(sqlalchemy.String)
+    member3_school = sqlalchemy.Column(sqlalchemy.String)
 
-    member4_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member4_surname = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    member4_school = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    member4_name = sqlalchemy.Column(sqlalchemy.String)
+    member4_surname = sqlalchemy.Column(sqlalchemy.String)
+    member4_school = sqlalchemy.Column(sqlalchemy.String)
 
     user_id = sqlalchemy.Column(sqlalchemy.Integer,
                                 sqlalchemy.ForeignKey("users_login_data.id"))
