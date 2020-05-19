@@ -135,14 +135,18 @@
         {% for task in picked_tasks %}
             <div class="col">
                 <img src={{task['content']}} width="100%" height="50%">
-                <form method="post">
-                    <div class="form-group">
-                        <label for="name">{{task['name']}}</label>
-                        <input value={{task['name']}} id="name" name="name" hidden>
-                        <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                    </div>
-                    <button class="btn btn-primary" type="submit">Отправить</button>
-                </form>
+                {% if not task['manual_check'] %}
+                    <form method="post">
+                        <div class="form-group">
+                            <label for="name">{{task['name']}}</label>
+                            <input value={{task['name']}} id="name" name="name" hidden>
+                            <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Отправить</button>
+                    </form>
+                {% else %}
+                    <canvas id={{task[name]}} > </canvas>
+
             </div>
         {% endfor %}
         </div>

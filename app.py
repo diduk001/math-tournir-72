@@ -222,12 +222,12 @@ def update_cheater_status(team, game):
 
 # Получить состояние честности
 
-def get_cheater_status(team):
+def get_cheater_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
     if game == 'domino':
         que = f"SELECT domino_cheater FROM about_teams WHERE title=?"
-    else:
+    elif game == 'penalty':
         que = f"SELECT penalty_cheater FROM about_teams WHERE title=?"
     res = bool(cur.execute(que, (team,)).fetchone()[0])
     con.close()
