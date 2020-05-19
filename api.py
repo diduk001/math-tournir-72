@@ -61,7 +61,9 @@ def api():
     if request_type == "add_task":
         answer = request.args.get("answer", default='', type=str)
         info = request.args.get("info", default='', type=str)
-        return add_task(game_type, grade, task, answer, info)
+        manual_check = request.args.get("manual_check", default=False, type=bool)
+        ans_picture = request.args.get("ans_picture", default=False, type=bool)
+        return add_task(game_type, grade, task, answer, info, manual_check, ans_picture)
 
 
 # Проверка ответа
@@ -95,7 +97,7 @@ def get_task(game_type, grade, task):
     return info
 
 
-def add_task(game_type, grade, task, ans, info):
+def add_task(game_type, grade, task, ans, info, manual_check, ans_picture):
     """
     Добавление условия для задачи
     :param game_type: str, Тип игры (domino/penalty)
@@ -103,15 +105,19 @@ def add_task(game_type, grade, task, ans, info):
     :param task: str/int, Номер задачи в соответствии с типом игры
     :param ans: str, Правильный ответ
     :param info: str, Условие
+    :param manual_check: bool, Флаг ручной проверки
+    :param ans_picture: bool, Флаг ответа-картинки
     :return: None
     """
     table = f"{game_type}_{grade}_info"
     try:
         if db_interface.data_exists(TASKS_INFO_DATABASE, table, "task", task):
-            db_interface.update_data(TASKS_INFO_DATABASE, table, ("answer", "info"),
-                                     (hash(ans), info), "task", task)
+            db_interface.update_data(TASKS_INFO_DATABASE, table, ("answer", "info",
+                                                                  "manual_check", "ans_picture"),
+                                     (hash(ans), info, manual_check, ans_picture), "task", task)
         else:
-            db_interface.insert_data(TASKS_INFO_DATABASE, table, (task, hash(ans), info))
+            db_interface.insert_data(TASKS_INFO_DATABASE, table, (task, hash(ans), info,
+                                                                  manual_check, ans_picture))
     except Exception as e:
         return jsonify({"error": str(e)})
     return "ok!"
@@ -131,13 +137,20 @@ def setup():
     Наполнение базы данных таблицами со стоблцами task, answer, text
     :return: None
     """
+
     for game_type in VALID_GAME_TYPES:
         for grade in VALID_GRADES:
             table_name = f"{game_type}_{grade}_info"
+            sql_request_delete = f"DROP TABLE IF EXISTS {table_name}"
+            db_interface.execute(TASKS_INFO_DATABASE, sql_request_delete)
+
             sql_request = f"CREATE TABLE IF NOT EXISTS {table_name} ("
-            sql_request += "task text PRIMARY KEY,"  # Номер задачи
-            sql_request += "answer text,"  # Хэшированный ответ
-            sql_request += "info text);"  # Условие
+            sql_request += "task TEXT PRIMARY KEY,"  # Номер задачи
+            sql_request += "answer TEXT,"  # Хэшированный ответ
+            sql_request += "info TEXT,"  # Условие
+            sql_request += "manual_check BOOLEAN,"  # Флаг ручной проверки
+            sql_request += "ans_picture BOOLEAN"  # Флаг сдачи ответа в виде картинки
+            sql_request += ");"  # Условие
             db_interface.execute(TASKS_INFO_DATABASE, sql_request)
 
 

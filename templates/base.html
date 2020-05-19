@@ -56,6 +56,17 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/sign_up">Регистрация</a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
+                               role="button" data-toggle="dropdown" aria-haspopup="true"
+                               aria-expanded="false">
+                                Регистрация
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="/sign_up/player">Один участник</a>
+                                <a class="dropdown-item" href="/sign_up/team">4 участника</a>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -65,15 +76,27 @@
             <script>
                 let online = true;
                 let a = 0;
-                setInterval(function() {
+                setInterval(function () {
                     let now = new Date().getTime();
-                    if (online){
+                    if (online) {
                         $.post('/anti_cheat', {time: "hah"});
                     }
                 }, 500000);
-                window.onfocus = function(){ online = true; }
-                window.onblur = function(){ online = false; }
+                window.onfocus = function () {
+                    online = true;
+                }
+                window.onblur = function () {
+                    online = false;
+                }
             </script>
+            <br>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="alert alert-danger">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             {% block content %}{% endblock %}
         </main>
     </div>

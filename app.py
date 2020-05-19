@@ -4,13 +4,14 @@ import os.path
 from hashlib import md5
 
 import requests
-from flask import Flask, render_template, redirect, request, send_file, jsonify
+from flask import Flask, render_template, redirect, request, jsonify, make_response, flash
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 
+import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm
+    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm
 from db_interface import *
 
 
@@ -29,7 +30,7 @@ app = Flask(__name__)
 
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
-db_session.global_init("db/login_data_members_data_session.sqlite")
+db_session.global_init(os.path.join("db", "login_data_members_data_session.sqlite"))
 app.register_blueprint(api_blueprint)
 
 # Создание и инициализация менеджера входа
@@ -81,8 +82,6 @@ def profile():
                 return render_template("you_are_banned.html", title="Вас дисквалифицировали")
 
             team = current_user.team_name
-            print(current_user)
-            print(team)
             grade = current_user.grade
             domino_place = get_place(team, 'domino', grade)
             penalty_place = get_place(team, 'penalty', grade)
@@ -223,16 +222,14 @@ def update_cheater_status(team, game):
 
 # Получить состояние честности
 
-def get_cheater_status(team, game):
-    con = sqlite3.connect(os.path.join("db", "tasks.db"))
+def get_cheater_status(team):
+    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
     if game == 'domino':
-        que = f"SELECT domino_cheater FROM about_teams WHERE title='{team}'"
+        que = f"SELECT domino_cheater FROM about_teams WHERE title=?"
     else:
-        que = f"SELECT domino_cheater FROM about_teams WHERE title='{team}'"
-    print(que)
-    print(cur.execute(que).fetchone())
-    res = bool(cur.execute(que).fetchone()[0])
+        que = f"SELECT penalty_cheater FROM about_teams WHERE title=?"
+    res = bool(cur.execute(que, (team,)).fetchone()[0])
     con.close()
     return res
 
@@ -260,79 +257,153 @@ def anti_cheat():
 
 # Регистрация
 
-@app.route("/sign_up", methods=["GET", "POST"])
-def sign_up():
-    sign_up_form = SignUpForm()
-    params = dict()
-    params["title"] = "Регистрация"
-    params["form"] = sign_up_form
+@app.route("/sign_up/<string:classificator>", methods=["GET", "POST"])
+def sign_up(classificator):
+    if classificator == "team":
+        sign_up_form = SignUpForm()
+        params = dict()
+        params["title"] = "Регистрация"
+        params["form"] = sign_up_form
 
-    # Проверяем, правильно ли заполнена форма
+        # Проверяем, правильно ли заполнена форма
 
-    if sign_up_form.validate_on_submit():
+        if sign_up_form.validate_on_submit():
 
-        # Если мы нажали на кнопку "регистриция", то выходим из аккаунта
-        if is_auth():
-            logout_user()
+            # Если мы нажали на кнопку "регистриция", то выходим из аккаунта
+            if is_auth():
+                logout_user()
 
-            # Проверяем, не использован ли логин и пароль
+                # Проверяем, не использован ли логин и пароль
 
-        is_login_used = login_used(request.form.get("team-login"))
-        is_team_name_used = team_name_used(request.form.get("team-team_name"))
-        if is_team_name_used or is_login_used:
-            if login_used:
-                params["login_used"] = True
+            is_login_used = login_used(request.form.get("team-login"))
+            is_team_name_used = team_name_used(request.form.get("team-team_name"))
+            if is_team_name_used or is_login_used:
+                if login_used:
+                    params["login_used"] = True
 
-            if team_name_used:
-                params["team_name_used"] = True
+                if team_name_used:
+                    params["team_name_used"] = True
 
-            return render_template("sign_up.html", **params)
+                return render_template("sign_up_team.html", **params)
 
-        # Создания объека User
+            # Создания объека User
 
-        user = User(
-            login=request.form.get("team-login"),
-            team_name=request.form.get("team-team_name"),
-            email=request.form.get("team-email"),
-            grade=int(request.form.get("team-grade")),
+            user = User(
+                login=request.form.get("team-login"),
+                team_name=request.form.get("team-team_name"),
+                email=request.form.get("team-email"),
+                grade=int(request.form.get("team-grade")),
 
-            member1=(request.form.get("member1-name_field"),
-                     request.form.get("member1-surname"),
-                     request.form.get("member1-school")),
+                member1=(request.form.get("member1-name_field"),
+                         request.form.get("member1-surname"),
+                         request.form.get("member1-school")),
 
-            member2=(request.form.get("member2-name_field"),
-                     request.form.get("member2-surname"),
-                     request.form.get("member2-school")),
+                member2=(request.form.get("member2-name_field"),
+                         request.form.get("member2-surname"),
+                         request.form.get("member2-school")),
 
-            member3=(request.form.get("member3-name_field"),
-                     request.form.get("member3-surname"),
-                     request.form.get("member3-school")),
+                member3=(request.form.get("member3-name_field"),
+                         request.form.get("member3-surname"),
+                         request.form.get("member3-school")),
 
-            member4=(request.form.get("member4-name_field"),
-                     request.form.get("member4-surname"),
-                     request.form.get("member4-school"))
-        )
+                member4=(request.form.get("member4-name_field"),
+                         request.form.get("member4-surname"),
+                         request.form.get("member4-school"))
+            )
 
-        user.set_password(request.form.get("team-password"))
+            user.set_password(request.form.get("team-password"))
 
-        # Добавление пользователя в базы данных
-        con = sqlite3.connect((os.path.join("db", "tasks.db")))
-        cur = con.cursor()
-        domino_table = 'domino_tasks' + str(user.grade)
-        penalty_table = 'penalty_tasks' + str(user.grade)
-        time = datetime.datetime.now()
-        time = ' '.join(
-            map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
-        cur.execute(f"INSERT into {domino_table}(title) values ('{user.team_name}')")
-        cur.execute(f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-        cur.execute(f"INSERT into about_teams(title, time) values ('{user.team_name}', '{time}')")
-        con.commit()
-        con.close()
-        add_user(user)
+            # Добавление пользователя в базы данных
+            domino_table = 'domino_tasks' + str(user.grade)
+            penalty_table = 'penalty_tasks' + str(user.grade)
+            about_teams = "about_teams"
 
-        return redirect("/login")
+            time = datetime.datetime.now()
+            time = ' '.join(
+                map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
 
-    return render_template("sign_up.html", **params)
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {domino_table}(title) values ("
+                                 f"'{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {about_teams}(title, time) values ("
+                                 f"'{user.team_name}', '{time}')")
+
+            add_user(user)
+
+            return redirect("/login")
+
+        return render_template("sign_up_team.html", **params)
+
+    elif classificator == "player":
+        sign_up_form = SignUpPlayerForm()
+        params = dict()
+        params["title"] = "Регистрация"
+        params["form"] = sign_up_form
+
+        if sign_up_form.validate_on_submit():
+            if is_auth():
+                logout_user()
+
+            is_login_used = login_used(request.form.get("team-login"))
+            is_team_name_used = team_name_used(request.form.get("team-team_name"))
+            if is_team_name_used or is_login_used:
+                if login_used:
+                    params["login_used"] = True
+
+                if team_name_used:
+                    params["team_name_used"] = True
+
+                return render_template("sign_up_player.html", **params)
+
+            # Создания объекта User
+
+            user = User(
+                login=request.form.get("team-login"),
+                team_name=request.form.get("team-team_name"),
+                email=request.form.get("team-email"),
+                grade=int(request.form.get("team-grade")),
+
+                member1=(request.form.get("member-name_field"),
+                         request.form.get("member-surname"),
+                         request.form.get("member-school")),
+
+                member2=(None, None, None),  # У нас только один член команды
+                member3=(None, None, None),
+                member4=(None, None, None)
+            )
+
+            user.set_password(request.form.get("team-password"))
+
+            # Добавление пользователя в базы данных
+            domino_table = 'domino_tasks' + str(user.grade)
+            penalty_table = 'penalty_tasks' + str(user.grade)
+            about_teams = "about_teams"
+            time = datetime.datetime.now()
+            time = ' '.join(
+                map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
+
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {domino_table}(title) values ("
+                                 f"'{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {about_teams}(title, time) values ("
+                                 f"'{user.team_name}', '{time}')")
+
+            add_user(user)
+
+            return redirect("/login")
+
+        return render_template("sign_up_player.html", **params)
+    else:
+        print("Вы не должны были сюда попасть, но так получилось((")
+        print(request.data)
+        print(request.url)
+        return "Вы не должны были сюда попасть, но так получилось(("
 
 
 # Страница с правилами
@@ -349,19 +420,25 @@ def rules():
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_pass():
     if request.method == "GET":
-        return send_file("./templates/admin_pass.html")
-    elif request.method == "POST":
-        password = request.form.get("password")
+        admin_cookie = request.cookies.get("ac3308b31764fc2774d1df8d3ba92f0d")  # Входили ли
+        if admin_cookie and admin_cookie == "ddb5f9b4be9fa7bb3b16a6e3a19f237c":  # Если уже входили
+            return admin_room()  # Возвращаем кабинет админа
+        else:
+            return render_template("admin_pass.html", title="Авторизуйтесь, пожалуйста")
+    else:
+        password = request.form.get("admin_pass")
         password = password.strip()
-        if hash_md5(password) == "8d5a568735a2195fbdcd900507c48c6d":  # hash_md5(";353!tyum")
-            return redirect("/52df6a777d579a6fc8b787b049824b41")
-        return "Пароль неправильный! <br> <a " \
-               "href=\"./21232f297a57a5a743894a0e4a801fc3\">Вернуться обратно</a>"
+        if hash_md5(password) == "9ef668352a9addb7d462668c012602d5":  # hash_md5("IloveFmschool!")
+            resp = make_response(admin_room())
+            resp.set_cookie('ac3308b31764fc2774d1df8d3ba92f0d', 'ddb5f9b4be9fa7bb3b16a6e3a19f237c')
+            return resp
+        else:
+            flash("Неправильный пароль!")
+            return render_template("admin_pass.html", title="Авторизуйтесь, пожалуйста")
 
 
 # Пункт управления для админов
 
-@app.route('/52df6a777d579a6fc8b787b049824b41', methods=['GET'])
 def admin_room():
     params = dict()
     params["add_task_form"] = AddTaskForm()
@@ -379,18 +456,20 @@ def add_task():
     grade = request.form.get("grade")
     game_type = request.form.get("game_type")
     answer = request.form.get("answer")
+    manual_check = bool(request.form.get("manual_check"))
+    ans_picture = bool(request.form.get("ans_picture"))
+    manual_check = ans_picture or manual_check
+
     if game_type == "domino" and task not in VALID_DOMINO_TASKS_NUMBERS:
         return """номер задачи и тип игры не совпадают 
-                  <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+                  <a href="/admin"> вернуться обратно</a>"""
     if game_type == "penalty" and task not in VALID_PENALTY_TASKS_NUMBERS:
         return """номер задачи и тип игры не совпадают
-                  <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+                  <a href="/admin"> вернуться обратно</a>"""
     file = request.files.get('info')
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        print(*app.config['UPLOAD_FOLDER'], filename)
-        print(os.path.join(*app.config['UPLOAD_FOLDER'], filename))
         file.save(os.path.join(*app.config['UPLOAD_FOLDER'], filename))
         info = os.path.join(*app.config['UPLOAD_FOLDER'], filename)
         url = SERVER_URL + '/api'
@@ -400,18 +479,18 @@ def add_task():
                   "grade": grade,
                   "task": task,
                   "answer": answer,
-                  "info": info}
-        print(url)
+                  "info": info,
+                  "manual_check": manual_check,
+                  "ans_picture": ans_picture}
+
         r = requests.get(url, params=params)
         print(r.content)
-        print(r.url)
-        # print(requests.get(url, params=params))
-        # print(requests.get(url, params=params).content)
+        print(params)
 
-        return """задача добавлена <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+        return """задача добавлена <a href="/admin"> вернуться 
         обратно</a>"""
     else:
-        return """файл не прошёл проверку <a href="/52df6a777d579a6fc8b787b049824b41">
+        return """файл не прошёл проверку <a href="/admin">
                   вернуться обратно</a>"""
 
 
@@ -433,7 +512,7 @@ def start_end_time():
         datetime_start = datetime.datetime.strptime(time_start, time_format)
         datetime_end = datetime.datetime.strptime(time_end, time_format)
     except ValueError:
-        return """Время не соответствует формату <a href="/52df6a777d579a6fc8b787b049824b41"> 
+        return """Время не соответствует формату <a href="/admin"> 
                   вернуться обратно</a>"""
 
     if game_type == "domino":
@@ -443,7 +522,7 @@ def start_end_time():
         penalty_start_time = datetime_start
         penalty_end_time = datetime_end
 
-    return """Вы установили время и дату соревнования (если я не ошибся). <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться 
+    return """Вы установили время и дату соревнования (если я не ошибся). <a href="/admin"> вернуться 
         обратно</a>"""
 
 
@@ -454,7 +533,7 @@ def ban_team():
     team_name = request.form.get("team_name")
     if not team_name_used(team_name):
         return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
-               ввели <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+               ввели <a href="/admin"> вернуться обратно</a>"""
 
     session = db_session.create_session()
 
@@ -466,9 +545,9 @@ def ban_team():
         session.commit()
 
         return f"""Команда {team_name} отправилась в бан <a 
-                href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+                href="/admin"> вернуться обратно</a>"""
     except Exception as e:
-        return f"""Произошла ошибка: {e} \n <a href="/52df6a777d579a6fc8b787b049824b41"> 
+        return f"""Произошла ошибка: {e} \n <a href="/admin"> 
                 вернуться обратно</a>"""
 
 
@@ -479,7 +558,7 @@ def pardon():
     team_name = request.form.get("team_name")
     if not team_name_used(team_name):
         return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
-                   ввели <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+                   ввели <a href="/admin"> вернуться обратно</a>"""
 
     session = db_session.create_session()
     team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
@@ -488,17 +567,17 @@ def pardon():
 
     if not banned:
         return f"""Команда {repr(team_name)} не дисквалифицирована. 
-                <a href="/52df6a777d579a6fc8b787b049824b41"> вернуться обратно</a>"""
+                <a href="/admin"> вернуться обратно</a>"""
 
     try:
         login_data = session.query(UserLoginData).filter(UserLoginData.id == team_id).first()
         login_data.is_banned = False
         session.commit()
 
-        return f"""Команда {repr(team_name)} прощена. <a href="/52df6a777d579a6fc8b787b049824b41">
+        return f"""Команда {repr(team_name)} прощена. <a href="/admin">
                 вернуться обратно</a>"""
     except Exception as e:
-        return f"""Произошла ошибка: {e} \n <a href="/52df6a777d579a6fc8b787b049824b41"> 
+        return f"""Произошла ошибка: {e} \n <a href="/admin"> 
                         вернуться обратно</a>"""
 
 
@@ -736,7 +815,7 @@ def penalty():
 
     # Если пользователь нарушил правила, то мы сообщаем ему об этом
 
-    if get_cheater_status(current_user.team_name, 'domino'):
+    if get_cheater_status(current_user.team_name, 'penalty'):
         return render_template("cheater.html")
 
     # Если мы забанили команду
@@ -804,6 +883,8 @@ def penalty():
 
 @app.route('/results/<game>/<grade>')
 def results(game, grade):
+    debug_var_test = 0  # 0 - показываем тестовых юзеров, 1 - не показываем
+    debug_var_zero = 0  # 0 - показываем юзеров с 0 баллами, 1 - не показываем
     grade = str(grade)
     team = ''
     if is_auth() and str(current_user.grade) == str(grade):
@@ -822,6 +903,13 @@ def results(game, grade):
     cur = con.cursor()
     results = cur.execute(f"SELECT * from {table} ORDER BY sum DESC").fetchall()
     con.close()
+
+    if debug_var_test == 1:
+        results = [row for row in results if
+                   "[TEST]" not in row[1]]  # Не показываем тестовую команду
+    if debug_var_zero == 1:
+        results = [row for row in results if row[-1] == 0]  # Не показываем тех, кто ничего не набрал
+
     team_num = len(results)
     return render_template("results.html", team=team, results=results, title=titles[game],
                            grade=grade,
