@@ -1,4 +1,5 @@
 import os.path
+from hashlib import md5
 
 from flask import Blueprint, request, jsonify
 
@@ -75,11 +76,11 @@ def check_task(game_type, grade, task, user_answer):
     :param grade: str/int, Параллель, для которой добавляется задача
     :param task: str/int, Номер задачи в соответствии с типом игры
     :param user_answer: str, Ответ пользователя
-    :return: True или False
+    :return: str, True или False
     """
     table = f"{game_type}_{grade}_info"
     correct_answer = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)[1]
-    return hash(user_answer) == correct_answer
+    return str(hash_md5(user_answer) in correct_answer)
 
 
 # Вернуть условие задачи
@@ -109,14 +110,19 @@ def add_task(game_type, grade, task, ans, info, manual_check, ans_picture):
     :param ans_picture: bool, Флаг ответа-картинки
     :return: None
     """
+    hashed_ans = ""
+    for possible_ans in ans.split('!'):  # Перебираем возможные ответы
+        hashed_ans += '|' + hash_md5(possible_ans) + '|'  # То, что хранится в табличке -
+        # |md5(ans1)||md5(ans2)||...|
+
     table = f"{game_type}_{grade}_info"
     try:
         if db_interface.data_exists(TASKS_INFO_DATABASE, table, "task", task):
             db_interface.update_data(TASKS_INFO_DATABASE, table, ("answer", "info",
                                                                   "manual_check", "ans_picture"),
-                                     (hash(ans), info, manual_check, ans_picture), "task", task)
+                                     (hashed_ans, info, manual_check, ans_picture), "task", task)
         else:
-            db_interface.insert_data(TASKS_INFO_DATABASE, table, (task, hash(ans), info,
+            db_interface.insert_data(TASKS_INFO_DATABASE, table, (task, hashed_ans, info,
                                                                   manual_check, ans_picture))
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -152,6 +158,13 @@ def setup():
             sql_request += "ans_picture BOOLEAN"  # Флаг сдачи ответа в виде картинки
             sql_request += ");"  # Условие
             db_interface.execute(TASKS_INFO_DATABASE, sql_request)
+
+
+# Функция хэширования
+
+def hash_md5(s):
+    h = md5(bytes(s, encoding="utf-8"))
+    return h.hexdigest()
 
 
 if __name__ == '__main__':

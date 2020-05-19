@@ -129,6 +129,14 @@ def get_user_from_id(user_id):
     return user
 
 
+# Получаем User из имени команды
+
+def get_user_from_team_name(team_name):
+    session = db_session.create_session()
+    team_id = session.query(UserMemberData.id).filter(UserMemberData.team_name == team_name).first()
+    return get_user_from_id(team_id)
+
+
 def create_connection(db_file):
     """
     Создать подключение к файлу базы данных
