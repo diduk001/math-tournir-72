@@ -12,6 +12,11 @@
                     <div>
                         {{ add_task_form.csrf_token }}
                     </div>
+                    <p style="color: red">Если возможных ответов несколько, перечисляйте через
+                        "!"</p>
+                    <p style="color: red">Например, "1 2!1,2!1, 2!1;2"
+                    <p style="color: red">Однако, пожалуйста, уточняйте формат ввода в условиях</p>
+                    <p style="color: red">Всё предугадать невозможно!</p>
                     {% for field in add_task_form if field.name != 'csrf_token' %}
                         <div>
                             {% if field.type == 'SubmitField' %}

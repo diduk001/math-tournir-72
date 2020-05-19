@@ -468,7 +468,10 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        file.save(os.path.abspath(app.config['UPLOAD_FOLDER']))
+        try:
+            file.save(os.path.abspath(app.config['UPLOAD_FOLDER']))
+        except IsADirectoryError:
+            file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
         info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
@@ -607,7 +610,13 @@ def check_task(game, grade, task, user_answer):
               "grade": grade,
               "task": task[1:],
               "answer": user_answer}
-    return requests.get(url, params=params).content
+    r = requests.get(url, params=params)
+    if r.content == b"True":
+        return True
+    elif r.content == b"False":
+        return False
+    else:
+        raise Exception(r.content)
 
 
 # Получение условия задачи
