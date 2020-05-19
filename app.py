@@ -612,7 +612,16 @@ def check_task(game, grade, task, user_answer):
     return requests.get(url, params=params).content
 
 
+def get_manual_check(game, grade, task):
+    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
+    cur = con.cursor()
+    table = f'{game}_{grade}_info'
+    que = f"SELECT manual_check FROM {table} WHERE task=?"
+    res = bool(cur.execute(que, (task,)).fetchone()[0])
+    con.close()
+    return res
 # Получение условия задачи
+
 
 def get_task(game, grade, task):
     url = SERVER_URL + '/api'
@@ -661,6 +670,10 @@ for grade in ['5', '6', '7']:
                                        'number': number_of_domino_task}
 
 
+@app.route("/manual_checking")
+def manual_checking():
+    request.
+
 # Страница домино
 
 @app.route("/domino", methods=["GET", "POST"])
@@ -704,7 +717,8 @@ def domino():
         tasks = {}
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
-                          'state': get_task_state('domino_tasks', key, team, grade)}
+                          'state': get_task_state('domino_tasks', key, team, grade),
+                          'manual_check': get_manual_check('domino', grade, key)}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
