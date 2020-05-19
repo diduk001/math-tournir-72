@@ -81,13 +81,19 @@ def profile():
             if is_banned():
                 return render_template("you_are_banned.html", title="Вас дисквалифицировали")
 
+            is_player = ~bool(current_user.member2_name)
             team = current_user.team_name
             grade = current_user.grade
             domino_place = get_place(team, 'domino', grade)
             penalty_place = get_place(team, 'penalty', grade)
-            return render_template("profile.html", domino_place=domino_place,
-                                   penalty_place=penalty_place,
-                                   **(get_cur_user().__dict__()))
+            if is_player:
+                return render_template("profile.html", domino_place=domino_place,
+                                       penalty_place=penalty_place, **(get_cur_user().__dict__()),
+                                       is_player=True)
+            else:
+                return render_template("profile.html", domino_place=domino_place,
+                                       penalty_place=penalty_place, **(get_cur_user().__dict__()),
+                                       is_player=False)
         else:
             # Иначе переправляем на вход
             return redirect("/login")
@@ -325,7 +331,7 @@ def sign_up(classificator):
                                  f"'{user.team_name}')")
             db_interface.execute(os.path.join("db", "tasks.db"),
                                  f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-            db_interface.execute(os.path.join("db", "tasks.db"),
+            db_interface.execute(os.path.join("db", "tasks_info.db"),
                                  f"INSERT into {about_teams}(title, time) values ("
                                  f"'{user.team_name}', '{time}')")
 
@@ -388,7 +394,7 @@ def sign_up(classificator):
                                  f"'{user.team_name}')")
             db_interface.execute(os.path.join("db", "tasks.db"),
                                  f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-            db_interface.execute(os.path.join("db", "tasks.db"),
+            db_interface.execute(os.path.join("db", "tasks_info.db"),
                                  f"INSERT into {about_teams}(title, time) values ("
                                  f"'{user.team_name}', '{time}')")
 
@@ -1017,6 +1023,15 @@ def is_banned():
         login_data = session.query(UserLoginData).filter(UserLoginData.id == cur_user.id).first()
         return login_data.is_banned
     return None
+
+
+# Возвращает True если в команде один участник
+
+def is_player(team_name):
+    user = get_user_from_team_name(team_name)
+    if None in user.member2:
+        return True
+    return False
 
 
 if __name__ == '__main__':
