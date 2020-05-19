@@ -21,7 +21,7 @@ class ConfigClass(object):
     SECRET_KEY = "0d645377e31ab6b5847ec817bac4aaf8"
     USER_ENABLE_EMAIL = False
     USER_ENABLE_USERNAME = True
-    UPLOAD_FOLDER = ['.', 'static', 'img', 'uploads']
+    UPLOAD_FOLDER = os.path.join('static', 'img', 'uploads')
 
 
 # Создание приложения
@@ -468,8 +468,8 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        file.save(os.path.join(*app.config['UPLOAD_FOLDER'], filename))
-        info = os.path.join(*app.config['UPLOAD_FOLDER'], filename)
+        file.save(os.path.abspath(app.config['UPLOAD_FOLDER']))
+        info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
                   "request_type": "add_task",
@@ -1011,4 +1011,4 @@ def is_banned():
 
 
 if __name__ == '__main__':
-    app.run(port=8080, host='127.0.0.1')
+    app.run(port=5000, host='127.0.0.1')
