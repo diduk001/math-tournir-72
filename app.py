@@ -81,6 +81,8 @@ def profile():
                 return render_template("you_are_banned.html", title="Вас дисквалифицировали")
 
             team = current_user.team_name
+            print(current_user)
+            print(team)
             grade = current_user.grade
             domino_place = get_place(team, 'domino', grade)
             penalty_place = get_place(team, 'penalty', grade)
@@ -228,6 +230,8 @@ def get_cheater_status(team, game):
         que = f"SELECT domino_cheater FROM about_teams WHERE title='{team}'"
     else:
         que = f"SELECT domino_cheater FROM about_teams WHERE title='{team}'"
+    print(que)
+    print(cur.execute(que).fetchone())
     res = bool(cur.execute(que).fetchone()[0])
     con.close()
     return res
@@ -385,6 +389,8 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
+        print(*app.config['UPLOAD_FOLDER'], filename)
+        print(os.path.join(*app.config['UPLOAD_FOLDER'], filename))
         file.save(os.path.join(*app.config['UPLOAD_FOLDER'], filename))
         info = os.path.join(*app.config['UPLOAD_FOLDER'], filename)
         url = SERVER_URL + '/api'
