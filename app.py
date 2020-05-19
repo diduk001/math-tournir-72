@@ -474,11 +474,9 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        try:
-            file.save(os.path.abspath(app.config['UPLOAD_FOLDER']))
-        except IsADirectoryError:
-            file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
+        file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
         info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        print(info)
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
                   "request_type": "add_task",
