@@ -444,7 +444,7 @@ def admin_pass():
 
 
 # Пункт управления для админов
-
+@app.route("/hahggwp", methods=["GET", "POST"])
 def admin_room():
     params = dict()
     params["add_task_form"] = AddTaskForm()
@@ -632,7 +632,10 @@ def get_manual_check(game, grade, task):
     cur = con.cursor()
     table = f'{game}_{grade}_info'
     que = f"SELECT manual_check FROM {table} WHERE task=?"
-    res = bool(cur.execute(que, (task,)).fetchone()[0])
+    print(que)
+    res = cur.execute(que, (task[1:],)).fetchone()[0]
+    if res is not None:
+        res = bool(res)
     con.close()
     return res
 # Получение условия задачи
@@ -685,9 +688,22 @@ for grade in ['5', '6', '7']:
                                        'number': number_of_domino_task}
 
 
-@app.route("/manual_checking")
-def manual_checking():
-    request.
+@app.route("/DDA6265E7AD3906846116641D3511D50")
+def add_manual_checking():
+    team = current_user.team_name
+    grade = current_user.grade
+    game = request.form['game']
+    task = request.form['task']
+    time = datetime.datetime.now()
+    time = ' '.join(map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
+    result = ' '.join(map(lambda x: f"{x[0]};{x[1]}", request.form['result']))
+    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
+    cur = con.cursor()
+    table = f'{game}_{grade}'
+    que = f"INSERT INTO {table} (team, task, time, result) VALUES ({team}, {task}, {time}, {result})"
+    cur.execute(que)
+    con.commit()
+    con.close()
 
 # Страница домино
 
@@ -873,7 +889,8 @@ def penalty():
         # Формируем информацию о состоянии задач пользователя
         for key in penalty_keys:
             tasks[key] = {'name': key[1:],
-                          'state': get_task_state('penalty_tasks', key, team, grade)}
+                          'state': get_task_state('penalty_tasks', key, team, grade),
+                          'manual_check': get_manual_check('penalty', grade, key)}
         # Если пользователь сдал задачу
         if request.method == "POST":
             key = 't' + request.form.get('name')

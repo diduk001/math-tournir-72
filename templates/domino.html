@@ -131,7 +131,9 @@
         {% if message %}
             <h2>{{message}}</h2>
         {% endif %}
-        {% set i = 0 %}
+        {% set i = '0' %}
+        {% set j = 0 %}
+        {% set numbers = ['0', '1'] %}
         <div class="row">
         {% for task in picked_tasks %}
             <div class="col">
@@ -146,10 +148,10 @@
                         <button class="btn btn-primary" type="submit">Отправить</button>
                     </form>
                 {% else %}
-                        {% set canvas = f"canvas_{i}" %}
-                        {% set back = f"back_{i}" %}
-                        {% set clear = f"clear_{i}" %}
-                        {% set submit = f"submit_{i} %}
+                        {% set canvas = "canvas_" + i %}
+                        {% set back = "back_" + i %}
+                        {% set clear = "clear_" + i %}
+                        {% set submit = "submit_" + i %}
                         <canvas id={{canvas}} height="300" width="400"></canvas>
                         <div class="row">
                             <div class="col">
@@ -164,7 +166,7 @@
                         </div>
                     <script>
                         var result = new Array();
-                        canvas = document.getElementById({canvas});
+                        canvas = document.getElementById({{canvas}});
                         writing = function(e) {
                           var x = e.offsetX==undefined?e.layerX:e.offsetX;
                           var y = e.offsetY==undefined?e.layerY:e.offsetY;
@@ -216,14 +218,16 @@
                           }
                         }
                         submit = function(){
-                            $.post("game": "domino",
-                                   "task":
-                        document.getElementById({back}).onclick = get_back;
-                        document.getElementById({canvas}).onclick = writing;
-                        document.getElementById({clear}).onclick = clear;
-                        document.getElementById({submit}).onclick = submit;
+                            $.post('\DDA6265E7AD3906846116641D3511D50', {"game": "domino",
+                                                                         "task": {{task['name']}},
+                                                                         "result": result});
+                        document.getElementById({{back}}).onclick = get_back;
+                        document.getElementById({{canvas}}).onclick = writing;
+                        document.getElementById({{clear}}).onclick = clear;
+                        document.getElementById({{submit}}).onclick = submit;
                     </script>
-                % i = i + 1 %}
+                {% j = j + 1 %}
+                {% i = numbers[j] %}
                 {% endif %}
             </div>
         {% endfor %}
