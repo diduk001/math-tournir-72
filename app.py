@@ -704,7 +704,7 @@ def get_manual_check(game, grade, task):
     cur = con.cursor()
     table = f'{game}_{grade}_info'
     que = f"SELECT manual_check FROM {table} WHERE task=?"
-    res = cur.execute(que, (task[1:],)).fetchone()
+    res = cur.execute(que, (task,)).fetchone()
     if res is not None:
         res = res[0]
         res = bool(res)
@@ -721,6 +721,8 @@ def get_task(game, grade, task):
               "game_type": game,
               "grade": grade,
               "task": task}
+    print(params)
+    print(url)
     return requests.get(url, params=params).content
 
 
@@ -838,7 +840,7 @@ def domino():
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
                           'state': get_task_state('domino_tasks', key, team, grade),
-                          'manual_check': get_manual_check('domino', grade, key)}
+                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
@@ -855,8 +857,10 @@ def domino():
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],
-                 'content': get_task('domino', grade, domino_tasks_names_by_keys[key])})
+                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
+                 'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
         print(picked_tasks)
+        print(tasks)
         # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
@@ -982,7 +986,7 @@ def penalty():
         for key in penalty_keys:
             tasks[key] = {'name': key[1:],
                           'state': get_task_state('penalty_tasks', key, team, grade),
-                          'manual_check': get_manual_check('penalty', grade, key)}
+                          'manual_check': get_manual_check('penalty', grade, key[1:])}
         # Если пользователь сдал задачу
         if request.method == "POST":
             key = 't' + request.form.get('name')
