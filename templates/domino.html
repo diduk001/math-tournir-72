@@ -131,12 +131,11 @@
         {% if message %}
             <h2>{{message}}</h2>
         {% endif %}
-            {% set i = '0' %}
-            {% set j = 0 %}
-            {% set number = ['0', '1'] %}
+        {% set number = ['0', '1'] %}
         <div class="row">
-
-            {% for task in picked_tasks %}
+            {% for j in range(number_of_picked_tasks) %}
+                {% set task = picked_tasks[j] %}
+                {% set i = number[j] %}
                 <div class="col">
                     <img src={{task['content']}} width="100%" height="50%">
                     {% if not task['manual_check'] %}
@@ -149,87 +148,87 @@
                             <button class="btn btn-primary" type="submit">Отправить</button>
                         </form>
                     {% else %}
-                            {% set canvas = "canvas_" + i %}
-                            {% set back = "back_" + i %}
-                            {% set clear = "clear_" + i %}
-                            {% set submit = "submit_" + i %}
-                            <a id={{task['name']}}>{{task['name']}}</a>
-                            <canvas id={{canvas}} height="300" width="400"></canvas>
-                            <div class="row">
-                                <div class="col">
-                                <button id={{back}} class="btn btn-primary">Отменить действие</button>
-                                </div>
-                                <div class="col">
-                                    <button id={{clear}} class="btn btn-primary">Очистить</button>
-                                </div>
-                                <div class="col">
-                                <button id={{submit}} class="btn btn-primary">Отправить</button>
-                                </div>
+                        {% set canvas = "canvas_" + i %}
+                        {% set back = "back_" + i %}
+                        {% set clear = "clear_" + i %}
+                        {% set submit = "submit_" + i %}
+                        <a id={{task['name']}}>{{task['name']}}</a>
+                        <canvas id={{canvas}} height="300" width="400"></canvas>
+                        <div class="row">
+                            <div class="col">
+                            <button id={{back}} class="btn btn-primary">Отменить действие</button>
                             </div>
-                            <script>
-                                var result = new Array();
-                                canvas = document.getElementById({{canvas}});
-                                writing = function(e) {
-                                  var x = e.offsetX==undefined?e.layerX:e.offsetX;
-                                  var y = e.offsetY==undefined?e.layerY:e.offsetY;
+                            <div class="col">
+                                <button id={{clear}} class="btn btn-primary">Очистить</button>
+                            </div>
+                            <div class="col">
+                            <button id={{submit}} class="btn btn-primary">Отправить</button>
+                            </div>
+                        </div>
+                        <script>
+                            var result = new Array();
+                            canvas = document.getElementById({{canvas}});
+                            writing = function(e) {
+                              var x = e.offsetX==undefined?e.layerX:e.offsetX;
+                              var y = e.offsetY==undefined?e.layerY:e.offsetY;
 
-                                  if (result.length % 2 == 0){
-                                    if (canvas.getContext) {
-                                        var ctx = canvas.getContext('2d');
-                                        ctx.fillRect(x - 1, y - 1, 3, 3);
-                                        ctx.beginPath();
-                                        ctx.moveTo(x, y);
-                                    }
-                                  }
-                                  else{
-                                      if (canvas.getContext) {
-                                        var ctx = canvas.getContext('2d');
-                                        ctx.lineTo(x, y);
-                                        ctx.closePath();
-                                        ctx.stroke();
-                                        ctx.fillRect(x - 1, y - 1, 3, 3);
-                                      }
-                                  }
-                                  result.push([x, y]);
+                              if (result.length % 2 == 0){
+                                if (canvas.getContext) {
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.fillRect(x - 1, y - 1, 3, 3);
+                                    ctx.beginPath();
+                                    ctx.moveTo(x, y);
                                 }
-                                get_back = function() {
-                                  if (result.length > 0){
-                                  points = [result.pop(), result.pop()];
+                              }
+                              else{
                                   if (canvas.getContext) {
-                                        var ctx = canvas.getContext('2d');
-                                        ctx.fillStyle = '#FFFFFF';
-                                        ctx.strokeStyle = '#FFFFFF';
-                                        ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
-                                        ctx.beginPath();
-                                        ctx.moveTo(points[1][0], points[1][1]);
-                                        ctx.lineTo(points[0][0], points[0][1]);
-                                        ctx.closePath();
-                                        ctx.stroke();
-                                        ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
-                                        ctx.fillStyle = 'rgb(0,0,0)';
-                                        ctx.strokeStyle = 'rgb(0,0,0)';
-                                    }
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.lineTo(x, y);
+                                    ctx.closePath();
+                                    ctx.stroke();
+                                    ctx.fillRect(x - 1, y - 1, 3, 3);
                                   }
+                              }
+                              result.push([x, y]);
+                            }
+                            get_back = function() {
+                              if (result.length > 0){
+                              points = [result.pop(), result.pop()];
+                              if (canvas.getContext) {
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.fillStyle = '#FFFFFF';
+                                    ctx.strokeStyle = '#FFFFFF';
+                                    ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
+                                    ctx.beginPath();
+                                    ctx.moveTo(points[1][0], points[1][1]);
+                                    ctx.lineTo(points[0][0], points[0][1]);
+                                    ctx.closePath();
+                                    ctx.stroke();
+                                    ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
+                                    ctx.fillStyle = 'rgb(0,0,0)';
+                                    ctx.strokeStyle = 'rgb(0,0,0)';
                                 }
-                                clear = function(){
-                                  result = new Array();
-                                  }
-                                  if (canvas.getContext) {
-                                     var ctx = canvas.getContext('2d');
-                                     ctx.clearRect(0, 0, 400, 300);
-                                  }
-                                }
-                                submit = function(){
-                                    $.post('\DDA6265E7AD3906846116641D3511D50', {"game": "domino",
-                                                                                 "task": {{task['name']}},
-                                                                                 "result": result});
-                                document.getElementById({{back}}).onclick = get_back;
-                                document.getElementById({{canvas}}).onclick = writing;
-                                document.getElementById({{clear}}).onclick = clear;
-                                document.getElementById({{submit}}).onclick = submit;
-                            </script>
-                            {% j = j + 1 %}
-                            {% i = number[j] %}
+                              }
+                            }
+                            clear = function(){
+                              result = new Array();
+                              }
+                              if (canvas.getContext) {
+                                 var ctx = canvas.getContext('2d');
+                                 ctx.clearRect(0, 0, 400, 300);
+                              }
+                            }
+                            submit = function(){
+                                $.post('\DDA6265E7AD3906846116641D3511D50', {"game": "domino",
+                                                                             "task": {{task['name']}},
+                                                                             "result": result});
+                            document.getElementById({{back}}).onclick = get_back;
+                            document.getElementById({{canvas}}).onclick = writing;
+                            document.getElementById({{clear}}).onclick = clear;
+                            document.getElementById({{submit}}).onclick = submit;
+                            }
+                        </script>
+
                     {% endif %}
                 </div>
             {% endfor %}

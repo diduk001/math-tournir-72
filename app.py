@@ -866,7 +866,7 @@ def domino():
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
                                    picked_tasks=picked_tasks, message=False, info=domino_info[grade],
-                                   state=state, end_time=end_time)
+                                   state=state, end_time=end_time, number_of_picked_tasks=len(picked_tasks))
         # Иначе пользователь сдал или взял "на руки" задачу
         elif request.method == "POST":
             # Сообщение об ошибке
@@ -926,7 +926,8 @@ def domino():
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys, picked_tasks=picked_tasks, message=message,
-                                   info=domino_info[grade], state=state, end_time=end_time)
+                                   info=domino_info[grade], state=state, end_time=end_time,
+                                   number_of_picked_tasks=len(picked_tasks))
 
 
 # Всё что нужно для пенальти
