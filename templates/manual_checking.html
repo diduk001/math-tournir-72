@@ -4,18 +4,24 @@
 {% if not_task %}
     <h3>На данный момент нет непроверенных задач</h3>
 {% else %}
-    <p id="result" hidden>0;0 55;55 121;121 100;254</p>
-    <p>0-0</p>
+    <p>{{task_name}}</p>
     <canvas id="canvas" height="300" width="400"></canvas>
-    <button class="btn btn-success" id='accepted'>Верно</button>
-    <button class="btn btn-warning" id="wrong_answer">Неверно</button>
+    <button style="btn btn-success" id='accepted'>Верно</button>
+    <button style="btn btn-warning" id="wrong_answer">Неверно</button>
     <script>
-        let result = document.getElementById("result").innerHTML;
+        let result = "{{task_result}}";
+        if (result == ''){
+            $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+                                                       task: '{{task_name}}',
+                                                       result: false});
+            window.location.reload();
+        }
         result = result.split(" ");
         let canvas = document.getElementById("canvas");
-        for (i = 0; i < result.length; i+= 2){
-          f_p = result[i].split(';');
-          s_p = result[i + 1].split(";");
+        for (var i = 0; i < result.length; i+= 2){
+          let f_p = result[i].split(';');
+          alert(f_p);
+          let s_p = result[i + 1].split(";");
           if (canvas.getContext){
             ctx = canvas.getContext('2d');
             ctx.fillRect(f_p[0] - 1, f_p[1] - 1, 3, 3);
@@ -27,14 +33,20 @@
             ctx.fillRect(s_p[0] - 1, s_p[1] - 1, 3, 3);
           }
         }
-        document.getElementById('accepted').onclick = $.post("/manual_checking/" + {{game}} + "/" + {{grade}},
-                                                                                  {"team":{{team}}
-                                                                                   "task":{{task_name}}
-                                                                                   "result":true);
-        getElementById('wrong_answer').onclick = $.post("/manual_checking/" + {{game}} + "/" + {{grade}},
-                                                                                  {"team":{{team}}
-                                                                                   "task":{{task_name}}
-                                                                                   "result":false);
+        accepted = function(){
+        $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+                                                       task: '{{task_name}}',
+                                                       result: true});
+        window.location.reload();
+        }
+        wrong_answer = function(){
+        $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+                                                       task: '{{task_name}}',
+                                                       result: false});
+        window.location.reload();
+        }
+        document.getElementById('accepted').onclick = accepted;
+        document.getElementById('wrong_answer').onclick = wrong_answer;
 
     </script>
 {% endif %}

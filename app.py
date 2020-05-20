@@ -612,24 +612,26 @@ def manual_checking(game, grade):
         con = sqlite3.connect(os.path.join("db", "manual_check.db"))
         cur = con.cursor()
         table = f'{game}_{grade}'
-        que = f"SELECT * from {table} ORDER BY sum"
+        que = f"SELECT * from {table} ORDER BY id"
         task = cur.execute(que).fetchone()
         if task:
             team = task[1]
             task_name = task[2]
             task_result = task[4]
+            print(que)
+            print(task)
             return render_template("manual_checking.html",team=team, task_name=task_name, task_result=task_result,
                                    game=game, grade=grade, not_task=False)
         else:
             return render_template("manual_checking.html", not_task=True)
     elif request.method == "POST":
-        team = request['team']
-        task = request['task']
-        result = request['result']
+        team = request.form['team']
+        task = request.form['task']
+        result = request.form['result']
         verdicts = ['cf', 'ff', 'cs', 'fs']
         if game == 'domino':
             key = domino_tasks_keys_by_names[task]
-            task = {"state": get_task_state("domino_task", key, team, grade)}
+            task = {"state": get_task_state("domino_tasks", key, team, grade), "name": task}
             if result and get_state(task['state']) == 'cf':
                 task['state'] = str(
                     sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
@@ -653,7 +655,7 @@ def manual_checking(game, grade):
             table = "domino_tasks"
         else:
             key = f"t{task}"
-            task = {"state": get_task_state("penalty_task", key, team, grade)}
+            task = {"state": get_task_state("penalty_tasks", key, team, grade), "name": task}
             # Если пользователь сдал задачу правильно
             if result:
                 # Если пользователь сдал задачу правильно с первой попытки
@@ -672,11 +674,19 @@ def manual_checking(game, grade):
                     task['state'] = '0' + 'ff'
                 else:
                     task['state'] = '-2' + 'fs'
-                table = 'penalty_tasks'
+            table = 'penalty_tasks'
         # обновление бд
         update_results(table, get_point(task['state']), team, grade)
         update(table, key, task['state'], team, grade)
-
+        con = sqlite3.connect(os.path.join("db", "manual_check.db"))
+        cur = con.cursor()
+        table = f'{game}_{grade}'
+        que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
+        print(que)
+        cur.execute(que).fetchone()
+        con.commit()
+        con.close()
+    return jsonify({'hah': 'hah'})
 
 # Проверка задачи
 
@@ -753,7 +763,10 @@ domino_messages = {'full': "Вы уже взяли 2 задачи", 'af': 'Вы 
                    'as': 'Вы уже решили эту задачу',
                    'fs': 'У Вас закончились попытки на сдачу этой задачи',
                    'absent': 'На данный момент задачи с этим номером отсутсвуют',
-                   'hand': 'Вы уже взяли эту задачу'}
+                   'hand': 'Вы уже взяли эту задачу',
+                   'cf': "Задача проверяется",
+                   'cs': 'Задача проверяется'}
+
 number_of_domino_task = 5
 domino_info = {'5': {}, '6': {}, '7': {}}
 for grade in ['5', '6', '7']:
@@ -763,7 +776,7 @@ for grade in ['5', '6', '7']:
 
 
 # Сдача задачи на ручную проверку
-@app.route("/DDA6265E7AD3906846116641D3511D50", methods=["POST"])
+@app.route("/add_task_for_manual_checking", methods=["POST"])
 def add_task_for_manual_checking():
     team = current_user.team_name
     grade = current_user.grade
@@ -771,18 +784,23 @@ def add_task_for_manual_checking():
     task = request.form['task']
     time = datetime.datetime.now()
     time = ' '.join(map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
-    result = ' '.join(map(lambda x: f"{x[0]};{x[1]}", request.form['result']))
-    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
+    result = request.form['result'][1:]
+    con = sqlite3.connect(os.path.join("db", "manual_check.db"))
     cur = con.cursor()
     table = f'{game}_{grade}'
-    que = f"INSERT INTO {table} (team, task, time, result) VALUES ({team}, {task}, {time}, {result})"
+    que = f"INSERT INTO {table}(team, task, time, result) VALUES('{team}', '{task}', '{time}', '{result}')"
+    print(que)
     cur.execute(que)
     con.commit()
     con.close()
     # Если Домино то возвращаем задачу на "игровой стол"
     if game == "domino":
         key = domino_tasks_keys_by_names[task]
-        domino_info[key]['number'] += 1
+        domino_info[str(grade)][key]['number'] += 1
+        picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
+        picked_tasks.remove(key)
+        picked_tasks = ' '.join(picked_tasks)
+        update('domino_tasks', 'picked_tasks', picked_tasks, team, grade)
     else:
         key = f"t{task}"
     # Отмечаем что задача проверяется
@@ -794,9 +812,11 @@ def add_task_for_manual_checking():
     # Вторая попытка сдачи задачи
     else:
         state = '0cs'
-    update('domino_tasks', key, state, team, grade)
+    update(f'{game}_tasks', key, state, team, grade)
+    return jsonify({'hah': 'hah'})
 
 # Страница домино
+
 
 @app.route("/domino", methods=["GET", "POST"])
 def domino():
@@ -854,6 +874,7 @@ def domino():
         # Формируем информацию о задачах, которые сейчас "на руках" у пользователя
         keys_of_picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
         picked_tasks = []
+        print(keys_of_picked_tasks)
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],

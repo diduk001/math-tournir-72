@@ -114,6 +114,12 @@
                                                type="submit" value={{task['name']}}>
                                     </form>
                                 </div>
+                            {% elif task['state'][-2:] in ['cf', 'cs'] %}
+                                <div class="ab_task" title="Задача проверяется">
+                                    <form method="post">
+                                        <input class="btn btn-secondary btn-lg btn-block" id="picked" name="picked"
+                                               type="submit" value={{task['name']}}>
+                                    </form>
                             {% else %}
                                 <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
                                     <form method="post">
@@ -125,7 +131,6 @@
                         </td>
                     {% endfor %}
                 </tr>
-
             {% endfor %}
         </table>
         {% if message %}
@@ -153,7 +158,7 @@
                         {% set clear = "clear_" + i %}
                         {% set submit = "submit_" + i %}
                         <a id={{task['name']}}>{{task['name']}}</a>
-                        <canvas id={{canvas}} height="300" width="400"></canvas>
+                        <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
                         <div class="row">
                             <div class="col">
                             <button id={{back}} class="btn btn-primary">Отменить действие</button>
@@ -167,7 +172,7 @@
                         </div>
                         <script>
                             var result = new Array();
-                            canvas = document.getElementById({{canvas}});
+                            canvas = document.getElementById('{{canvas}}');
                             writing = function(e) {
                               var x = e.offsetX==undefined?e.layerX:e.offsetX;
                               var y = e.offsetY==undefined?e.layerY:e.offsetY;
@@ -218,14 +223,20 @@
                               }
                             }
                             submit = function(){
-                                $.post('\DDA6265E7AD3906846116641D3511D50', {"game": "domino",
-                                                                             "task": {{task['name']}},
-                                                                             "result": result});
-                            document.getElementById({{back}}).onclick = get_back;
-                            document.getElementById({{canvas}}).onclick = writing;
-                            document.getElementById({{clear}}).onclick = clear;
-                            document.getElementById({{submit}}).onclick = submit;
+                                let new_result = "";
+                                for (let i = 0; i < result.length; i++){
+                                    new_result += ' ' + result[i].join(';');
+                                }
+
+                                $.post('/add_task_for_manual_checking', {game: "domino",
+                                                 task: "{{task['name']}}",
+                                                 result: new_result});
+                                window.location.reload();
                             }
+                            document.getElementById('{{back}}').onclick = get_back;
+                            document.getElementById('{{canvas}}').onclick = writing;
+                            document.getElementById('{{clear}}').onclick = clear;
+                            document.getElementById('{{submit}}').onclick = submit;
                         </script>
 
                     {% endif %}
