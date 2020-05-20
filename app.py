@@ -476,11 +476,9 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        try:
-            file.save(os.path.abspath(app.config['UPLOAD_FOLDER']))
-        except IsADirectoryError:
-            file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
+        file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
         info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        print(info)
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
                   "request_type": "add_task",
@@ -604,10 +602,10 @@ def get_point(string):
 
 
 def get_state(string):
-    print(string)
     return string[-2:]
 
 
+# Ручная проверка
 @app.route('/manual_checking/<game>/<grade>', methods=["POST", "GET"])
 def manual_checking(game, grade):
     if request.method == "GET":
@@ -628,11 +626,11 @@ def manual_checking(game, grade):
         team = request['team']
         task = request['task']
         result = request['result']
-        verdicts = ['ok', 'ff', 'fs']
+        verdicts = ['cf', 'ff', 'cs', 'fs']
         if game == 'domino':
             key = domino_tasks_keys_by_names[task]
             task = {"state": get_task_state("domino_task", key, team, grade)}
-            if result and get_state(task['state']) == 'ok':
+            if result and get_state(task['state']) == 'cf':
                 task['state'] = str(
                     sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
                 if task['name'] == '0-0':
@@ -652,15 +650,14 @@ def manual_checking(game, grade):
                         -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
                 if task['name'] == '0-0':
                     task['state'] = '0fs'
-            update_results('domino_tasks', get_point(task['state']), team, grade)
-            update('domino_tasks', key, task['state'], team, grade)
+            table = "domino_tasks"
         else:
             key = f"t{task}"
             task = {"state": get_task_state("penalty_task", key, team, grade)}
             # Если пользователь сдал задачу правильно
             if result:
                 # Если пользователь сдал задачу правильно с первой попытки
-                if get_state(task['state']) == 'ok':
+                if get_state(task['state']) == 'cf':
                     task['state'] = str(penalty_info[grade][key]['cost']) + 'af'
                     if penalty_info[grade][key]['cost'] > 5:
                         penalty_info[grade][key]['cost'] -= 1
@@ -675,10 +672,10 @@ def manual_checking(game, grade):
                     task['state'] = '0' + 'ff'
                 else:
                     task['state'] = '-2' + 'fs'
-            # обновление бд
-            update_results('penalty_tasks', get_point(task['state']), team, grade)
-            update('penalty_tasks', key, task['state'], team, grade)
-
+                table = 'penalty_tasks'
+        # обновление бд
+        update_results(table, get_point(task['state']), team, grade)
+        update(table, key, task['state'], team, grade)
 
 
 # Проверка задачи
@@ -700,20 +697,22 @@ def check_task(game, grade, task, user_answer):
         raise Exception(r.content)
 
 
+# Узнать проверяется ли задача в ручную
+
 def get_manual_check(game, grade, task):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
     table = f'{game}_{grade}_info'
     que = f"SELECT manual_check FROM {table} WHERE task=?"
-    print(que)
     res = cur.execute(que, (task[1:],)).fetchone()
     if res is not None:
         res = res[0]
         res = bool(res)
     con.close()
     return res
-# Получение условия задачи
 
+
+# Получение условия задачи
 
 def get_task(game, grade, task):
     url = SERVER_URL + '/api'
@@ -721,8 +720,7 @@ def get_task(game, grade, task):
               "request_type": "get_task",
               "game_type": game,
               "grade": grade,
-              "task": task[1:]}
-    print(params)
+              "task": task}
     return requests.get(url, params=params).content
 
 
@@ -762,6 +760,7 @@ for grade in ['5', '6', '7']:
                                        'number': number_of_domino_task}
 
 
+# Сдача задачи на ручную проверку
 @app.route("/DDA6265E7AD3906846116641D3511D50", methods=["POST"])
 def add_task_for_manual_checking():
     team = current_user.team_name
@@ -778,6 +777,22 @@ def add_task_for_manual_checking():
     cur.execute(que)
     con.commit()
     con.close()
+    # Если Домино то возвращаем задачу на "игровой стол"
+    if game == "domino":
+        key = domino_tasks_keys_by_names[task]
+        domino_info[key]['number'] += 1
+    else:
+        key = f"t{task}"
+    # Отмечаем что задача проверяется
+    table = f"{game}_tasks"
+    state = get_task_state(table, key, team, grade)
+    # Первая попытка сдачи задачи
+    if get_state(state) == 'ok':
+        state = '0cf'
+    # Вторая попытка сдачи задачи
+    else:
+        state = '0cs'
+    update('domino_tasks', key, state, team, grade)
 
 # Страница домино
 
@@ -839,7 +854,9 @@ def domino():
         picked_tasks = []
         for key in keys_of_picked_tasks:
             picked_tasks.append(
-                {'name': domino_tasks_names_by_keys[key], 'content': get_task('domino', grade, key)})
+                {'name': domino_tasks_names_by_keys[key],
+                 'content': get_task('domino', grade, domino_tasks_names_by_keys[key])})
+        print(picked_tasks)
         # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,

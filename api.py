@@ -50,7 +50,7 @@ def api():
 
     if game_type == "penalty":
         if task not in VALID_PENALTY_TASKS_NUMBERS:
-            return jsonify({'error': 'Wrong task number. Must be i where 1 <= i <= 14'})
+            return jsonify({'error': 'Wrong task number. Must be i where 1 <= i <= 16'})
 
     if request_type == "check_task":
         answer = request.args.get("answer", default='', type=str)
