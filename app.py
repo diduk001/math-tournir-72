@@ -916,8 +916,9 @@ def domino():
                     update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
                     update('domino_tasks', key, tasks[key]['state'], team, grade)
                     picked_tasks.remove(key)
+                    keys_of_picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
-            update('domino_tasks', 'picked_tasks', " ".join(map(lambda x: x['name'], picked_tasks)), team, grade)
+            update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys, picked_tasks=picked_tasks, message=message,
