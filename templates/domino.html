@@ -131,9 +131,6 @@
         {% if message %}
             <h2>{{message}}</h2>
         {% endif %}
-        {% set i = '0' %}
-        {% set j = 0 %}
-        {% set numbers = ['0', '1'] %}
         <div class="row">
         {% for task in picked_tasks %}
             <div class="col">
@@ -226,11 +223,9 @@
                         document.getElementById({{clear}}).onclick = clear;
                         document.getElementById({{submit}}).onclick = submit;
                     </script>
-                {% j = j + 1 %}
-                {% i = numbers[j] %}
                 {% endif %}
             </div>
         {% endfor %}
-    {% endif %}
         </div>
+    {% endif %}
 {% endblock %}

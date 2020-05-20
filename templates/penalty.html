@@ -102,8 +102,6 @@
                                         {% endif %}
                                         <input value={{task['name']}} id="name" name="name" hidden>
                                         <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                                        <input value={{task['name']}} id="name" name="name" hidden>
-                                        <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                                     {% else %}
                                         {% set canvas = "canvas_" + i %}
                                         {% set back = "back_" + i %}
@@ -183,10 +181,8 @@
                                             document.getElementById({{clear}}).onclick = clear;
                                             document.getElementById({{submit}}).onclick = submit;
                                         </script>
-                                        {% j = j + 1 %}
-                                        {% i = numbers[j] %}
                                     {% endif %}
-
+                                {% endif %}
                             </div>
                             {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
                                 <button class="btn btn-primary" type="submit">Отправить</button>

@@ -608,6 +608,79 @@ def get_state(string):
     return string[-2:]
 
 
+@app.route('/manual_checking/<game>/<grade>', methods=["POST", "GET"])
+def manual_checking(game, grade):
+    if request.method == "GET":
+        con = sqlite3.connect(os.path.join("db", "manual_check.db"))
+        cur = con.cursor()
+        table = f'{game}_{grade}'
+        que = f"SELECT * from {table} ORDER BY sum"
+        task = cur.execute(que).fetchone()
+        if task:
+            team = task[1]
+            task_name = task[2]
+            task_result = task[4]
+            return render_template("manual_checking.html",team=team, task_name=task_name, task_result=task_result,
+                                   game=game, grade=grade, not_task=False)
+        else:
+            return render_template("manual_checking.html", not_task=True)
+    elif request.method == "POST":
+        team = request['team']
+        task = request['task']
+        result = request['result']
+        verdicts = ['ok', 'ff', 'fs']
+        if game == 'domino':
+            key = domino_tasks_keys_by_names[task]
+            task = {"state": get_task_state("domino_task", key, team, grade)}
+            if result and get_state(task['state']) == 'ok':
+                task['state'] = str(
+                    sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
+                if task['name'] == '0-0':
+                    task['state'] = '10af'
+            # Если пользователь решил задачу со второй попытки
+            elif result:
+                task['state'] = str(
+                    max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
+            # Если пользователь решил задачу неправильно
+            else:
+                task['state'] = verdicts[
+                    verdicts.index(get_state(task['state'])) + 1]
+                if task['state'] == 'ff':
+                    task['state'] = '0ff'
+                else:
+                    task['state'] = str(
+                        -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
+                if task['name'] == '0-0':
+                    task['state'] = '0fs'
+            update_results('domino_tasks', get_point(task['state']), team, grade)
+            update('domino_tasks', key, task['state'], team, grade)
+        else:
+            key = f"t{task}"
+            task = {"state": get_task_state("penalty_task", key, team, grade)}
+            # Если пользователь сдал задачу правильно
+            if result:
+                # Если пользователь сдал задачу правильно с первой попытки
+                if get_state(task['state']) == 'ok':
+                    task['state'] = str(penalty_info[grade][key]['cost']) + 'af'
+                    if penalty_info[grade][key]['cost'] > 5:
+                        penalty_info[grade][key]['cost'] -= 1
+                # Если пользователь сдал задачу правильно со второй попытки
+                else:
+                    task['state'] = '3' + 'as'
+            # Если пользователь сдал задачу неправильно
+            else:
+                task['state'] = verdicts[
+                    verdicts.index(get_state(task['state'])) + 1]
+                if task['state'] == 'ff':
+                    task['state'] = '0' + 'ff'
+                else:
+                    task['state'] = '-2' + 'fs'
+            # обновление бд
+            update_results('penalty_tasks', get_point(task['state']), team, grade)
+            update('penalty_tasks', key, task['state'], team, grade)
+
+
+
 # Проверка задачи
 
 def check_task(game, grade, task, user_answer):
@@ -633,8 +706,9 @@ def get_manual_check(game, grade, task):
     table = f'{game}_{grade}_info'
     que = f"SELECT manual_check FROM {table} WHERE task=?"
     print(que)
-    res = cur.execute(que, (task[1:],)).fetchone()[0]
+    res = cur.execute(que, (task[1:],)).fetchone()
     if res is not None:
+        res = res[0]
         res = bool(res)
     con.close()
     return res
@@ -688,8 +762,8 @@ for grade in ['5', '6', '7']:
                                        'number': number_of_domino_task}
 
 
-@app.route("/DDA6265E7AD3906846116641D3511D50")
-def add_manual_checking():
+@app.route("/DDA6265E7AD3906846116641D3511D50", methods=["POST"])
+def add_task_for_manual_checking():
     team = current_user.team_name
     grade = current_user.grade
     game = request.form['game']
