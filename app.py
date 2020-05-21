@@ -11,7 +11,7 @@ import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm
+    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm, GradeGameForm
 from db_interface import *
 
 
@@ -444,13 +444,13 @@ def admin_pass():
 
 
 # Пункт управления для админов
-@app.route("/hahggwp", methods=["GET", "POST"])
 def admin_room():
     params = dict()
     params["add_task_form"] = AddTaskForm()
     params["start_end_time_form"] = StartEndTimeForm()
     params["ban_team_form"] = BanTeamForm()
     params["pardon_team_form"] = PardonTeamForm()
+    params["grade_game_form"] = GradeGameForm()
     return render_template("admin_room.html", **params)
 
 
@@ -476,8 +476,8 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
-        info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         print(info)
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
@@ -588,6 +588,16 @@ def pardon():
                         вернуться обратно</a>"""
 
 
+# Страница, которая переправляет админа на ручную проверку
+# Ну или страница с ручной проверкой, я пока не решил
+
+@app.route('/b1131abe22277e066731346d53b953f8', methods=['POST'])
+def redirect_to_manual_check():
+    grade = request.form.get("grade")
+    game = request.form.get("game")
+    return redirect(f"deb5b702b8e7cd15788ce1a96fa93e7c/{game}/{grade}")
+
+
 # Функция хэширования
 
 def hash_md5(s):
@@ -606,7 +616,7 @@ def get_state(string):
 
 
 # Ручная проверка
-@app.route('/manual_checking/<game>/<grade>', methods=["POST", "GET"])
+@app.route('/deb5b702b8e7cd15788ce1a96fa93e7c/<game>/<grade>', methods=["POST", "GET"])
 def manual_checking(game, grade):
     if request.method == "GET":
         con = sqlite3.connect(os.path.join("db", "manual_check.db"))
@@ -620,7 +630,8 @@ def manual_checking(game, grade):
             task_result = task[4]
             print(que)
             print(task)
-            return render_template("manual_checking.html",team=team, task_name=task_name, task_result=task_result,
+            return render_template("manual_checking.html", team=team, task_name=task_name,
+                                   task_result=task_result,
                                    game=game, grade=grade, not_task=False)
         else:
             return render_template("manual_checking.html", not_task=True)
@@ -678,9 +689,12 @@ def manual_checking(game, grade):
                         task['state'] = '-2' + 'fs'
                 table = 'penalty_tasks'
         # обновление бд
+        print('hah')
         if get_state(task['state']) in ['cf', 'cs']:
+            print('gg')
             update_results(table, get_point(task['state']), team, grade)
             update(table, key, task['state'], team, grade)
+            print('what')
             con = sqlite3.connect(os.path.join("db", "manual_check.db"))
             cur = con.cursor()
             table = f'{game}_{grade}'
@@ -690,6 +704,7 @@ def manual_checking(game, grade):
             con.commit()
             con.close()
     return jsonify({'hah': 'hah'})
+
 
 # Проверка задачи
 
@@ -818,6 +833,7 @@ def add_task_for_manual_checking():
     update(f'{game}_tasks', key, state, team, grade)
     return jsonify({'hah': 'hah'})
 
+
 # Страница домино
 
 
@@ -863,7 +879,8 @@ def domino():
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
                           'state': get_task_state('domino_tasks', key, team, grade),
-                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])}
+                          'manual_check': get_manual_check('domino', grade,
+                                                           domino_tasks_names_by_keys[key])}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
@@ -881,16 +898,18 @@ def domino():
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],
-                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
+                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[
+                            2:-1],
                  'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
-        print(picked_tasks)
-        print(tasks)
+        print("picked", picked_tasks)
+        print("tasks", tasks)
         # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
                                    picked_tasks=picked_tasks, message=False, info=domino_info[grade],
-                                   state=state, end_time=end_time, number_of_picked_tasks=len(picked_tasks))
+                                   state=state, end_time=end_time,
+                                   number_of_picked_tasks=len(picked_tasks))
         # Иначе пользователь сдал или взял "на руки" задачу
         elif request.method == "POST":
             # Сообщение об ошибке
@@ -950,6 +969,9 @@ def domino():
                     picked_tasks.remove(key)
                     keys_of_picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
+
+            print("picked", picked_tasks)
+            print("keys", keys_of_picked_tasks)
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,

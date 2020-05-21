@@ -33,13 +33,13 @@
           }
         }
         accepted = function(){
-        $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+        $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
                                                        task: '{{task_name}}',
                                                        result: true});
         window.location.reload();
         }
         wrong_answer = function(){
-        $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+        $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
                                                        task: '{{task_name}}',
                                                        result: false});
         window.location.reload();

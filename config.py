@@ -277,3 +277,13 @@ class StartEndTimeForm(FlaskForm):
 class ForgotPassword(FlaskForm):
     email = StringField("Email", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
     submit = SubmitField("Восстановить пароль")
+
+
+# Чтобы выбрать класс и тип игры
+
+class GradeGameForm(FlaskForm):
+    grade = RadioField("Выберите класс", choices=[("5", "5"), ("6", "6"), ("7", "7")],
+                       validators=DATA_REQUIRED_VALIDATOR)
+    game = RadioField("Выберите игру", choices=[("domino", "Домино"), ("penalty",
+                                                                       "Пенальти")])
+    submit = SubmitField("Перейти")
