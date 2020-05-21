@@ -11,7 +11,7 @@ import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm
+    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm, GradeGameForm
 from db_interface import *
 
 
@@ -444,13 +444,13 @@ def admin_pass():
 
 
 # Пункт управления для админов
-@app.route("/hahggwp", methods=["GET", "POST"])
 def admin_room():
     params = dict()
     params["add_task_form"] = AddTaskForm()
     params["start_end_time_form"] = StartEndTimeForm()
     params["ban_team_form"] = BanTeamForm()
     params["pardon_team_form"] = PardonTeamForm()
+    params["grade_game_form"] = GradeGameForm()
     return render_template("admin_room.html", **params)
 
 
@@ -588,6 +588,16 @@ def pardon():
                         вернуться обратно</a>"""
 
 
+# Страница, которая переправляет админа на ручную проверку
+# Ну или страница с ручной проверкой, я пока не решил
+
+@app.route('/b1131abe22277e066731346d53b953f8', methods=['POST'])
+def redirect_to_manual_check():
+    grade = request.form.get("grade")
+    game = request.form.get("game")
+    return redirect(f"deb5b702b8e7cd15788ce1a96fa93e7c/{game}/{grade}")
+
+
 # Функция хэширования
 
 def hash_md5(s):
@@ -606,7 +616,7 @@ def get_state(string):
 
 
 # Ручная проверка
-@app.route('/manual_checking/<game>/<grade>', methods=["POST", "GET"])
+@app.route('/deb5b702b8e7cd15788ce1a96fa93e7c/<game>/<grade>', methods=["POST", "GET"])
 def manual_checking(game, grade):
     if request.method == "GET":
         con = sqlite3.connect(os.path.join("db", "manual_check.db"))
