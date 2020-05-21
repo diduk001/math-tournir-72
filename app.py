@@ -149,7 +149,7 @@ def get_task_state(table, task, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT {task} FROM {table + str(grade)} WHERE title = '{team}'"
-    result = cur.execute(que).fetchone()
+    result = cur.execute(que).fetchone()[0]
     con.close()
     if not result:
         return ""
@@ -632,6 +632,7 @@ def manual_checking(game, grade):
             task_result = task[4]
 
             ans_picture = get_ans_picture(game, grade, task_name)
+            print(ans_picture, 'hah')
             return render_template("manual_checking.html", team=team, task_name=task_name,
                                    task_result=task_result,
                                    game=game, grade=grade, not_task=False, ans_picture=ans_picture)
@@ -800,6 +801,7 @@ def get_ans_picture(game, grade, task):
     cur = con.cursor()
     table = f'{game}_{grade}_info'
     que = f"SELECT ans_picture FROM {table} WHERE task=?"
+    print(que, task)
     res = cur.execute(que, (task,)).fetchone()
     if res is not None:
         res = res[0]
@@ -1035,7 +1037,7 @@ def penalty():
 
     penalty_info[grade] = {}
     for key in penalty_keys:
-        content = str(get_task("penalty", grade, key[1:]))[2:-1]
+        content = str(get_task("penalty", grade, key[1:]))
         penalty_info[grade][key] = {'name': key[1:], 'cost': 15, "content": content}
 
     # Если игра ещё не началась, то мы показывает отсчёт до начала
