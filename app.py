@@ -25,6 +25,11 @@ class ConfigClass(object):
     UPLOAD_FOLDER = os.path.join('static', 'img', 'uploads')
 
 
+# флаги для того, показывать ли тестовых юзеров и команд с 0 очков
+
+RESULTS_SHOW_ZERO = 0
+RESULTS_SHOW_TEST = 0
+
 # Создание приложения
 
 app = Flask(__name__)
@@ -111,6 +116,7 @@ def get_place(team, game, grade):
     results = list(
         map(lambda x: x[0], cur.execute(f"SELECT title from {table} ORDER BY sum DESC").fetchall()))
     con.close()
+    results = [team_name for team_name in results if "[TEST]" not in team_name]
     return results.index(team) + 1
 
 
@@ -757,6 +763,7 @@ def get_task(game, grade, task):
         print(e)
         return None
 
+
 # Всё что нужно для домино
 
 domino_start_time = datetime.datetime(2020, 4, 28, 19, 8, 30)
@@ -808,6 +815,7 @@ def get_ans_picture(game, grade, task):
         res = bool(res)
     con.close()
     return res
+
 
 # Сдача задачи на ручную проверку
 @app.route("/add_task_for_manual_checking", methods=["POST"])
@@ -899,8 +907,10 @@ def domino():
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
                           'state': get_task_state('domino_tasks', key, team, grade),
-                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
-                          'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])}
+                          'manual_check': get_manual_check('domino', grade,
+                                                           domino_tasks_names_by_keys[key]),
+                          'ans_picture': get_ans_picture('domino', grade,
+                                                         domino_tasks_names_by_keys[key])}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
@@ -947,9 +957,12 @@ def domino():
                     keys_of_picked_tasks.append(key)
                     picked_tasks.append(
                         {'name': domino_tasks_names_by_keys[key],
-                         'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[2:-1],
-                         'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
-                         'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
+                         'content': str(
+                             get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[2:-1],
+                         'manual_check': get_manual_check('domino', grade,
+                                                          domino_tasks_names_by_keys[key]),
+                         'ans_picture': get_ans_picture('domino', grade,
+                                                        domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] -= 1
                 # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:
@@ -1099,8 +1112,8 @@ def penalty():
 
 @app.route('/results/<game>/<grade>')
 def results(game, grade):
-    debug_var_test = 0  # 0 - показываем тестовых юзеров, 1 - не показываем
-    debug_var_zero = 0  # 0 - показываем юзеров с 0 баллами, 1 - не показываем
+    debug_var_test = RESULTS_SHOW_TEST  # 0 - показываем тестовых юзеров, 1 - не показываем
+    debug_var_zero = RESULTS_SHOW_ZERO  # 0 - показываем юзеров с 0 баллами, 1 - не показываем
     grade = str(grade)
     team = ''
     if is_auth() and str(current_user.grade) == str(grade):
@@ -1150,6 +1163,30 @@ def login():
                                invalid_parameters=True,
                                form=form)
     return render_template("login.html", **params)
+
+
+# Показывать/Не показывать нулёвых
+
+@app.route('/toggle_show_zero')
+def toggle_zero():
+    global RESULTS_SHOW_ZERO
+
+    if RESULTS_SHOW_ZERO == 0:
+        RESULTS_SHOW_ZERO = 1
+    else:
+        RESULTS_SHOW_ZERO = 0
+
+
+# Показывать/Не показывать тестовых
+
+@app.route('/toggle_show_test')
+def toggle_test():
+    global RESULTS_SHOW_TEST
+
+    if RESULTS_SHOW_TEST == 0:
+        RESULTS_SHOW_TEST = 1
+    else:
+        RESULTS_SHOW_TEST = 0
 
 
 # Выход из аккаунта
