@@ -632,60 +632,63 @@ def manual_checking(game, grade):
         if game == 'domino':
             key = domino_tasks_keys_by_names[task]
             task = {"state": get_task_state("domino_tasks", key, team, grade), "name": task}
-            if result and get_state(task['state']) == 'cf':
-                task['state'] = str(
-                    sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
-                if task['name'] == '0-0':
-                    task['state'] = '10af'
-            # Если пользователь решил задачу со второй попытки
-            elif result:
-                task['state'] = str(
-                    max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
-            # Если пользователь решил задачу неправильно
-            else:
-                task['state'] = verdicts[
-                    verdicts.index(get_state(task['state'])) + 1]
-                if task['state'] == 'ff':
-                    task['state'] = '0ff'
-                else:
+            if get_state(task['state']) in ['cf', 'cs']:
+                if result and get_state(task['state']) == 'cf':
                     task['state'] = str(
-                        -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
-                if task['name'] == '0-0':
-                    task['state'] = '0fs'
-            table = "domino_tasks"
+                        sum(map(int, domino_info[grade][key]['name'].split('-')))) + 'af'
+                    if task['name'] == '0-0':
+                        task['state'] = '10af'
+                # Если пользователь решил задачу со второй попытки
+                elif result:
+                    task['state'] = str(
+                        max(map(int, domino_info[grade][key]['name'].split('-')))) + 'as'
+                # Если пользователь решил задачу неправильно
+                else:
+                    task['state'] = verdicts[
+                        verdicts.index(get_state(task['state'])) + 1]
+                    if task['state'] == 'ff':
+                        task['state'] = '0ff'
+                    else:
+                        task['state'] = str(
+                            -min(map(int, domino_info[grade][key]['name'].split('-')))) + 'fs'
+                    if task['name'] == '0-0':
+                        task['state'] = '0fs'
+                table = "domino_tasks"
         else:
             key = f"t{task}"
             task = {"state": get_task_state("penalty_tasks", key, team, grade), "name": task}
-            # Если пользователь сдал задачу правильно
-            if result:
-                # Если пользователь сдал задачу правильно с первой попытки
-                if get_state(task['state']) == 'cf':
-                    task['state'] = str(penalty_info[grade][key]['cost']) + 'af'
-                    if penalty_info[grade][key]['cost'] > 5:
-                        penalty_info[grade][key]['cost'] -= 1
-                # Если пользователь сдал задачу правильно со второй попытки
+            if get_state(task['state']) in ['cf', 'cs']:
+                # Если пользователь сдал задачу правильно
+                if result:
+                    # Если пользователь сдал задачу правильно с первой попытки
+                    if get_state(task['state']) == 'cf':
+                        task['state'] = str(penalty_info[grade][key]['cost']) + 'af'
+                        if penalty_info[grade][key]['cost'] > 5:
+                            penalty_info[grade][key]['cost'] -= 1
+                    # Если пользователь сдал задачу правильно со второй попытки
+                    else:
+                        task['state'] = '3' + 'as'
+                # Если пользователь сдал задачу неправильно
                 else:
-                    task['state'] = '3' + 'as'
-            # Если пользователь сдал задачу неправильно
-            else:
-                task['state'] = verdicts[
-                    verdicts.index(get_state(task['state'])) + 1]
-                if task['state'] == 'ff':
-                    task['state'] = '0' + 'ff'
-                else:
-                    task['state'] = '-2' + 'fs'
-            table = 'penalty_tasks'
+                    task['state'] = verdicts[
+                        verdicts.index(get_state(task['state'])) + 1]
+                    if task['state'] == 'ff':
+                        task['state'] = '0' + 'ff'
+                    else:
+                        task['state'] = '-2' + 'fs'
+                table = 'penalty_tasks'
         # обновление бд
-        update_results(table, get_point(task['state']), team, grade)
-        update(table, key, task['state'], team, grade)
-        con = sqlite3.connect(os.path.join("db", "manual_check.db"))
-        cur = con.cursor()
-        table = f'{game}_{grade}'
-        que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
-        print(que)
-        cur.execute(que).fetchone()
-        con.commit()
-        con.close()
+        if get_state(task['state']) in ['cf', 'cs']:
+            update_results(table, get_point(task['state']), team, grade)
+            update(table, key, task['state'], team, grade)
+            con = sqlite3.connect(os.path.join("db", "manual_check.db"))
+            cur = con.cursor()
+            table = f'{game}_{grade}'
+            que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
+            print(que)
+            cur.execute(que).fetchone()
+            con.commit()
+            con.close()
     return jsonify({'hah': 'hah'})
 
 # Проверка задачи
@@ -904,7 +907,11 @@ def domino():
                     message = domino_messages['hand']
                 # Пользователь может взять задачу, выдаём её
                 elif get_state(tasks[key]['state']) in ['ff', 'ok']:
-                    picked_tasks.append(key)
+                    keys_of_picked_tasks.append(key)
+                    picked_tasks.append(
+                        {'name': domino_tasks_names_by_keys[key],
+                         'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
+                         'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] -= 1
                 # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:

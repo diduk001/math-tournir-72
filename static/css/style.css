@@ -1,6 +1,8 @@
 #page-container {
     position: relative;
-    min-height: 100vh;
+    min-height: 100%;
+    height: calc(100% - 50px);
+    overflow: auto;
 }
 
 #content-wrap {

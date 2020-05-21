@@ -5,9 +5,9 @@
     <h3>На данный момент нет непроверенных задач</h3>
 {% else %}
     <p>{{task_name}}</p>
-    <canvas id="canvas" height="300" width="400"></canvas>
-    <button style="btn btn-success" id='accepted'>Верно</button>
-    <button style="btn btn-warning" id="wrong_answer">Неверно</button>
+    <canvas id="canvas" height="300" width="400" style = "border:2px solid black"></canvas>
+    <button class="btn btn-success" id='accepted'>Верно</button>
+    <button class="btn btn-danger" id="wrong_answer">Неверно</button>
     <script>
         let result = "{{task_result}}";
         if (result == ''){
@@ -20,7 +20,6 @@
         let canvas = document.getElementById("canvas");
         for (var i = 0; i < result.length; i+= 2){
           let f_p = result[i].split(';');
-          alert(f_p);
           let s_p = result[i + 1].split(";");
           if (canvas.getContext){
             ctx = canvas.getContext('2d');
