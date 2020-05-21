@@ -86,7 +86,7 @@
             {% set task = tasks[key] %}
             {% set state = "penalty_task" + task['state'] %}
                 <div>
-                    <img src={{info[key]['content']}} width="100%" height="35%">
+                    <img src={{info[key]['content']}} width="800px" height="400px">
                     {% if task['state'][-2:] in ['af', 'as'] %}
                         <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
                     {% elif task['state'][-2:] in ['cf', 'cs'] %}

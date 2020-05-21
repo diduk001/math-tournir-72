@@ -409,9 +409,6 @@ def sign_up(classificator):
 
         return render_template("sign_up_player.html", **params)
     else:
-        print("Вы не должны были сюда попасть, но так получилось((")
-        print(request.data)
-        print(request.url)
         return "Вы не должны были сюда попасть, но так получилось(("
 
 
@@ -481,7 +478,6 @@ def add_task():
         filename = task + '-' + grade + '.' + get_extension(file.filename)
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
         info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        print(info)
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
                   "request_type": "add_task",
@@ -493,8 +489,6 @@ def add_task():
                   "manual_check": manual_check,
                   "ans_picture": ans_picture}
         r = requests.get(url, params=params)
-        print(r.content)
-        print(params)
 
         return """задача добавлена <a href="/admin"> вернуться 
         обратно</a>"""
@@ -632,7 +626,6 @@ def manual_checking(game, grade):
             task_result = task[4]
 
             ans_picture = get_ans_picture(game, grade, task_name)
-            print(ans_picture, 'hah')
             return render_template("manual_checking.html", team=team, task_name=task_name,
                                    task_result=task_result,
                                    game=game, grade=grade, not_task=False, ans_picture=ans_picture)
@@ -642,6 +635,7 @@ def manual_checking(game, grade):
         team = request.form['team']
         task = request.form['task']
         result = request.form['result']
+        result = True if result == "true" else False
         verdicts = ['cf', 'ff', 'cs', 'fs']
         if game == 'domino':
             key = domino_tasks_keys_by_names[task]
@@ -698,7 +692,6 @@ def manual_checking(game, grade):
         cur = con.cursor()
         table = f'{game}_{grade}'
         que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
-        print(que)
         cur.execute(que).fetchone()
         con.commit()
         con.close()
@@ -710,10 +703,10 @@ def manual_checking(game, grade):
 def check_task(game, grade, task, user_answer):
     url = SERVER_URL + '/api'
     params = {"apikey": TOTALLY_RIGHT_APIKEY,
-              "request_type": "add_task",
+              "request_type": "check_task",
               "game_type": game,
               "grade": grade,
-              "task": task[1:],
+              "task": task,
               "answer": user_answer}
     r = requests.get(url, params=params)
     if r.content == b"True":
@@ -753,8 +746,6 @@ def get_task(game, grade, task):
     try:
         return d["info"]
     except Exception as e:
-        print(d)
-        print(e)
         return None
 
 # Всё что нужно для домино
@@ -801,7 +792,6 @@ def get_ans_picture(game, grade, task):
     cur = con.cursor()
     table = f'{game}_{grade}_info'
     que = f"SELECT ans_picture FROM {table} WHERE task=?"
-    print(que, task)
     res = cur.execute(que, (task,)).fetchone()
     if res is not None:
         res = res[0]
@@ -826,7 +816,6 @@ def add_task_for_manual_checking():
     cur = con.cursor()
     table = f'{game}_{grade}'
     que = f"INSERT INTO {table}(team, task, time, result) VALUES('{team}', '{task}', '{time}', '{result}')"
-    print(que)
     cur.execute(que)
     con.commit()
     con.close()
@@ -849,7 +838,6 @@ def add_task_for_manual_checking():
     # Вторая попытка сдачи задачи
     else:
         state = '0cs'
-    print(state)
     update(f'{game}_tasks', key, state, team, grade)
     return jsonify({'hah': 'hah'})
 
@@ -932,7 +920,9 @@ def domino():
             # Сообщение об ошибке
             message = False
             # Если пользователь попытался взять задачу
+            print(request.form)
             if request.form.get("picked"):
+                print('whatwhat')
                 key = domino_tasks_keys_by_names[request.form.get("picked")]
                 number_of_picked_task = len(picked_tasks)
                 # У пользователя уже 2 задачи "на руках", сообщаем, что больше взять нельзя
@@ -959,8 +949,8 @@ def domino():
                 key = domino_tasks_keys_by_names[request.form.get('name')]
                 verdicts = ['ok', 'ff', 'fs']
                 # Если всё нормально и пользователь не попытался багануть сайт
-                if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in picked_tasks:
-                    result = check_task('domino', grade, key, request.form.get('answer'))
+                if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in keys_of_picked_tasks:
+                    result = check_task('domino', grade, domino_tasks_names_by_keys[key], request.form.get('answer'))
                     # Если пользователь решил задачу с первой попытки
                     if result and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(
@@ -985,8 +975,15 @@ def domino():
                     # Обновление бд, возвращение задачи на "игровой стол"
                     update_results('domino_tasks', get_point(tasks[key]['state']), team, grade)
                     update('domino_tasks', key, tasks[key]['state'], team, grade)
-                    picked_tasks.remove(key)
+                    print('hah')
                     keys_of_picked_tasks.remove(key)
+                    picked_tasks = []
+                    for key in keys_of_picked_tasks:
+                        picked_tasks.append(
+                            {'name': domino_tasks_names_by_keys[key],
+                             'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key])),
+                             'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
+                             'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] += 1
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
@@ -1067,7 +1064,7 @@ def penalty():
             verdicts = ['ok', 'ff', 'fs']
             # Если пользователь не попытался багануть сайт
             if get_state(tasks[key]['state']) in ['ok', 'ff']:
-                result = check_task('penalty', grade, key, request.form.get('answer'))
+                result = check_task('penalty', grade, key[1:], request.form.get('answer'))
                 # Если пользователь сдал задачу правильно
                 if result:
                     # Если пользователь сдал задачу правильно с первой попытки
