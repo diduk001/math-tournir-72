@@ -62,8 +62,11 @@ def api():
     if request_type == "add_task":
         answer = request.args.get("answer", default='', type=str)
         info = request.args.get("info", default='', type=str)
-        manual_check = request.args.get("manual_check", default=False, type=bool)
-        ans_picture = request.args.get("ans_picture", default=False, type=bool)
+        manual_check = request.args.get("manual_check", default='False', type=str)
+        ans_picture = request.args.get("ans_picture", default='False', type=str)
+        manual_check = True if manual_check == "True" else False
+        ans_picture = True if ans_picture == "True" else False
+        print(manual_check, ans_picture, 'gg')
         return add_task(game_type, grade, task, answer, info, manual_check, ans_picture)
 
 
@@ -117,6 +120,7 @@ def add_task(game_type, grade, task, ans, info, manual_check, ans_picture):
 
     table = f"{game_type}_{grade}_info"
     try:
+        print(manual_check, ans_picture, 'hah')
         if db_interface.data_exists(TASKS_INFO_DATABASE, table, "task", task):
             db_interface.update_data(TASKS_INFO_DATABASE, table, ("answer", "info",
                                                                   "manual_check", "ans_picture"),

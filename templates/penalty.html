@@ -88,11 +88,11 @@
                 <div>
                     <img src={{info[key]['content']}} width="100%" height="35%">
                     {% if task['state'][-2:] in ['af', 'as'] %}
-                        <p class="accepted">Вы уже решили эту задачу</p>
+                        <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
                     {% elif task['state'][-2:] in ['cf', 'cs'] %}
-                        <p>Задача проверяется</p>
+                        <p>{{task['name']}}. Задача проверяется</p>
                     {% elif task['state'][-2:] == 'fs' %}
-                        <p class="failed">У вас закончились попытки на сдачу этой задачи</p>
+                        <p class="failed">{{task['name']}}. У вас закончились попытки на сдачу этой задачи</p>
                     {% else %}
                         {% if not task['manual_check'] %}
                             <form method="post">
@@ -111,7 +111,7 @@
                                         <button class="btn btn-primary" type="submit">Отправить</button>
                                     {% endif %}
                             </form>
-                        {% else %}
+                        {% elif task['manual_check'] and task['ans_picture'] %}
                             {% set canvas = "canvas_" + i %}
                             {% set back = "back_" + i %}
                             {% set clear = "clear_" + i %}
@@ -187,7 +187,7 @@
                                     new_result += ' ' + result{{i}}[i].join(';');
                                 }
 
-                                $.post('/add_task_for_manual_checking', {game: "domino",
+                                $.post('/add_task_for_manual_checking', {game: "penalty",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
                                 window.location.reload();
@@ -197,6 +197,24 @@
                             document.getElementById('{{clear}}').onclick = clear{{i}};
                             document.getElementById('{{submit}}').onclick = submit{{i}};
                                 </script>
+                        {% elif task['manual_check'] %}
+                            {% set answer = "answer_" + i %}
+                            {% set submit = "submit_" + i %}
+                            <label for={{task['name']}}>{{task['name']}}</label>
+                            <input value={{task['name']}} id={{task['name']}} name="name" hidden>
+                            <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ"
+                                   name="answer">
+                            <button id={{submit}} class="btn btn-primary">Отправить</button>
+                            <script>
+                                submit{{i}} = function(){
+                                    let new_result = document.getElementById('{{answer}}').value;
+                                    $.post('/add_task_for_manual_checking', {game: "penalty",
+                                                     task: "{{task['name']}}",
+                                                     result: new_result});
+                                    window.location.reload();
+                                }
+                                document.getElementById('{{submit}}').onclick = submit{{i}};
+                            </script>
                         {% endif %}
                     {% endif %}
                 </div>

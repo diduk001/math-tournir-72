@@ -489,7 +489,7 @@ def add_task():
                   "info": info,
                   "manual_check": manual_check,
                   "ans_picture": ans_picture}
-
+        print(params)
         r = requests.get(url, params=params)
         print(r.content)
         print(params)
@@ -630,9 +630,10 @@ def manual_checking(game, grade):
             task_result = task[4]
             print(que)
             print(task)
+            ans_picture = get_ans_picture(game, grade, task_name)
             return render_template("manual_checking.html", team=team, task_name=task_name,
                                    task_result=task_result,
-                                   game=game, grade=grade, not_task=False)
+                                   game=game, grade=grade, not_task=False, ans_picture=ans_picture)
         else:
             return render_template("manual_checking.html", not_task=True)
     elif request.method == "POST":
@@ -690,19 +691,18 @@ def manual_checking(game, grade):
                 table = 'penalty_tasks'
         # обновление бд
         print('hah')
-        if get_state(task['state']) in ['cf', 'cs']:
-            print('gg')
-            update_results(table, get_point(task['state']), team, grade)
-            update(table, key, task['state'], team, grade)
-            print('what')
-            con = sqlite3.connect(os.path.join("db", "manual_check.db"))
-            cur = con.cursor()
-            table = f'{game}_{grade}'
-            que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
-            print(que)
-            cur.execute(que).fetchone()
-            con.commit()
-            con.close()
+        print('gg')
+        update_results(table, get_point(task['state']), team, grade)
+        update(table, key, task['state'], team, grade)
+        print('what')
+        con = sqlite3.connect(os.path.join("db", "manual_check.db"))
+        cur = con.cursor()
+        table = f'{game}_{grade}'
+        que = f"DELETE FROM {table} WHERE (team = '{team}') AND (task = '{task['name']}')"
+        print(que)
+        cur.execute(que).fetchone()
+        con.commit()
+        con.close()
     return jsonify({'hah': 'hah'})
 
 
@@ -793,6 +793,18 @@ for grade in ['5', '6', '7']:
                                        'number': number_of_domino_task}
 
 
+def get_ans_picture(game, grade, task):
+    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
+    cur = con.cursor()
+    table = f'{game}_{grade}_info'
+    que = f"SELECT ans_picture FROM {table} WHERE task=?"
+    res = cur.execute(que, (task,)).fetchone()
+    if res is not None:
+        res = res[0]
+        res = bool(res)
+    con.close()
+    return res
+
 # Сдача задачи на ручную проверку
 @app.route("/add_task_for_manual_checking", methods=["POST"])
 def add_task_for_manual_checking():
@@ -802,7 +814,10 @@ def add_task_for_manual_checking():
     task = request.form['task']
     time = datetime.datetime.now()
     time = ' '.join(map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
-    result = request.form['result'][1:]
+    if get_ans_picture(game, grade, task):
+        result = request.form['result'][1:]
+    else:
+        result = request.form['result']
     con = sqlite3.connect(os.path.join("db", "manual_check.db"))
     cur = con.cursor()
     table = f'{game}_{grade}'
@@ -830,6 +845,7 @@ def add_task_for_manual_checking():
     # Вторая попытка сдачи задачи
     else:
         state = '0cs'
+    print(state)
     update(f'{game}_tasks', key, state, team, grade)
     return jsonify({'hah': 'hah'})
 
@@ -879,8 +895,8 @@ def domino():
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
                           'state': get_task_state('domino_tasks', key, team, grade),
-                          'manual_check': get_manual_check('domino', grade,
-                                                           domino_tasks_names_by_keys[key])}
+                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
+                          'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
@@ -894,16 +910,15 @@ def domino():
         # Формируем информацию о задачах, которые сейчас "на руках" у пользователя
         keys_of_picked_tasks = get_task_state('domino_tasks', 'picked_tasks', team, grade).split()
         picked_tasks = []
-        print(keys_of_picked_tasks)
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],
                  'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[
                             2:-1],
-                 'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
-        print("picked", picked_tasks)
-        print("tasks", tasks)
+                 'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
+                 'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
         # Если пользователь просто загрузил страницу игры то показывает её ему
+        print(picked_tasks)
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
@@ -930,7 +945,8 @@ def domino():
                     picked_tasks.append(
                         {'name': domino_tasks_names_by_keys[key],
                          'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
-                         'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
+                         'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
+                         'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] -= 1
                 # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:
@@ -969,9 +985,6 @@ def domino():
                     picked_tasks.remove(key)
                     keys_of_picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
-
-            print("picked", picked_tasks)
-            print("keys", keys_of_picked_tasks)
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
@@ -1037,7 +1050,9 @@ def penalty():
         for key in penalty_keys:
             tasks[key] = {'name': key[1:],
                           'state': get_task_state('penalty_tasks', key, team, grade),
-                          'manual_check': get_manual_check('penalty', grade, key[1:])}
+                          'manual_check': get_manual_check('penalty', grade, key[1:]),
+                          'ans_picture': get_ans_picture('penalty', grade, key[1:])
+                          }
         # Если пользователь сдал задачу
         if request.method == "POST":
             key = 't' + request.form.get('name')
