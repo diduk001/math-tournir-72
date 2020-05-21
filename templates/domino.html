@@ -142,11 +142,13 @@
                 {% set task = picked_tasks[j] %}
                 {% set i = number[j] %}
                 <div class="col">
-                    <img src={{task['content']}} width= height="50%">
+                    <a>{{task['name']}}</a>
+                    <br>
+                    <img src={{task['content']}} width="70%" height="30%">
                     {% if not task['manual_check'] %}
                         <form method="post">
                             <div class="form-group">
-                                <label for={{task['name']}}>{{task['name']}}</label>
+                                <a id={{task['name']}} hidden>{{task['name']}}</a>
                                 <input value={{task['name']}} id={{task['name']}} name="name" hidden>
                                 <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                             </div>
@@ -157,7 +159,6 @@
                         {% set back = "back_" + i %}
                         {% set clear = "clear_" + i %}
                         {% set submit = "submit_" + i %}
-                        <a id={{task['name']}}>{{task['name']}}</a>
                         <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
                         <div class="row">
                             <div class="col">

@@ -917,8 +917,7 @@ def domino():
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],
-                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[
-                            2:-1],
+                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key])),
                  'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
                  'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
         # Если пользователь просто загрузил страницу игры то показывает её ему
