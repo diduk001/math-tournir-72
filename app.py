@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import os.path
 from hashlib import md5
@@ -148,8 +149,10 @@ def get_task_state(table, task, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT {task} FROM {table + str(grade)} WHERE title = '{team}'"
-    result = cur.execute(que).fetchone()[0]
+    result = cur.execute(que).fetchone()
     con.close()
+    if not result:
+        return ""
     return result
 
 
@@ -475,7 +478,7 @@ def add_task():
     file = request.files.get('info')
 
     if file and allowed_file(file.filename):
-        filename = task + '.' + get_extension(file.filename)
+        filename = task + '-' + grade + '.' + get_extension(file.filename)
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
         info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         print(info)
@@ -743,10 +746,14 @@ def get_task(game, grade, task):
               "game_type": game,
               "grade": grade,
               "task": task}
-    print(params)
-    print(url)
-    return requests.get(url, params=params).content
-
+    r = requests.get(url, params=params)
+    d = json.loads(r.content)
+    try:
+        return d["info"]
+    except Exception as e:
+        print(d)
+        print(e)
+        return None
 
 # Всё что нужно для домино
 
@@ -920,8 +927,14 @@ def domino():
                     message = domino_messages['hand']
                 # Пользователь может взять задачу, выдаём её
                 elif get_state(tasks[key]['state']) in ['ff', 'ok']:
-                    picked_tasks.append(key)
                     keys_of_picked_tasks.append(key)
+                    picked_tasks.append(
+                        {'name': domino_tasks_names_by_keys[key],
+                         'content': str(
+                             get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[
+                                    2:-1],
+                         'manual_check': get_manual_check('domino', grade,
+                                                          domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] -= 1
                 # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:
@@ -961,8 +974,9 @@ def domino():
                     keys_of_picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
 
-            print("picked", picked_tasks)
-            print("keys", keys_of_picked_tasks)
+            print("post")
+            print("\tpicked", picked_tasks)
+            print("\tkeys", keys_of_picked_tasks)
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
@@ -977,16 +991,11 @@ penalty_keys = list(map(lambda x: 't' + str(x), range(1, 17)))
 penalty_info = {}
 penalty_start_time = datetime.datetime(2020, 4, 28, 19, 37, 0)
 penalty_end_time = datetime.datetime(2021, 4, 28, 20, 30, 0)
-for grade in ['5', '6', '7']:
-    penalty_info[grade] = {}
-    for key in penalty_keys:
-        penalty_info[grade][key] = {'name': key[1:], 'cost': 15}
 penalty_messages = {'accepted': 'Вы уже решили эту задачу',
                     'failed': 'У вас закончились попытки на сдачу этой задачи'}
 
 
 # Страница пенальти
-
 
 @app.route('/penalty', methods=["GET", "POST"])
 def penalty():
@@ -1009,6 +1018,12 @@ def penalty():
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
+
+    penalty_info[grade] = {}
+    for key in penalty_keys:
+        content = str(get_task("penalty", grade, key[1:]))[2:-1]
+        penalty_info[grade][key] = {'name': key[1:], 'cost': 15, "content": content}
+
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     if game_status('penalty', time) == 'not_started':
         start_time = f"{penalty_start_time.month} {penalty_start_time.day} {penalty_start_time.year} "

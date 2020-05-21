@@ -94,8 +94,10 @@ def get_task(game_type, grade, task):
     :return: str, Условие задачи
     """
     table = f"{game_type}_{grade}_info"
-    info = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)[2]
-    return info
+    info = db_interface.get_data(TASKS_INFO_DATABASE, table, "task", task)
+    if not info:
+        return jsonify({"error": "no task info"})
+    return jsonify({"info": info[2]})
 
 
 def add_task(game_type, grade, task, ans, info, manual_check, ans_picture):

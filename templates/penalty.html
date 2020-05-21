@@ -3,203 +3,216 @@
 {% block content %}
     {% if state == 'not started' %}
         <h1 id="timer"></h1>
-        <p hidden id="start_time">{{start_time}}</p>
+        <p hidden id="start_time">{{ start_time }}</p>
         <script>
-        // Set the date we're counting down to
-        let start_time = document.getElementById("start_time");
-        let time = start_time.innerHTML;
-        let countDownDate = new Date(time).getTime();
+            // Set the date we're counting down to
+            let start_time = document.getElementById("start_time");
+            let time = start_time.innerHTML;
+            let countDownDate = new Date(time).getTime();
 
-        // Update the count down every 1 second
-        let x = setInterval(function() {
+            // Update the count down every 1 second
+            let x = setInterval(function () {
 
-            // Get todays date and time
-            let now = new Date().getTime();
+                // Get todays date and time
+                let now = new Date().getTime();
 
-            // Find the distance between now an the count down date
-            let distance = countDownDate - now;
+                // Find the distance between now an the count down date
+                let distance = countDownDate - now;
 
-            // Time calculations for days, hours, minutes and seconds
-            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                // Time calculations for days, hours, minutes and seconds
+                let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Output the result in an element with id="demo"
-            let message = "Cоревнование начнётся через ";
-            if (days > 0){
-                message += days + " д ";
-            }
-            message += hours + " ч "
-            + minutes + " м " + seconds + " сек";
-            document.getElementById("timer").innerHTML = message;
-            // If the count down is over, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
-            }
-        }, 1000);
+                // Output the result in an element with id="demo"
+                let message = "Cоревнование начнётся через ";
+                if (days > 0) {
+                    message += days + " д ";
+                }
+                message += hours + " ч "
+                    + minutes + " м " + seconds + " сек";
+                document.getElementById("timer").innerHTML = message;
+                // If the count down is over, write some text
+                if (distance < 0) {
+                    clearInterval(x);
+                    document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
+                }
+            }, 1000);
         </script>
     {% elif state == 'ended' %}
         <h1>Соревнование уже закончилось</h1>
     {% else %}
         <h1 id="timer"></h1>
-        <p hidden id="end_time">{{end_time}}</p>
+        <p hidden id="end_time">{{ end_time }}</p>
         <script>
-        // Set the date we're counting down to
-        let end_time = document.getElementById("end_time");
-        let time = end_time.innerHTML;
-        let countDownDate = new Date(time).getTime();
+            // Set the date we're counting down to
+            let end_time = document.getElementById("end_time");
+            let time = end_time.innerHTML;
+            let countDownDate = new Date(time).getTime();
 
-        // Update the count down every 1 second
-        let x = setInterval(function() {
+            // Update the count down every 1 second
+            let x = setInterval(function () {
 
-            // Get todays date and time
-            let now = new Date().getTime();
+                // Get todays date and time
+                let now = new Date().getTime();
 
-            // Find the distance between now an the count down date
-            let distance = countDownDate - now;
+                // Find the distance between now an the count down date
+                let distance = countDownDate - now;
 
-            // Time calculations for days, hours, minutes and seconds
-            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            if (seconds < 10) seconds = "0" + seconds;
-            if (minutes < 10) minutes = "0" + minutes;
-            if (hours < 10) hours = "0" + hours;
-            // Output the result in an element with id="demo"
-            let message = "До конца соревнования ";
-            message += hours + ":"
-            + minutes + ":" + seconds;
-            document.getElementById("timer").innerHTML = message;
-            // If the count down is over, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerHTML = "Соревнование завершилось";
-            }
-        }, 1000);
+                // Time calculations for days, hours, minutes and seconds
+                let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                if (seconds < 10) seconds = "0" + seconds;
+                if (minutes < 10) minutes = "0" + minutes;
+                if (hours < 10) hours = "0" + hours;
+                // Output the result in an element with id="demo"
+                let message = "До конца соревнования ";
+                message += hours + ":"
+                    + minutes + ":" + seconds;
+                document.getElementById("timer").innerHTML = message;
+                // If the count down is over, write some text
+                if (distance < 0) {
+                    clearInterval(x);
+                    document.getElementById("timer").innerHTML = "Соревнование завершилось";
+                }
+            }, 1000);
         </script>
         {% for j in range(16) %}
             {% set i = keys[j][1:] %}
             {% set key = keys[j] %}
             {% set task = tasks[key] %}
-            {% set state = "penalty_task" + task['state'] %}
-                <div>
-                    <img src={{info[key]['content']}} width="100%" height="35%">
-                    {% if task['state'][-2:] in ['af', 'as'] %}
-                        <p class="accepted">Вы уже решили эту задачу</p>
-                    {% elif task['state'][-2:] in ['cf', 'cs'] %}
-                        <p>Задача проверяется</p>
-                    {% elif task['state'][-2:] == 'fs' %}
-                        <p class="failed">У вас закончились попытки на сдачу этой задачи</p>
-                    {% else %}
-                        {% if not task['manual_check'] %}
-                            <form method="post">
-                                <div class="form-group">
-                                    {% if task['state'][-2:] == 'ff' %}
-                                        <label class="first_try_failed" for="name">{{task['name']}}. Эта задача стоит
-                                            {{info[key]['cost']}} б. У Вас осталась одна попытка на сдачу этой задачи</label>
-                                    {% else %}
-                                        <label class={{state}} for="name">{{task['name']}}. Эта задача стоит
-                                        {{info[key]['cost']}} б.</label>
-                                    {% endif %}
-                                    <input value={{task['name']}} id="name" name="name" hidden>
-                                    <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                                </div>
-                                    {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
-                                        <button class="btn btn-primary" type="submit">Отправить</button>
-                                    {% endif %}
-                            </form>
-                        {% else %}
-                            {% set canvas = "canvas_" + i %}
-                            {% set back = "back_" + i %}
-                            {% set clear = "clear_" + i %}
-                            {% set submit = "submit_" + i %}
-                            <a id={{task['name']}}>{{task['name']}}</a>
-                            <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
-                            <div class="row">
-                                <div class="col">
-                                <button id={{back}} class="btn btn-primary">Отменить действие</button>
-                                </div>
-                                <div class="col">
-                                    <button id={{clear}} class="btn btn-primary">Очистить</button>
-                                </div>
-                                <div class="col">
-                                <button id={{submit}} class="btn btn-primary">Отправить</button>
-                                </div>
-                            </div>
-                            <script>
-                                var result = new Array();
-                                canvas = document.getElementById('{{canvas}}');
-                                writing = function(e) {
-                                  var x = e.offsetX==undefined?e.layerX:e.offsetX;
-                                  var y = e.offsetY==undefined?e.layerY:e.offsetY;
+            {% set state = "penalty_task" + "".join(task['state']) %}
+            <div>
+                {% if task['state'][-2:] == 'ff' %}
+                    <label class="first_try_failed" for="name">{{ task['name'] }}. Эта задача
+                        стоит
+                        {{ info[key]['cost'] }} б. У Вас осталась одна попытка на сдачу этой
+                        задачи</label>
+                {% else %}
+                    <label class={{ state }} for="name">{{ task['name'] }}. Эта задача стоит
+                        {{ info[key]['cost'] }} б.</label>
+                {% endif %}
+                <br>
+                <img src={{ info[key]['content'] }} width="50%" height="35%">
+                <br>
+                {% if task['state'][-2:] in ['af', 'as'] %}
+                    <p class="accepted">Вы уже решили эту задачу</p>
+                {% elif task['state'][-2:] in ['cf', 'cs'] %}
+                    <p>Задача проверяется</p>
+                {% elif task['state'][-2:] == 'fs' %}
+                    <p class="failed">У вас закончились попытки на сдачу этой задачи</p>
+                {% else %}
+                    {% if not task['manual_check'] %}
+                        <form method="post">
+                            <div class="form-group">
 
-                                  if (result.length % 2 == 0){
+                                <input value={{ task['name'] }} id="name" name="name" hidden>
+                                <input class="form-control" type="text"
+                                       placeholder="Введите Ваш ответ" name="answer">
+                            </div>
+                            {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
+                                <button class="btn btn-primary" type="submit">Отправить</button>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        {% set canvas = "canvas_" + i %}
+                        {% set back = "back_" + i %}
+                        {% set clear = "clear_" + i %}
+                        {% set submit = "submit_" + i %}
+                        <br>
+                        <canvas id={{ canvas }} height="300" width="400"
+                                style="border:2px solid black"></canvas>
+                        <div class="row">
+                            <div class="col">
+                                <button id={{ back }} class="btn btn-primary
+                                ">Отменить действие</button>
+                            </div>
+                            <div class="col">
+                                <button id={{ clear }} class="btn btn-primary
+                                ">Очистить</button>
+                            </div>
+                            <div class="col">
+                                <button id={{ submit }} class="btn btn-primary
+                                ">Отправить</button>
+                            </div>
+                        </div>
+                        <script>
+                            var result = [];
+                            canvas = document.getElementById('{{canvas}}');
+                            writing = function (e) {
+                                var x = e.offsetX == undefined ? e.layerX : e.offsetX;
+                                var y = e.offsetY == undefined ? e.layerY : e.offsetY;
+
+                                if (result.length % 2 == 0) {
                                     if (canvas.getContext) {
                                         var ctx = canvas.getContext('2d');
                                         ctx.fillRect(x - 1, y - 1, 3, 3);
                                         ctx.beginPath();
                                         ctx.moveTo(x, y);
                                     }
-                                  }
-                                  else{
-                                      if (canvas.getContext) {
+                                } else {
+                                    if (canvas.getContext) {
                                         var ctx = canvas.getContext('2d');
                                         ctx.lineTo(x, y);
                                         ctx.closePath();
                                         ctx.stroke();
                                         ctx.fillRect(x - 1, y - 1, 3, 3);
-                                      }
-                                  }
-                                  result.push([x, y]);
-                                }
-                                get_back = function() {
-                                  if (result.length > 0){
-                                      points = [result.pop(), result.pop()];
-                                      if (canvas.getContext) {
-                                            var ctx = canvas.getContext('2d');
-                                            ctx.fillStyle = '#FFFFFF';
-                                            ctx.strokeStyle = '#FFFFFF';
-                                            ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
-                                            ctx.beginPath();
-                                            ctx.moveTo(points[1][0], points[1][1]);
-                                            ctx.lineTo(points[0][0], points[0][1]);
-                                            ctx.closePath();
-                                            ctx.stroke();
-                                            ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
-                                            ctx.fillStyle = 'rgb(0,0,0)';
-                                            ctx.strokeStyle = 'rgb(0,0,0)';
-                                      }
-                                  }
-                                }
-                                clear = function(){
-                                  result = new Array();
-                                  if (canvas.getContext) {
-                                     var ctx = canvas.getContext('2d');
-                                     ctx.clearRect(0, 0, 400, 300);
-                                  }
-                                }
-                                submit = function(){
-                                    let new_result = "";
-                                    for (let i = 0; i < result.length; i++){
-                                        new_result += ' ' + result[i].join(';');
                                     }
-
-                                    $.post('/add_task_for_manual_checking', {game: "penalty",
-                                                     task: "{{task['name']}}",
-                                                     result: new_result});
-                                    window.location.reload();
                                 }
-                                document.getElementById('{{back}}').onclick = get_back;
-                                document.getElementById('{{canvas}}').onclick = writing;
-                                document.getElementById('{{clear}}').onclick = clear;
-                                document.getElementById('{{submit}}').onclick = submit;
-                                </script>
-                        {% endif %}
+                                result.push([x, y]);
+                            }
+                            get_back = function () {
+                                if (result.length > 0) {
+                                    points = [result.pop(), result.pop()];
+                                    if (canvas.getContext) {
+                                        var ctx = canvas.getContext('2d');
+                                        ctx.fillStyle = '#FFFFFF';
+                                        ctx.strokeStyle = '#FFFFFF';
+                                        ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
+                                        ctx.beginPath();
+                                        ctx.moveTo(points[1][0], points[1][1]);
+                                        ctx.lineTo(points[0][0], points[0][1]);
+                                        ctx.closePath();
+                                        ctx.stroke();
+                                        ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
+                                        ctx.fillStyle = 'rgb(0,0,0)';
+                                        ctx.strokeStyle = 'rgb(0,0,0)';
+                                    }
+                                }
+                            }
+                            clear = function () {
+                                result = [];
+                                if (canvas.getContext) {
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.clearRect(0, 0, 400, 300);
+                                }
+                            }
+                            submit = function () {
+                                let new_result = "";
+                                for (let i = 0; i < result.length; i++) {
+                                    new_result += ' ' + result[i].join(';');
+                                }
+
+                                $.post('/add_task_for_manual_checking', {
+                                    game: "penalty",
+                                    task: "{{task['name']}}",
+                                    result: new_result
+                                });
+                                window.location.reload();
+                            }
+                            document.getElementById('{{back}}').onclick = get_back;
+                            document.getElementById('{{canvas}}').onclick = writing;
+                            document.getElementById('{{clear}}').onclick = clear;
+                            document.getElementById('{{submit}}').onclick = submit;
+                        </script>
                     {% endif %}
-                </div>
+                {% endif %}
+                <br>
+                <br>
+            </div>
 
         {% endfor %}
     {% endif %}

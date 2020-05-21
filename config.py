@@ -149,7 +149,7 @@ class User:
 VALID_REQUEST_TYPES = ("check_task", "get_task", "add_task")
 VALID_GAME_TYPES = ("domino", "penalty")
 VALID_GRADES = (5, 6, 7)
-VALID_PENALTY_TASKS_NUMBERS = tuple([str(i) for i in range(1, 15)])
+VALID_PENALTY_TASKS_NUMBERS = tuple([str(i) for i in range(1, 17)])
 VALID_DOMINO_TASKS_NUMBERS = tuple([f"{i}-{j}" for i in range(7) for j in range(i, 7)])
 
 # Файл, содержащий формы для входа и регистрации
