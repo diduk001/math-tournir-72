@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import os.path
 from hashlib import md5
@@ -148,8 +149,10 @@ def get_task_state(table, task, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     que = f"SELECT {task} FROM {table + str(grade)} WHERE title = '{team}'"
-    result = cur.execute(que).fetchone()[0]
+    result = cur.execute(que).fetchone()
     con.close()
+    if not result:
+        return ""
     return result
 
 
@@ -475,7 +478,7 @@ def add_task():
     file = request.files.get('info')
 
     if file and allowed_file(file.filename):
-        filename = task + '.' + get_extension(file.filename)
+        filename = task + '-' + grade + '.' + get_extension(file.filename)
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
         info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         print(info)
@@ -489,7 +492,6 @@ def add_task():
                   "info": info,
                   "manual_check": manual_check,
                   "ans_picture": ans_picture}
-        print(params)
         r = requests.get(url, params=params)
         print(r.content)
         print(params)
@@ -628,8 +630,7 @@ def manual_checking(game, grade):
             team = task[1]
             task_name = task[2]
             task_result = task[4]
-            print(que)
-            print(task)
+
             ans_picture = get_ans_picture(game, grade, task_name)
             return render_template("manual_checking.html", team=team, task_name=task_name,
                                    task_result=task_result,
@@ -690,11 +691,8 @@ def manual_checking(game, grade):
                         task['state'] = '-2' + 'fs'
                 table = 'penalty_tasks'
         # обновление бд
-        print('hah')
-        print('gg')
         update_results(table, get_point(task['state']), team, grade)
         update(table, key, task['state'], team, grade)
-        print('what')
         con = sqlite3.connect(os.path.join("db", "manual_check.db"))
         cur = con.cursor()
         table = f'{game}_{grade}'
@@ -749,10 +747,14 @@ def get_task(game, grade, task):
               "game_type": game,
               "grade": grade,
               "task": task}
-    print(params)
-    print(url)
-    return requests.get(url, params=params).content
-
+    r = requests.get(url, params=params)
+    d = json.loads(r.content)
+    try:
+        return d["info"]
+    except Exception as e:
+        print(d)
+        print(e)
+        return None
 
 # Всё что нужно для домино
 
@@ -918,7 +920,6 @@ def domino():
                  'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
                  'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
         # Если пользователь просто загрузил страницу игры то показывает её ему
-        print(picked_tasks)
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
@@ -941,10 +942,11 @@ def domino():
                     message = domino_messages['hand']
                 # Пользователь может взять задачу, выдаём её
                 elif get_state(tasks[key]['state']) in ['ff', 'ok']:
+                    picked_tasks.append(key)
                     keys_of_picked_tasks.append(key)
                     picked_tasks.append(
                         {'name': domino_tasks_names_by_keys[key],
-                         'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
+                         'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[2:-1],
                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
                          'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] -= 1
@@ -1009,7 +1011,6 @@ penalty_messages = {'accepted': 'Вы уже решили эту задачу',
 
 # Страница пенальти
 
-
 @app.route('/penalty', methods=["GET", "POST"])
 def penalty():
     global penalty_info
@@ -1031,6 +1032,12 @@ def penalty():
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
+
+    penalty_info[grade] = {}
+    for key in penalty_keys:
+        content = str(get_task("penalty", grade, key[1:]))[2:-1]
+        penalty_info[grade][key] = {'name': key[1:], 'cost': 15, "content": content}
+
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     if game_status('penalty', time) == 'not_started':
         start_time = f"{penalty_start_time.month} {penalty_start_time.day} {penalty_start_time.year} "
