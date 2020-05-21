@@ -476,8 +476,8 @@ def add_task():
 
     if file and allowed_file(file.filename):
         filename = task + '.' + get_extension(file.filename)
-        file.save(os.path.abspath(os.path.join(app.config["UPLOAD_FOLDER"], filename)))
-        info = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        info = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         print(info)
         url = SERVER_URL + '/api'
         params = {"apikey": TOTALLY_RIGHT_APIKEY,
@@ -620,7 +620,8 @@ def manual_checking(game, grade):
             task_result = task[4]
             print(que)
             print(task)
-            return render_template("manual_checking.html",team=team, task_name=task_name, task_result=task_result,
+            return render_template("manual_checking.html", team=team, task_name=task_name,
+                                   task_result=task_result,
                                    game=game, grade=grade, not_task=False)
         else:
             return render_template("manual_checking.html", not_task=True)
@@ -687,6 +688,7 @@ def manual_checking(game, grade):
         con.commit()
         con.close()
     return jsonify({'hah': 'hah'})
+
 
 # Проверка задачи
 
@@ -815,6 +817,7 @@ def add_task_for_manual_checking():
     update(f'{game}_tasks', key, state, team, grade)
     return jsonify({'hah': 'hah'})
 
+
 # Страница домино
 
 
@@ -860,7 +863,8 @@ def domino():
         for key in domino_keys:
             tasks[key] = {'name': domino_info[grade][key]['name'],
                           'state': get_task_state('domino_tasks', key, team, grade),
-                          'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])}
+                          'manual_check': get_manual_check('domino', grade,
+                                                           domino_tasks_names_by_keys[key])}
         # Обновляем состояние задач, которые закончились/появились на "игровом столе"
         for key in domino_keys:
             if get_state(tasks[key]['state']) == 'ok' and domino_info[grade][key]['number'] == 0:
@@ -878,16 +882,18 @@ def domino():
         for key in keys_of_picked_tasks:
             picked_tasks.append(
                 {'name': domino_tasks_names_by_keys[key],
-                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[1:],
+                 'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key]))[
+                            2:-1],
                  'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key])})
-        print(picked_tasks)
-        print(tasks)
+        print("picked", picked_tasks)
+        print("tasks", tasks)
         # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys,
                                    picked_tasks=picked_tasks, message=False, info=domino_info[grade],
-                                   state=state, end_time=end_time, number_of_picked_tasks=len(picked_tasks))
+                                   state=state, end_time=end_time,
+                                   number_of_picked_tasks=len(picked_tasks))
         # Иначе пользователь сдал или взял "на руки" задачу
         elif request.method == "POST":
             # Сообщение об ошибке
@@ -905,6 +911,7 @@ def domino():
                 # Пользователь может взять задачу, выдаём её
                 elif get_state(tasks[key]['state']) in ['ff', 'ok']:
                     picked_tasks.append(key)
+                    keys_of_picked_tasks.append(key)
                     domino_info[grade][key]['number'] -= 1
                 # Пользователь не может взять задачу по другой причине, сообщаем причину
                 else:
@@ -943,6 +950,9 @@ def domino():
                     picked_tasks.remove(key)
                     keys_of_picked_tasks.remove(key)
                     domino_info[grade][key]['number'] += 1
+
+            print("picked", picked_tasks)
+            print("keys", keys_of_picked_tasks)
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
