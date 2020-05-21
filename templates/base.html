@@ -11,6 +11,24 @@
           crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css"/>
     <title>{{ title }}</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .wrapper {
+            min-height: 100%;
+            /* Равно высоте подвала, */
+            /* но с учётом margin-bottom у последнего дочернего элемента */
+            margin-bottom: -50px;
+        }
+
+        .footer,
+        .push {
+            height: 50px;
+        }
+    </style>
 </head>
 
 <body>
@@ -87,20 +105,23 @@
                 }
             </script>
             <br>
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <p class="alert alert-danger">{{ message }}</p>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
+            <div class="wrapper">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <p class="alert alert-danger">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+                <div class="push"></div>
+            </div>
         </main>
     </div>
 
     {# Самый нижний элемент, footer. Находится внизу страницы, но не выше нижнего края экрана #}
     {# Я долго парился чтобы это норм отображалось и написал этот комментарий по приколу #}
-    <footer id="footer">
+    <footer class="footer" id="footer">
         <br>
         <div class="container">
             <div class="row align-items-center">
