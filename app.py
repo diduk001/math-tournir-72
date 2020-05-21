@@ -1176,6 +1176,8 @@ def toggle_zero():
     else:
         RESULTS_SHOW_ZERO = 0
 
+    return "ok"
+
 
 # Показывать/Не показывать тестовых
 
@@ -1187,6 +1189,8 @@ def toggle_test():
         RESULTS_SHOW_TEST = 1
     else:
         RESULTS_SHOW_TEST = 0
+
+    return "ok"
 
 
 # Выход из аккаунта
