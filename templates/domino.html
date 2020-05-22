@@ -89,26 +89,27 @@
                         <td class="domino_col_task">
                             {% if task['state'][-2:] == 'ok' %}
                                 <div class="ok_task" title="Вы можете взять эту задачу">
-                                    <input class="btn btn-primary btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-primary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'fs' %}
                                 <div class="fs_task" title="У вас закончились попытки на сдачу этой задачи">
-                                    <input class="btn btn-danger btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-danger btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'ff' %}
                                 <div class="ff_task" title="У вас осталась 1 попытка на сдачу этой задачи">
-                                    <input class="btn btn-warning btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-warning btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'af' or task['state'][-2:] == 'as' %}
                                 <div class="accepted_task" title="Вы решили эту задачу">
-                                    <input class="btn btn-success btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-success btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] in ['cf', 'cs'] %}
                                 <div class="ab_task" title="Задача проверяется">
-                                    <input class="btn btn-secondary btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
+                                </div>
                             {% else %}
                                 <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
-                                    <input class="btn btn-secondary btn-lg btn-block" id={{key}} value={{task['name']}}>
+                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% endif %}
 
