@@ -115,7 +115,11 @@
                                     send{{i}} = function() {
                                         let task_answer = document.getElementById('{{answer}}').value;
                                         $.post('/penalty', {name: '{{task['name']}}', answer: task_answer});
-                                        location.reload(true);
+                                        setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                                     }
                                     document.getElementById('{{submit}}').onclick = send{{i}};
                                 </script>
@@ -197,7 +201,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "penalty",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload();
+                               setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{back}}').onclick = get_back{{i}};
                             document.getElementById('{{canvas}}').onclick = writing{{i}};
@@ -218,7 +226,11 @@
                                     $.post('/add_task_for_manual_checking', {game: "penalty",
                                                      task: "{{task['name']}}",
                                                      result: new_result});
-                                    window.location.reload();
+                                    setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                                 }
                                 document.getElementById('{{submit}}').onclick = submit{{i}};
                             </script>

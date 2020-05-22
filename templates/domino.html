@@ -116,7 +116,11 @@
                             <script>
                                 send{{key}} = function() {
                                     $.post('/domino', {'picked': '{{task['name']}}'});
-                                    location.reload(true);
+                                    setTimeout(
+                                      function()
+                                      {
+                                         location.reload(true);
+                                      }, 500);
                                 }
                                 document.getElementById('{{key}}').onclick = send{{key}};
                             </script>
@@ -148,7 +152,11 @@
                                     send{{i}} = function() {
                                         let task_answer = document.getElementById('{{answer}}').value;
                                         $.post('/domino', {name: '{{task['name']}}', answer: task_answer});
-                                        location.reload(true);
+                                        setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                                     }
                                     document.getElementById('{{submit}}').onclick = send{{i}};
                                 </script>
@@ -230,7 +238,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "domino",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload();
+                                setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{back}}').onclick = get_back{{i}};
                             document.getElementById('{{canvas}}').onclick = writing{{i}};
@@ -251,7 +263,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "domino",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload(true);
+                                setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{submit}}').onclick = submit{{i}};
                         </script>
