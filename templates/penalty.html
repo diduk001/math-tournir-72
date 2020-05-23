@@ -85,8 +85,11 @@
             {% set key = keys[j] %}
             {% set task = tasks[key] %}
             {% set state = "penalty_task" + task['state'] %}
+            {% set answer = "answer" + i %}
+            {% set name = "name" + i %}
+            {% set submit = "submit_" + i %}
                 <div>
-                    <img src={{info[key]['content']}} width="100%" height="35%">
+                    <img src={{info[key]['content']}} width="800px" height="400px">
                     {% if task['state'][-2:] in ['af', 'as'] %}
                         <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
                     {% elif task['state'][-2:] in ['cf', 'cs'] %}
@@ -95,7 +98,6 @@
                         <p class="failed">{{task['name']}}. У вас закончились попытки на сдачу этой задачи</p>
                     {% else %}
                         {% if not task['manual_check'] %}
-                            <form method="post">
                                 <div class="form-group">
                                     {% if task['state'][-2:] == 'ff' %}
                                         <label class="first_try_failed" for="name">{{task['name']}}. Эта задача стоит
@@ -104,18 +106,27 @@
                                         <label class={{state}} for="name">{{task['name']}}. Эта задача стоит
                                         {{info[key]['cost']}} б.</label>
                                     {% endif %}
-                                    <input value={{task['name']}} id="name" name="name" hidden>
-                                    <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                    <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                                 </div>
                                     {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
-                                        <button class="btn btn-primary" type="submit">Отправить</button>
+                                        <button id={{submit}} class="btn btn-primary" type="submit">Отправить</button>
                                     {% endif %}
-                            </form>
+                                <script>
+                                    send{{i}} = function() {
+                                        let task_answer = document.getElementById('{{answer}}').value;
+                                        $.post('/penalty', {name: '{{task['name']}}', answer: task_answer});
+                                        setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
+                                    }
+                                    document.getElementById('{{submit}}').onclick = send{{i}};
+                                </script>
                         {% elif task['manual_check'] and task['ans_picture'] %}
                             {% set canvas = "canvas_" + i %}
                             {% set back = "back_" + i %}
                             {% set clear = "clear_" + i %}
-                            {% set submit = "submit_" + i %}
                             <a id={{task['name']}}>{{task['name']}}</a>
                             <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
                             <div class="row">
@@ -190,7 +201,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "penalty",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload();
+                               setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{back}}').onclick = get_back{{i}};
                             document.getElementById('{{canvas}}').onclick = writing{{i}};
@@ -211,7 +226,11 @@
                                     $.post('/add_task_for_manual_checking', {game: "penalty",
                                                      task: "{{task['name']}}",
                                                      result: new_result});
-                                    window.location.reload();
+                                    setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                                 }
                                 document.getElementById('{{submit}}').onclick = submit{{i}};
                             </script>

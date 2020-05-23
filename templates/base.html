@@ -11,24 +11,6 @@
           crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css"/>
     <title>{{ title }}</title>
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-
-        .wrapper {
-            min-height: 100%;
-            /* Равно высоте подвала, */
-            /* но с учётом margin-bottom у последнего дочернего элемента */
-            margin-bottom: -50px;
-        }
-
-        .footer,
-        .push {
-            height: 50px;
-        }
-    </style>
 </head>
 
 <body>
@@ -105,48 +87,21 @@
                 }
             </script>
             <br>
-            <div class="wrapper">
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <p class="alert alert-danger">{{ message }}</p>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="alert alert-danger">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div id="content">
                 {% block content %}{% endblock %}
-                <div class="push"></div>
             </div>
         </main>
     </div>
 
     {# Самый нижний элемент, footer. Находится внизу страницы, но не выше нижнего края экрана #}
     {# Я долго парился чтобы это норм отображалось и написал этот комментарий по приколу #}
-    <footer class="footer" id="footer">
-        <br>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col">
-                    ГАОУ ТО "ФМШ", 2020
-                </div>
-
-                <div class="col">
-                    <a href="https://www.google.com/maps/place/ул.+30+лет+Победы,+102,+Тюмень,+Тюменская+обл.,+625051/@57.1161719,65.5862042,17z/data=!3m1!4b1!4m5!3m4!1s0x43bbe0de6f18b76f:0xbbb0b63150a73e69!8m2!3d57.116169!4d65.5883929?hl=ru">
-                        Тюмень, 30 лет Победы, 102
-                    </a>
-                </div>
-
-                <div class="col">
-                    <a href="mailto:fmschool72@mail.ru?subject=ТЮМ 72" target="_blank">
-                        fmschool72@mail.ru
-                    </a>
-                </div>
-
-                <div class="col">
-                    <a href="https://fmschool72.ru/" target="_blank">fmschool72.ru</a>
-                </div>
-            </div>
-        </div>
-    </footer>
 </div>
 
 {# Подключение скриптов Bootstrap #}

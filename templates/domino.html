@@ -89,45 +89,41 @@
                         <td class="domino_col_task">
                             {% if task['state'][-2:] == 'ok' %}
                                 <div class="ok_task" title="Вы можете взять эту задачу">
-                                    <form method="post">
-                                        <input class="btn btn-primary btn-lg btn-block" id="picked" name="picked" type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-primary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'fs' %}
                                 <div class="fs_task" title="У вас закончились попытки на сдачу этой задачи">
-                                    <form method="post">
-                                        <input class="btn btn-danger btn-lg btn-block" id="picked" name="picked"
-                                               type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-danger btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'ff' %}
                                 <div class="ff_task" title="У вас осталась 1 попытка на сдачу этой задачи">
-                                    <form method="post">
-                                        <input class="btn btn-warning btn-lg btn-block" id="picked" name="picked"
-                                               type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-warning btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] == 'af' or task['state'][-2:] == 'as' %}
                                 <div class="accepted_task" title="Вы решили эту задачу">
-                                    <form method="post">
-                                        <input class="btn btn-success btn-lg btn-block" id="picked" name="picked"
-                                               type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-success btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% elif task['state'][-2:] in ['cf', 'cs'] %}
                                 <div class="ab_task" title="Задача проверяется">
-                                    <form method="post">
-                                        <input class="btn btn-secondary btn-lg btn-block" id="picked" name="picked"
-                                               type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
+                                </div>
                             {% else %}
                                 <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
-                                    <form method="post">
-                                        <input class="btn btn-secondary btn-lg btn-block" id="picked" name="picked"
-                                               type="submit" value={{task['name']}}>
-                                    </form>
+                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
                                 </div>
                             {% endif %}
+
+                            <script>
+                                send{{key}} = function() {
+                                    $.post('/domino', {'picked': '{{task['name']}}'});
+                                    setTimeout(
+                                      function()
+                                      {
+                                         location.reload(true);
+                                      }, 500);
+                                }
+                                document.getElementById('{{key}}').onclick = send{{key}};
+                            </script>
                         </td>
                     {% endfor %}
                 </tr>
@@ -141,19 +137,29 @@
             {% for j in range(number_of_picked_tasks) %}
                 {% set task = picked_tasks[j] %}
                 {% set i = number[j] %}
+                {% set submit = "submit" + i %}
+                {% set answer = 'answer' + i %}
                 <div class="col">
                     <a>{{task['name']}}</a>
                     <br>
-                    <img src={{task['content']}} width="70%" height="30%">
+                    <img src={{task['content']}} width="800px" height="400px">
                     {% if not task['manual_check'] %}
-                        <form method="post">
                             <div class="form-group">
-                                <a id={{task['name']}} hidden>{{task['name']}}</a>
-                                <input value={{task['name']}} id={{task['name']}} name="name" hidden>
-                                <input class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                             </div>
-                            <button class="btn btn-primary" type="submit">Отправить</button>
-                        </form>
+                            <button id={{submit}} class="btn btn-primary" type="submit">Отправить</button>
+                            <script>
+                                    send{{i}} = function() {
+                                        let task_answer = document.getElementById('{{answer}}').value;
+                                        $.post('/domino', {name: '{{task['name']}}', answer: task_answer});
+                                        setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
+                                    }
+                                    document.getElementById('{{submit}}').onclick = send{{i}};
+                                </script>
                     {% elif task['manual_check'] and task['ans_picture'] %}
                         {% set canvas = "canvas_" + i %}
                         {% set back = "back_" + i %}
@@ -232,7 +238,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "domino",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload();
+                                setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{back}}').onclick = get_back{{i}};
                             document.getElementById('{{canvas}}').onclick = writing{{i}};
@@ -253,7 +263,11 @@
                                 $.post('/add_task_for_manual_checking', {game: "domino",
                                                  task: "{{task['name']}}",
                                                  result: new_result});
-                                window.location.reload();
+                                setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
                             }
                             document.getElementById('{{submit}}').onclick = submit{{i}};
                         </script>
