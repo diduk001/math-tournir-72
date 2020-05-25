@@ -222,7 +222,7 @@ def update_last_time(team, time):
 # Изменяет состояние честности команды
 
 def update_cheater_status(team, game):
-    con = sqlite3.connect(os.path.join("db", "tasks.db"))
+    con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
     que = f'UPDATE about_teams\n'
     if game == 'domino':
@@ -513,13 +513,20 @@ def start_end_time():
         game_type = request.form.get("game_type")
         time_start = request.form.get("time_start")
         time_end = request.form.get("time_end")
-        time_format = "%d.%m.%Y %H:%M:%S"
     except Exception as e:
         return "Исключение: " + str(e)
 
     try:
-        datetime_start = datetime.datetime.strptime(time_start, time_format)
-        datetime_end = datetime.datetime.strptime(time_end, time_format)
+        date, time = time_start.split(' ')[0], time_start.split(' ')[1]
+        days, months, years  = int(date.split('.')[0]), int(date.split('.')[1]), int(date.split('.')[2])
+        hours, minutes, seconds = int(time.split(':')[0]), int(time.split(':')[1]), int(time.split(':')[2])
+        datetime_start = datetime.datetime(year=years, month=months, day=days, hour=hours,
+                                           minute=minutes, second=seconds)
+        date, time = time_end.split(' ')[0], time_end.split(' ')[1]
+        days, months, years = int(date.split('.')[0]), int(date.split('.')[1]), int(date.split('.')[2])
+        hours, minutes, seconds = int(time.split(':')[0]), int(time.split(':')[1]), int(time.split(':')[2])
+        datetime_end = datetime.datetime(year=years, month=months, day=days, hour=hours,
+                                           minute=minutes, second=seconds)
     except ValueError:
         return """Время не соответствует формату <a href="/admin"> 
                   вернуться обратно</a>"""
