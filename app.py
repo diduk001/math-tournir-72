@@ -110,6 +110,8 @@ def profile():
 # Получить место команды в игре
 
 def get_place(team, game, grade):
+    if "[TEST]" in team:
+        return -1
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
     table = f"{game}_tasks{grade}"
@@ -1177,7 +1179,7 @@ def toggle_zero():
     else:
         RESULTS_SHOW_ZERO = 0
 
-    return "ok"
+    return "ok. now is " + str(RESULTS_SHOW_ZERO)
 
 
 # Показывать/Не показывать тестовых
@@ -1191,7 +1193,7 @@ def toggle_test():
     else:
         RESULTS_SHOW_TEST = 0
 
-    return "ok"
+    return "ok. now is " + str(RESULTS_SHOW_TEST)
 
 
 # Выход из аккаунта
