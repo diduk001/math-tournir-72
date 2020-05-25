@@ -1000,6 +1000,7 @@ def domino():
                     domino_info[grade][key]['number'] += 1
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
+            print(message)
             return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
                                    keys=domino_keys, picked_tasks=picked_tasks, message=message,
                                    info=domino_info[grade], state=state, end_time=end_time,
@@ -1015,7 +1016,8 @@ penalty_end_time = datetime.datetime(2021, 4, 28, 20, 30, 0)
 for grade in ['5', '6', '7']:
     penalty_info[grade] = {}
     for key in penalty_keys:
-        penalty_info[grade][key] = {'name': key[1:], 'cost': 15}
+        content = str(get_task("penalty", grade, key[1:]))
+        penalty_info[grade][key] = {'name': key[1:], 'cost': 15, "content": content}
 penalty_messages = {'accepted': 'Вы уже решили эту задачу',
                     'failed': 'У вас закончились попытки на сдачу этой задачи'}
 
@@ -1043,11 +1045,6 @@ def penalty():
     team = current_user.team_name
     grade = str(current_user.grade)
     time = datetime.datetime.now()
-
-    penalty_info[grade] = {}
-    for key in penalty_keys:
-        content = str(get_task("penalty", grade, key[1:]))
-        penalty_info[grade][key] = {'name': key[1:], 'cost': 15, "content": content}
 
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     if game_status('penalty', time) == 'not_started':
