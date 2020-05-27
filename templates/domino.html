@@ -3,19 +3,13 @@
 {% block content %}
     {% if state == 'not started' %}
         <h1 id="timer"></h1>
-        <p hidden id="start_time">{{start_time}}</p>
         <script>
         // Set the date we're counting down to
-        let start_time = document.getElementById("start_time");
-        let time = start_time.innerHTML;
-        let countDownDate = new Date(time).getTime();
-
+        let countDownDate = new Date('{{start_time}}').getTime();
+        // Get todays date and time
+        let now = new Date('{{now_time}}').getTime();
         // Update the count down every 1 second
         let x = setInterval(function() {
-
-            // Get todays date and time
-            let now = new Date().getTime();
-
             // Find the distance between now an the count down date
             let distance = countDownDate - now;
 
@@ -38,24 +32,21 @@
                 clearInterval(x);
                 document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
             }
+            now += 1000;
         }, 1000);
         </script>
     {% elif state == 'ended' %}
         <h1>Соревнование уже закончилось</h1>
     {% else %}
         <h1 id="timer"></h1>
-        <p hidden id="end_time">{{end_time}}</p>
         <script>
         // Set the date we're counting down to
-        let end_time = document.getElementById("end_time");
-        let time = end_time.innerHTML;
-        let countDownDate = new Date(time).getTime();
-
+        let countDownDate = new Date('{{end_time}}').getTime();
+        // Get todays date and time
+        let now = new Date('{{now_time}}').getTime();
         // Update the count down every 1 second
         let x = setInterval(function() {
 
-            // Get todays date and time
-            let now = new Date().getTime();
 
             // Find the distance between now an the count down date
             let distance = countDownDate - now;
@@ -78,6 +69,7 @@
                 clearInterval(x);
                 document.getElementById("timer").innerHTML = "Соревнование завершилось";
             }
+            now += 1000;
         }, 1000);
         </script>
         <table class="domino_table_task">
@@ -142,7 +134,7 @@
                 <div class="col">
                     <a>{{task['name']}}</a>
                     <br>
-                    <img src={{task['content']}} width="800px" height="400px">
+                    <img src={{task['content']}}>
                     {% if not task['manual_check'] %}
                             <div class="form-group">
                                 <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
@@ -252,7 +244,6 @@
                     {% elif task['manual_check'] %}
                         {% set answer = "answer_" + i %}
                         {% set submit = "submit_" + i %}
-                        <label for={{task['name']}}>{{task['name']}}</label>
                         <input value={{task['name']}} id={{task['name']}} name="name" hidden>
                         <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ"
                                name="answer">

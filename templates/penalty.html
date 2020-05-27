@@ -3,19 +3,13 @@
 {% block content %}
     {% if state == 'not started' %}
         <h1 id="timer"></h1>
-        <p hidden id="start_time">{{ start_time }}</p>
         <script>
             // Set the date we're counting down to
-            let start_time = document.getElementById("start_time");
-            let time = start_time.innerHTML;
-            let countDownDate = new Date(time).getTime();
-
+            let countDownDate = new Date('{{start_time}}').getTime();
+            // Get todays date and time
+            let now = new Date('{{now_time}}').getTime();
             // Update the count down every 1 second
-            let x = setInterval(function () {
-
-                // Get todays date and time
-                let now = new Date().getTime();
-
+            let x = setInterval(function() {
                 // Find the distance between now an the count down date
                 let distance = countDownDate - now;
 
@@ -38,6 +32,7 @@
                     clearInterval(x);
                     document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
                 }
+                now += 1000;
             }, 1000);
         </script>
     {% elif state == 'ended' %}
@@ -47,15 +42,12 @@
         <p hidden id="end_time">{{ end_time }}</p>
         <script>
             // Set the date we're counting down to
-            let end_time = document.getElementById("end_time");
-            let time = end_time.innerHTML;
-            let countDownDate = new Date(time).getTime();
-
+            let countDownDate = new Date('{{end_time}}').getTime();
+            // Get todays date and time
+            let now = new Date('{{now_time}}').getTime();
             // Update the count down every 1 second
-            let x = setInterval(function () {
+            let x = setInterval(function() {
 
-                // Get todays date and time
-                let now = new Date().getTime();
 
                 // Find the distance between now an the count down date
                 let distance = countDownDate - now;
@@ -71,13 +63,14 @@
                 // Output the result in an element with id="demo"
                 let message = "До конца соревнования ";
                 message += hours + ":"
-                    + minutes + ":" + seconds;
+                + minutes + ":" + seconds;
                 document.getElementById("timer").innerHTML = message;
                 // If the count down is over, write some text
                 if (distance < 0) {
                     clearInterval(x);
                     document.getElementById("timer").innerHTML = "Соревнование завершилось";
                 }
+                now += 1000;
             }, 1000);
         </script>
         {% for j in range(16) %}
@@ -89,7 +82,8 @@
             {% set name = "name" + i %}
             {% set submit = "submit_" + i %}
                 <div>
-                    <img src={{info[key]['content']}} width="800px" height="400px">
+                    <img src={{info[key]['content']}}>
+                    <br>
                     {% if task['state'][-2:] in ['af', 'as'] %}
                         <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
                     {% elif task['state'][-2:] in ['cf', 'cs'] %}
@@ -100,8 +94,8 @@
                         {% if not task['manual_check'] %}
                                 <div class="form-group">
                                     {% if task['state'][-2:] == 'ff' %}
-                                        <label class="first_try_failed" for="name">{{task['name']}}. Эта задача стоит
-                                            {{info[key]['cost']}} б. У Вас осталась одна попытка на сдачу этой задачи</label>
+                                        <label class="first_try_failed" for="name">{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                            этой задачи. Эта задача стоит для Вас 3 б.</label>
                                     {% else %}
                                         <label class={{state}} for="name">{{task['name']}}. Эта задача стоит
                                         {{info[key]['cost']}} б.</label>
@@ -127,7 +121,14 @@
                             {% set canvas = "canvas_" + i %}
                             {% set back = "back_" + i %}
                             {% set clear = "clear_" + i %}
-                            <a id={{task['name']}}>{{task['name']}}</a>
+                            {% if task['state'][-2:] == 'ff' %}
+                                <label class="first_try_failed" for={{canvas}}>{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                    этой задачи. Эта задача стоит для Вас 3 б.</label>
+                            {% else %}
+                                <label class={{state}} for={{canvas}}>{{task['name']}}. Эта задача стоит
+                                    {{info[key]['cost']}} б.</label>
+                            {% endif %}
+                            <br>
                             <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
                             <div class="row">
                                 <div class="col">
@@ -215,7 +216,13 @@
                         {% elif task['manual_check'] %}
                             {% set answer = "answer_" + i %}
                             {% set submit = "submit_" + i %}
-                            <label for={{task['name']}}>{{task['name']}}</label>
+                            {% if task['state'][-2:] == 'ff' %}
+                                <label class="first_try_failed" for={{task['name']}}>{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                    этой задачи. Эта задача стоит для Вас 3 б.</label>
+                            {% else %}
+                                <label class={{state}} for={{task['name']}}>{{task['name']}}. Эта задача стоит
+                                    {{info[key]['cost']}} б.</label>
+                            {% endif %}
                             <input value={{task['name']}} id={{task['name']}} name="name" hidden>
                             <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ"
                                    name="answer">

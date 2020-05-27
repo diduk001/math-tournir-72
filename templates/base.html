@@ -11,6 +11,7 @@
           crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css"/>
     <title>{{ title }}</title>
+    <script src="static/ifvisible/docs/ifvisible.js"></script>
 </head>
 
 <body>
@@ -19,7 +20,7 @@
 
         {# Верхнее меню #}
 
-        <header>
+        <header id="header">
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                 <a class="navbar-brand" href="/">ТЮМ 72</a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse"
@@ -46,8 +47,8 @@
                                 Результаты
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="/results/domino/5">Домино</a>
-                                <a class="dropdown-item" href="/results/penalty/5">Пенальти</a>
+                                <a class="dropdown-item" href="/results/domino/{{grade}}">Домино</a>
+                                <a class="dropdown-item" href="/results/penalty/{{grade}}">Пенальти</a>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -69,7 +70,7 @@
             </nav>
         </header>
 
-        <main role="main" class="container">
+        <main id='main' role="main" class="container">
             <script>
                 let online = true;
                 let a = 0;
@@ -78,13 +79,14 @@
                     if (online) {
                         $.post('/anti_cheat', {time: "hah"});
                     }
-                }, 500000);
-                window.onfocus = function () {
-                    online = true;
-                }
-                window.onblur = function () {
+                }, 5000);
+                ifvisible.on("blur", function() {
                     online = false;
-                }
+                });
+
+                ifvisible.on("focus", function() {
+                    online = true;
+                });
             </script>
             <br>
             {% with messages = get_flashed_messages() %}

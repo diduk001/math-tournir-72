@@ -12,12 +12,19 @@
         <script>
             let result = "{{task_result}}";
             if (result == ''){
-                $.post("/manual_checking/{{game}}/{{grade}}", {team: '{{team}}',
+                $.post("/cdb63e6a1a08307c6c44354aa37972b7/{{game}}/{{grade}}", {team: '{{team}}',
                                                            task: '{{task_name}}',
                                                            result: false});
-                window.location.reload();
+                setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
             }
             result = result.split(" ");
+            if (result.length % 2 == 1){
+                result.pop()
+            }
             let canvas = document.getElementById("canvas");
             for (var i = 0; i < result.length; i+= 2){
               let f_p = result[i].split(';');
@@ -37,13 +44,21 @@
             $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
                                                            task: '{{task_name}}',
                                                            result: true});
-            window.location.reload();
+            setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
             }
             wrong_answer = function(){
             $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
                                                            task: '{{task_name}}',
                                                            result: false});
-            window.location.reload();
+            setTimeout(
+                                          function()
+                                          {
+                                             location.reload(true);
+                                        }, 500);
             }
             document.getElementById('accepted').onclick = accepted;
             document.getElementById('wrong_answer').onclick = wrong_answer;
@@ -55,14 +70,24 @@
         <button class="btn btn-danger" id="wrong_answer">Неверно</button>
         <script>
             accepted = function(){
-            $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                           task: '{{task_name}}',
-                                                           result: true});
+                $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
+                                                               task: '{{task_name}}',
+                                                               result: true});
+                setTimeout(
+                      function()
+                      {
+                         location.reload(true);
+                      }, 500);
             }
             wrong_answer = function(){
-            $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                           task: '{{task_name}}',
-                                                           result: false});
+                $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
+                                                               task: '{{task_name}}',
+                                                               result: false});
+                setTimeout(
+                      function()
+                      {
+                         location.reload(true);
+                      }, 500);
             }
             document.getElementById('accepted').onclick = accepted;
             document.getElementById('wrong_answer').onclick = wrong_answer;
