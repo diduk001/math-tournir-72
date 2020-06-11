@@ -4,7 +4,7 @@
 {% if not_task %}
     <h3>На данный момент нет непроверенных задач</h3>
 {% else %}
-    <p>{{task_name}}</p>
+    <p>{{task_name}}, команда: "{{team}}"</p>
     {% if ans_picture %}
         <canvas id="canvas" height="300" width="400" style = "border:2px solid black"></canvas>
         <button class="btn btn-success" id='accepted'>Верно</button>

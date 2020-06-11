@@ -2,7 +2,14 @@
 
 {% block content %}
     <h1>Таблица результатов {{ title }} по {{ grade }} классу</h1>
-
+    <br>
+    {% if title == "Домино" %}
+        <a href="/static/results/domino_res.xlsx" download>Скачать результаты Домино по всем классам</a>
+        <br>
+    {% else %}
+        <a href="/static/results/penalty_res.xlsx" download>Скачать результаты Пенальти по всем классам</a>
+        <br>
+    {% endif %}
     <div class="container">
         <div class="row">
             {% for grd in ['5', '6', '7'] %}
@@ -28,6 +35,7 @@
                 <th width="10%"> {{ info[grade][task]['name'] }} </th>
             {% endfor %}
             <th> Сумма</th>
+            <th>Количество решённых задач</th>
         </tr>
         </thead>
         {% for place in range(team_num) %}
@@ -58,6 +66,7 @@
                     {% endif %}
                 {% endfor %}
                 <td width="30px"> {{ results[place][-1] }} </td>
+                <td width="30px"> {{numbers_of_solved[place]}} </td>
             </tr>
         {% endfor %}
     </table>

@@ -47,23 +47,18 @@
                                 Результаты
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="/results/domino/{{grade}}">Домино</a>
-                                <a class="dropdown-item" href="/results/penalty/{{grade}}">Пенальти</a>
+                                <a class="dropdown-item" href="/results/domino/5">Домино</a>
+                                <a class="dropdown-item" href="/results/penalty/5">Пенальти</a>
+                                <a class="dropdown-item" href="/static/results/results.xlsx" download>Общие результаты</a>
                             </div>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/profile">Профиль/Вход</a>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
-                               role="button" data-toggle="dropdown" aria-haspopup="true"
-                               aria-expanded="false">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/sign_up/player">
                                 Регистрация
                             </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="/sign_up/player">Один участник</a>
-                                <a class="dropdown-item" href="/sign_up/team">4 участника</a>
-                            </div>
                         </li>
                     </ul>
                 </div>
@@ -71,23 +66,6 @@
         </header>
 
         <main id='main' role="main" class="container">
-            <script>
-                let online = true;
-                let a = 0;
-                setInterval(function () {
-                    let now = new Date().getTime();
-                    if (online) {
-                        $.post('/anti_cheat', {time: "hah"});
-                    }
-                }, 5000);
-                ifvisible.on("blur", function() {
-                    online = false;
-                });
-
-                ifvisible.on("focus", function() {
-                    online = true;
-                });
-            </script>
             <br>
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
