@@ -1,149 +1,39 @@
 # URL для совершения запросов
+
 SERVER_URL = "http://0.0.0.0:80"
 
+from data.users_login_data import User
 # Файл, содержащий класс пользователя
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# Класс с данными о команде
-
-class User:
-    # Инициализация
-    # team_name - название команды
-    # member1, member2, member3, member4 - кортежи или список из Имени, Фамилия, Школы
-    # grade - класс участников
-    # ВАЖНО!! hashed_password здесь не указан, так как задаётся отдельным методом
-    def __init__(self, login, email, team_name, grade, member1, member2, member3, member4):
-        self.login = login
-        check_type("login", login, str)
-
-        self.id = int
-        self.hashed_password = str
-
-        self.email = email
-        check_type("login", login, str)
-        self.hashed_email = generate_password_hash(email)
-
-        self.is_approved = False
-        self.is_banned = False
-
-        self.team_name = team_name
-        check_type("team name", team_name, str)
-
-        self.grade = grade
-        check_type("grade", grade, int)
-
-        self.member1 = member1
-        check_type("member1", member1, tuple)
-
-        self.member2 = member2
-        check_type("member2", member2, tuple)
-
-        self.member3 = member3
-        check_type("member3", member3, tuple)
-
-        self.member4 = member4
-        check_type("member4", member4, tuple)
-
-        try:
-            self.name1, self.surname1, self.school1 = member1
-        except ValueError:
-            raise ValueError(f"member1 tuple {member1} length is {len(member1)}, but must be len 3")
-
-        try:
-            self.name2, self.surname2, self.school2 = member2
-        except ValueError:
-            raise ValueError(f"member3 tuple {member2} length is {len(member2)}, but must be len 3")
-
-        try:
-            self.name3, self.surname3, self.school3 = member3
-        except ValueError:
-            raise ValueError(f"member2 tuple {member3} length is {len(member3)}, but must be len 3")
-
-        try:
-            self.name4, self.surname4, self.school4 = member4
-        except ValueError:
-            raise ValueError(f"member4 tuple {member4} length is {len(member4)}, but must be len 3")
-
-    # метод, возвращающий имена участников
-    # surname - параметр, отвечающий за то, есть ли фамилия
-    def get_names(self, surname_flag=True):
-        name_surname = ((self.name1, self.surname1),
-                        (self.name2, self.surname2),
-                        (self.name3, self.surname3),
-                        (self.name4, self.surname4))
-        ans = list()
-        for name, surname in name_surname:
-            if name is None or surname is None:
-                continue
-
-            if surname_flag:
-                ans.append(' '.join([name, surname]))
-            else:
-                ans.append(name)
-        return tuple(ans)
-
-    def set_password(self, password):
-        check_type("password", password, str)
-        self.hashed_password = generate_password_hash(password)
-
-    def check_password(self, password):
-        check_type("password", password, str)
-        return check_password_hash(self.hashed_password, password)
-
-    def __str__(self):
-        fields = [f"login {self.login}",
-                  f"email {self.email}",
-                  f"team_name {self.team_name}",
-                  f"grade {str(self.grade)}",
-                  f"is banned {self.is_banned}",
-                  f"is approved {self.is_approved}",
-                  f"Member 1 {self.member1}",
-                  f"Member 2 {self.member2}",
-                  f"Member 3 {self.member3}",
-                  f"Member 4 {self.member4}"]
-
-        try:
-            fields.insert(1, f"hashed password " + self.hashed_password)
-        except AttributeError:
-            pass
-        try:
-            fields.insert(0, "id " + str(self.id))
-        except AttributeError:
-            pass
-
-        return " | ".join(fields)
-
-    def __bool__(self):
-        return True
-
-    def __dict__(self):
-        return {"login": self.login,
-                "team_name": self.team_name,
-                "grade": self.grade,
-
-                "is_banned": self.is_banned,
-                "is_approved": self.is_approved,
-
-                "member1_name": self.member1[0],
-                "member1_surname": self.member1[1],
-                "member1_school": self.member1[2],
-
-                "member2_name": self.member2[0],
-                "member2_surname": self.member2[1],
-                "member2_school": self.member2[2],
-
-                "member3_name": self.member3[0],
-                "member3_surname": self.member3[1],
-                "member3_school": self.member3[2],
-
-                "member4_name": self.member4[0],
-                "member4_surname": self.member4[1],
-                "member4_school": self.member4[2]
-                }
+# Создание данных о пользователе
+def create_user(login, name, surname, email, grade, school, teacher, info):
+    user = User()
+    user.login = login
+    user.name = name
+    user.surname = surname
+    user.email = email
+    user.grade = grade
+    user.school = school
+    user.teacher = teacher
+    user.info = info
+    return user
 
 
+# Словарь с информацией о том, может ли в игре быть разное количество задач
+GAMES_TASK_NUMBERS_VARIABILITY = {'domino':False,
+                                  'peanlty':True}
+# Словарь количества задач в играх по умолчанию
+GAMES_DEFAULT_TASK_NUMBERS = {'domino':28,
+                              'penalty': 16}
+# Словарь с информацией о том, может ли в игре быть больше одного набора задач
+GAMES_SETS_NUMBERS_VARIABILITY = {'domino': True,
+                                  'penalty': False}
+# Словарь количества наборов задач в играх по умолчанию
+GAMES_DEFAULT_SETS_NUMBERS = {'domino': 1,
+                              'penalty': 1}
 # Кортежи, в которых указаны валидные данные
 
 VALID_REQUEST_TYPES = ("check_task", "get_task", "add_task")
@@ -197,41 +87,21 @@ class LoginForm(FlaskForm):
 
 # Форма для регистрации члена команды с полями имени, фамилии, школы
 
-class SignUpMemberForm(Form):
-    surname = StringField("Фамилия", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
-    name_field = StringField("Имя", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
-    school = StringField("Школа", validators=DATA_REQUIRED_VALIDATOR)
-
 
 # Форма для регистрации команды с полями логина, пароля, названия команды, выбора класса
 
-class SignUpTeamForm(Form):
-    login = StringField("Логин", validators=DATA_REQUIRED_VALIDATOR)
-    password = PasswordField("Пароль", validators=DATA_REQUIRED_VALIDATOR)
-    email = StringField("Email", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    grade = SelectField("Класс", choices=[(5, 5), (6, 6), (7, 7)], coerce=int)
-
-
-# Всеобобщающая форма с формой регистрацией команды
-
-class SignUpForm(FlaskForm):
-    team = FormField(SignUpTeamForm)
-
-    member1 = FormField(SignUpMemberForm)
-    member2 = FormField(SignUpMemberForm)
-    member3 = FormField(SignUpMemberForm)
-    member4 = FormField(SignUpMemberForm)
-    submit = SubmitField("Регистрация")
-
-
-# Всеобобщающая форма для регистрации команды из одного человека
-
-class SignUpPlayerForm(FlaskForm):
-    team = FormField(SignUpTeamForm)
-    member = FormField(SignUpMemberForm)
-    submit = SubmitField("Регистрация")
-
+class SignUpUserForm(Form):
+    login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
+    password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
+    email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
+    name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    grade = SelectField("Класс*", choices=[(5, 5), (6, 6), (7, 7)], coerce=int)
+    school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
+    teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в Ваши успехи",
+                           validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, что Вы хотите рассказать о себе)",
+                       validators=DATA_REQUIRED_VALIDATOR)
 
 # Форма для бана команды
 
@@ -245,7 +115,6 @@ class BanTeamForm(FlaskForm):
 class PardonTeamForm(FlaskForm):
     team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Удалить команду из соревнования")
-
 
 # Форма для добавления задачи
 
@@ -282,7 +151,8 @@ class ForgotPassword(FlaskForm):
 # Чтобы выбрать класс и тип игры
 
 class GradeGameForm(FlaskForm):
-    grade = RadioField("Выберите класс", choices=[("5", "5"), ("6", "6"), ("7", "7")],
+    grade = RadioField("Выберите класс", choices=[("5", "5"), ("6", "6"), ("7", "7"), ("8", "8"), ("9", "9"),
+                                                  ("10", "10"), ("11", "11")],
                        validators=DATA_REQUIRED_VALIDATOR)
     game = RadioField("Выберите игру", choices=[("domino", "Домино"), ("penalty",
                                                                        "Пенальти")])

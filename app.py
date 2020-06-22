@@ -4,15 +4,16 @@ import os
 import os.path
 from hashlib import md5
 
+from data.users_login_data import User
 import requests
 from flask import Flask, render_template, redirect, request, jsonify, make_response, flash
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
-
+from data.db_session import global_init
 import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
-from config import SERVER_URL, SignUpForm, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm, SignUpPlayerForm, GradeGameForm
+from config import SERVER_URL, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
+    StartEndTimeForm, PardonTeamForm, SignUpUserForm, GradeGameForm, create_user
 from db_interface import *
 
 
@@ -33,6 +34,9 @@ RESULTS_SHOW_TEST = 0
 # Создание приложения
 
 app = Flask(__name__)
+
+# Инициализация бд
+global_init('main_bd')
 
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
@@ -324,8 +328,8 @@ def anti_cheat():
 
 # Регистрация
 
-@app.route("/sign_up/<string:classificator>", methods=["GET", "POST"])
-def sign_up(classificator):
+@app.route("/sign_up", methods=["GET", "POST"])
+def sign_up():
     global penalty_start_time, domino_start_time
     current_time = datetime.datetime.now() + datetime.timedelta(hours=5)
     start_time = datetime.datetime(2020, 5, 31, 14, 0, 0)
@@ -335,148 +339,57 @@ def sign_up(classificator):
     elif current_time > end_time:
         return render_template("registration_is_closed.html")
     else:
-        if classificator == "team":
-            sign_up_form = SignUpForm()
-            params = dict()
-            params["title"] = "Регистрация"
-            params["form"] = sign_up_form
+        sign_up_form = SignUpUserForm()
+        params = dict()
+        params["title"] = "Регистрация"
+        params["form"] = sign_up_form
 
-            # Проверяем, правильно ли заполнена форма
+        if sign_up_form.validate_on_submit():
+            if is_auth():
+                logout_user()
 
-            if sign_up_form.validate_on_submit():
+            is_login_used = login_used(request.form.get("team-login"))
+            if is_login_used:
+                if login_used:
+                    params["login_used"] = True
+                return render_template("sign_up_user.html", **params)
 
-                # Если мы нажали на кнопку "регистриция", то выходим из аккаунта
-                if is_auth():
-                    logout_user()
+            # Создания объекта User
 
-                    # Проверяем, не использован ли логин и пароль
+            user = create_user(
+                request.form.get("login"),
+                request.form.get("name"),
+                request.form.get("surname"),
+                request.form.get("email"),
+                int(request.form.get("grade")),
+                request.form.get("school"),
+                request.form.get("teachers"),
+                request.form.get("info"))
 
-                is_login_used = login_used(request.form.get("team-login"))
-                is_team_name_used = team_name_used(request.form.get("team-team_name"))
-                if is_team_name_used or is_login_used:
-                    if login_used:
-                        params["login_used"] = True
+            user.set_password(request.form.get("password"))
 
-                    if team_name_used:
-                        params["team_name_used"] = True
+            # Добавление пользователя в базы данных
+            domino_table = 'domino_tasks' + str(user.grade)
+            penalty_table = 'penalty_tasks' + str(user.grade)
+            about_teams = "about_teams"
+            time = datetime.datetime.now()
+            time = ' '.join(
+                map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
 
-                    return render_template("sign_up_team.html", **params)
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {domino_table}(title) values ("
+                                 f"'{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks.db"),
+                                 f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
+            db_interface.execute(os.path.join("db", "tasks_info.db"),
+                                 f"INSERT into {about_teams}(title, time) values ("
+                                 f"'{user.team_name}', '{time}')")
 
-                # Создания объека User
+            add_user(user)
 
-                user = User(
-                    login=request.form.get("team-login"),
-                    team_name=request.form.get("team-team_name"),
-                    email=request.form.get("team-email"),
-                    grade=int(request.form.get("team-grade")),
+            return redirect("/login")
 
-                    member1=(request.form.get("member1-name_field"),
-                             request.form.get("member1-surname"),
-                             request.form.get("member1-school")),
-
-                    member2=(request.form.get("member2-name_field"),
-                             request.form.get("member2-surname"),
-                             request.form.get("member2-school")),
-
-                    member3=(request.form.get("member3-name_field"),
-                             request.form.get("member3-surname"),
-                             request.form.get("member3-school")),
-
-                    member4=(request.form.get("member4-name_field"),
-                             request.form.get("member4-surname"),
-                             request.form.get("member4-school"))
-                )
-
-                user.set_password(request.form.get("team-password"))
-
-                # Добавление пользователя в базы данных
-                domino_table = 'domino_tasks' + str(user.grade)
-                penalty_table = 'penalty_tasks' + str(user.grade)
-                about_teams = "about_teams"
-
-                time = datetime.datetime.now()
-                time = ' '.join(
-                    map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
-
-                db_interface.execute(os.path.join("db", "tasks.db"),
-                                     f"INSERT into {domino_table}(title) values ("
-                                     f"'{user.team_name}')")
-                db_interface.execute(os.path.join("db", "tasks.db"),
-                                     f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-                db_interface.execute(os.path.join("db", "tasks_info.db"),
-                                     f"INSERT into {about_teams}(title, time) values ("
-                                     f"'{user.team_name}', '{time}')")
-
-                add_user(user)
-
-                return redirect("/login")
-
-            return render_template("sign_up_team.html", **params)
-
-        elif classificator == "player":
-            sign_up_form = SignUpPlayerForm()
-            params = dict()
-            params["title"] = "Регистрация"
-            params["form"] = sign_up_form
-
-            if sign_up_form.validate_on_submit():
-                if is_auth():
-                    logout_user()
-
-                is_login_used = login_used(request.form.get("team-login"))
-                is_team_name_used = team_name_used(request.form.get("team-team_name"))
-                if is_team_name_used or is_login_used:
-                    if login_used:
-                        params["login_used"] = True
-
-                    if team_name_used:
-                        params["team_name_used"] = True
-
-                    return render_template("sign_up_player.html", **params)
-
-                # Создания объекта User
-
-                user = User(
-                    login=request.form.get("team-login"),
-                    team_name=request.form.get("team-team_name"),
-                    email=request.form.get("team-email"),
-                    grade=int(request.form.get("team-grade")),
-
-                    member1=(request.form.get("member-name_field"),
-                             request.form.get("member-surname"),
-                             request.form.get("member-school")),
-
-                    member2=(None, None, None),  # У нас только один член команды
-                    member3=(None, None, None),
-                    member4=(None, None, None)
-                )
-
-                user.set_password(request.form.get("team-password"))
-
-                # Добавление пользователя в базы данных
-                domino_table = 'domino_tasks' + str(user.grade)
-                penalty_table = 'penalty_tasks' + str(user.grade)
-                about_teams = "about_teams"
-                time = datetime.datetime.now()
-                time = ' '.join(
-                    map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
-
-                db_interface.execute(os.path.join("db", "tasks.db"),
-                                     f"INSERT into {domino_table}(title) values ("
-                                     f"'{user.team_name}')")
-                db_interface.execute(os.path.join("db", "tasks.db"),
-                                     f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-                db_interface.execute(os.path.join("db", "tasks_info.db"),
-                                     f"INSERT into {about_teams}(title, time) values ("
-                                     f"'{user.team_name}', '{time}')")
-
-                add_user(user)
-
-                return redirect("/login")
-
-            return render_template("sign_up_player.html", **params)
-        else:
-            return "Вы не должны были сюда попасть, но так получилось(("
+        return render_template("sign_up_user.html", **params)
 
 # Страница с правилами
 
@@ -622,7 +535,7 @@ def ban_team():
     try:
         team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
                                                        team_name).first().id
-        login_data = session.query(UserLoginData).filter(UserLoginData.id == team_id).first()
+        login_data = session.query(User).filter(User.id == team_id).first()
         login_data.is_banned = True
         session.commit()
 
@@ -645,14 +558,14 @@ def pardon():
     session = db_session.create_session()
     team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
                                                    team_name).first().id
-    banned = session.query(UserLoginData).filter(UserLoginData.id == team_id).first().is_banned
+    banned = session.query(User).filter(User.id == team_id).first().is_banned
 
     if not banned:
         return f"""Команда {repr(team_name)} не дисквалифицирована. 
                 <a href="/admin"> вернуться обратно</a>"""
 
     try:
-        login_data = session.query(UserLoginData).filter(UserLoginData.id == team_id).first()
+        login_data = session.query(User).filter(User.id == team_id).first()
         login_data.is_banned = False
         session.commit()
 
@@ -1260,7 +1173,7 @@ def login():
     params["form"] = form
     if form.validate_on_submit():
         session = db_session.create_session()
-        user = session.query(UserLoginData).filter(UserLoginData.login == form.login.data).first()
+        user = session.query(User).filter(User.login == form.login.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)
             return redirect("/")
@@ -1323,7 +1236,7 @@ def load_user(user_id, login_data):
 @login_manager.user_loader
 def load_user_login_data(user_id):
     session = db_session.create_session()
-    return session.query(UserLoginData).get(user_id)
+    return session.query(User).get(user_id)
 
 
 # Функция для получения данных о команде по id
@@ -1369,7 +1282,7 @@ def is_banned():
     cur_user = get_cur_user()
     if cur_user:
         session = db_session.create_session()
-        login_data = session.query(UserLoginData).filter(UserLoginData.id == cur_user.id).first()
+        login_data = session.query(User).filter(User.id == cur_user.id).first()
         return login_data.is_banned
     return None
 

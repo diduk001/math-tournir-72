@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>Регистрация</h1>
-    <p style="color: red">Все поля обязательны для заполнения;</p>
+    <p style="color: red">Все поля с знаком "*" обязательны для заполнения</p>
     <p style="color: red">Имя и фамилия вводятся на русском языке с заглавной буквы;</p>
     <p style="color: red">Запомните логин и пароль, эти данные необходимы для входа;</p>
 
@@ -13,10 +13,11 @@
             {{ form.csrf_token }}
         </div>
 
-        {# Форма регистрации команды (поля логина, пароля, названия команды, выбора класса #}
+        {# Форма регистрации пользователя (поля логина, пароля, имени, фамилии, выбора класса, школы,
+           учителей, информации #}
 
         <div class="form-group">
-            {% for field in form.team %}
+            {% for field in form %}
                 <div class="form-group">
                     {{ field(class="form-control", placeholder=field.label.text) }}
                 </div>
@@ -40,34 +41,7 @@
             <br>
         {% endif %}
 
-        {# Предупреждение об используемом названии команды #}
 
-        {% if team_name_used %}
-            <div class="alert alert-danger" role="alert">
-                Это имя команды уже занято. Пожалуйста, введите другое
-            </div>
-            <br>
-        {% endif %}
-
-        {# Формы регистрации членов команды #}
-
-        <div class="member-form">
-
-            {# Отрисовка полей формы, ошибок #}
-
-            {% for field in form.member %}
-                <div class="form-group">
-                    {{ field(class="form-control", placeholder=field.label.text) }}
-                </div>
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        <div class="alert alert-danger" role="alert">
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-        </div>
 
         {# Кнопка отправки #}
 

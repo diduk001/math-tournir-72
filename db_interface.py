@@ -3,14 +3,12 @@
 import sqlite3
 from sqlite3 import Error
 
-from config import User
 from config import check_type
-from data import db_session, users_login_data, users_members_data
+from data import db_session, users_login_data
 
 # Назначение классов для того, чтобы не писать длинные пути
 
-UserLoginData = users_login_data.UserLoginData
-UserMemberData = users_members_data.UserMembersData
+UserLoginData = users_login_data.User
 
 
 # Функция добавления пользователя в базы данных
@@ -18,37 +16,9 @@ UserMemberData = users_members_data.UserMembersData
 
 def add_user(user):
     # Проверка типа аргумента
-    check_type("user", user, User)
-
-    # Заполнение данных для входа
-
-    login_data = users_login_data.UserLoginData()
-
-    login_data.login = user.login
-    login_data.hashed_password = user.hashed_password
-
-    login_data.email = user.email
-    login_data.hashed_email = user.email
-
-    login_data.is_approved = user.is_approved
-
-    login_data.is_banned = user.is_banned
-    # Заполнение данных о составе
-
-    member_data = users_members_data.UserMembersData()
-
-    member_data.team_name = user.team_name
-    member_data.grade = user.grade
-
-    member_data.member1_name, member_data.member1_surname, member_data.member1_school = user.member1
-    member_data.member2_name, member_data.member2_surname, member_data.member2_school = user.member2
-    member_data.member3_name, member_data.member3_surname, member_data.member3_school = user.member3
-    member_data.member4_name, member_data.member4_surname, member_data.member4_school = user.member4
-
-    session = db_session.create_session()
-    session.add(login_data)
-    session.commit()
-    session.add(member_data)
+    check_type("user", user, UserLoginData)
+    session = db_session.create_session('users')
+    session.add(user)
     session.commit()
 
 
@@ -59,7 +29,7 @@ def add_user(user):
 # verbose - bool, выводить ли ошибку (если она будет)
 # kwargs - именованные аргументы, те значения, которые нужно изменить
 
-def change_val(user_id, users_login_table, verbose=False, **kwargs):
+def change_val(user_id, verbose=False, **kwargs):
     session = db_session.create_session()
     user = session.query(UserLoginData).filter(UserLoginData.id == user_id).first()
     for key, val in kwargs:
@@ -88,53 +58,13 @@ def login_used(login):
 # Функция проверки названия команды на уникальность
 # Если название существует в базе, возвращаем True
 
-def team_name_used(team_name):
-    session = db_session.create_session()
-    return bool(session.query(UserMemberData).filter(UserMemberData.team_name == team_name).first())
-
 
 def get_user_from_id(user_id):
     session = db_session.create_session()
-    login_data = session.query(UserLoginData).get(user_id)
-    members_data = session.query(UserMemberData).get(user_id)
-    if login_data is None or members_data is None:
+    user = session.query(UserLoginData).get(user_id)
+    if user is None:
         return None
-
-    user = User(login_data.login,
-                login_data.email,
-                members_data.team_name,
-                members_data.grade,
-
-                (members_data.member1_name,
-                 members_data.member1_surname,
-                 members_data.member1_school),
-
-                (members_data.member2_name,
-                 members_data.member2_surname,
-                 members_data.member2_school),
-
-                (members_data.member3_name,
-                 members_data.member3_surname,
-                 members_data.member3_school),
-
-                (members_data.member4_name,
-                 members_data.member4_surname,
-                 members_data.member4_school))
-
-    user.id = login_data.id
-    user.hashed_password = login_data.hashed_password
-    user.is_banned = bool(login_data.is_banned)
-    user.is_approved = bool(login_data.is_approved)
-
     return user
-
-
-# Получаем User из имени команды
-
-def get_user_from_team_name(team_name):
-    session = db_session.create_session()
-    team_id = session.query(UserMemberData.id).filter(UserMemberData.team_name == team_name).first()
-    return get_user_from_id(team_id)
 
 
 def create_connection(db_file):
