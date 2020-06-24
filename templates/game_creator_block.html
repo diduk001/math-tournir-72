@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{block_title}}</h2>
+<form action="">
+    {% for field in form %}
+        <div>
+            {% if field.name == "submit %}
+                {{ field(class="btn btn-primary") }}
+            {% else %}
+                {{ field.label() }}
+                {{ field(class="form-control") }}
+            {% endif %}
+            {% for error in field.errors %}
+                <br>
+                <div class="error">{{ error }}</div>
+            {% endfor %}
+            <br>
+        </div>
+    {% endfor %}
+</form>
+{% endblock %}

@@ -11,7 +11,6 @@ from data.db_session import global_init, create_session
 # format - формат игры(командная/личная), string
 # privacy - приватность игры(открытая, закрытая), string
 # info - дополнительная информация о игре(описание string
-# solutions - путь к файлу с решениями, string
 # author - id того кто инициировал создание игры, string
 # task_number int
 # min_team_size int
@@ -19,9 +18,9 @@ from data.db_session import global_init, create_session
 # sets_number - количество наборов задач, int
 
 # Функция создающая игру
-def create_game(title, grade, game_type, start_time, end_time, format,  privacy, info, solutions, author,
+def create_game(title, grade, game_type, start_time, end_time, format,  privacy, info, author,
                 task_number, min_team_size, max_team_size, sets_number):
-    game = create_Game_object(title, grade, game_type, start_time, end_time, format, privacy, info, solutions, author,
+    game = create_Game_object(title, grade, game_type, start_time, end_time, format, privacy, info, author,
                               task_number, min_team_size, max_team_size, sets_number)
     session = create_session('main_bd')
     session.add(game)
@@ -29,7 +28,7 @@ def create_game(title, grade, game_type, start_time, end_time, format,  privacy,
 
 
 # Создание объекта класса Game
-def create_Game_object(title, grade, game_type, start_time, end_time, format,  privacy, info, solutions, author,
+def create_Game_object(title, grade, game_type, start_time, end_time, format,  privacy, info, author,
                 task_number, min_team_size, max_team_size, sets_number):
     game = Game()
     game.title = title
@@ -40,7 +39,6 @@ def create_Game_object(title, grade, game_type, start_time, end_time, format,  p
     game.format = format
     game.privacy = privacy
     game.info = info
-    game.solutions = solutions
     game.authors = author
     game.task_number = task_number
     game.min_team_size = min_team_size
@@ -50,9 +48,10 @@ def create_Game_object(title, grade, game_type, start_time, end_time, format,  p
 
 # Обновить информацию о игре в блоке общей информации (название, доп. информация, класс, тип игры, время начала,
 # время конца, формат (личная/командная), приватность(открытая/закрытая))
-def update_games_common_info(title, info, grade, game_type, start_time, end_time, format, privacy):
+def update_games_common_info(last_title, current_title, info, grade, game_type, start_time, end_time, format, privacy):
     session = create_session('main_bd')
-    game = session.query(Game).filter(Game.title == title)
+    game = session.query(Game).filter(Game.title == last_title)
+    game.title = current_title
     game.info = info
     game.grade = grade
     game.game_type = game_type
@@ -63,10 +62,9 @@ def update_games_common_info(title, info, grade, game_type, start_time, end_time
     session.commit()
 
 # Обновить информацию о игре в блоке задач (файл с решениями, количество задач, количество наборов задач)
-def update_games_task_info(title, solutions, task_number, sets_number):
+def update_games_task_info(title, task_number, sets_number):
     session = create_session('main_bd')
     game = session.query(Game).filter(Game.title == title)
-    game.solutions = solutions
     game.task_number = task_number
     game.sets_number = sets_number
     session.commit()

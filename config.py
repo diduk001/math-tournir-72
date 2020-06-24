@@ -42,6 +42,11 @@ VALID_GRADES = (5, 6, 7)
 VALID_PENALTY_TASKS_NUMBERS = tuple([str(i) for i in range(1, 17)])
 VALID_DOMINO_TASKS_NUMBERS = tuple([f"{i}-{j}" for i in range(7) for j in range(i, 7)])
 
+
+# Словарь игр и их названий
+games_dict = {'domino':'Домино',
+              'penalty':'Пенальти'}
+
 # Файл, содержащий формы для входа и регистрации
 
 from flask_wtf import FlaskForm
@@ -85,11 +90,40 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Вход")
 
 
-# Форма для регистрации члена команды с полями имени, фамилии, школы
+# Форма для заполнения общей информации о игре
+class GameCommonInfo(FlaskForm):
+    title = StringField('Название игры', validators=DATA_REQUIRED_VALIDATOR)
+    info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
+    grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)], coerce=int)
+    game_type = SelectField('Тип игры', choices=games_dict.items(), coerce=str)
+    start_time = StringField('Время начала', DATA_REQUIRED_VALIDATOR)
+    end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
+    format = SelectField('Формат игры', choices=[('личная', 'personal'), ('командная', 'team')])
+    privacy = SelectField('Приватность игры', choices=[('закрытая', 'private'), ('открытая', 'open')])
+    submit = SubmitField("Далее")
+
+# Форма для заполнения информации о блоке задач
+class GameTaskInfo(FlaskForm):
+    tasks_number = IntegerField('Количество задач', validators=DATA_REQUIRED_VALIDATOR)
+    sets_number = IntegerField('Количество наборов задач', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Далее")
 
 
-# Форма для регистрации команды с полями логина, пароля, названия команды, выбора класса
+# Форма для заполнения информации о размере команд
+class GameTeamInfo(FlaskForm):
+    min_team_size = IntegerField('Максимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
+    max_team_size = IntegerField('Минимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Далее")
 
+
+# Форма для заполнения информации о авторах и проверяющих
+class GameAuthorsAndCheckersInfo(FlaskForm):
+    authors = StringField('Имена и Фамилии авторов через пробел')
+    checkers = StringField('Имена и Фамилии проверяющих через пробел')
+    submit = SubmitField("Далее")
+
+
+# Форма для регистрации пользователя с полями логина, пароля, названия команды, выбора класса
 class SignUpUserForm(Form):
     login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
@@ -102,9 +136,10 @@ class SignUpUserForm(Form):
                            validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, что Вы хотите рассказать о себе)",
                        validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Зарегистрироваться")
+
 
 # Форма для бана команды
-
 class BanTeamForm(FlaskForm):
     team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Удалить команду из соревнования")

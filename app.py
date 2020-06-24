@@ -603,6 +603,8 @@ def get_state(string):
     return string[-2:]
 
 
+
+
 # Ручная проверка
 @app.route('/deb5b702b8e7cd15788ce1a96fa93e7c/<game>/<grade>', methods=["POST", "GET"])
 def manual_checking(game, grade):
