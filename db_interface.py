@@ -4,11 +4,11 @@ import sqlite3
 from sqlite3 import Error
 
 from config import check_type
-from data import db_session, users_login_data
+from data import db_session, users
 
 # Назначение классов для того, чтобы не писать длинные пути
 
-UserLoginData = users_login_data.User
+UserLoginData = users.User
 
 
 # Функция добавления пользователя в базы данных

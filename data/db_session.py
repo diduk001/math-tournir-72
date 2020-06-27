@@ -7,13 +7,13 @@ from sqlalchemy.orm import Session
 
 SqlAlchemyBase = dec.declarative_base()
 
-dict_of_factory = {}
+__factory = None
 
 
 def global_init(db_file):
     global __factory
 
-    if db_file in dict_of_factory.keys():
+    if __factory:
         return
 
     if not db_file or not db_file.strip():
@@ -23,11 +23,11 @@ def global_init(db_file):
     print(f"Подключение к базе данных по адресу {conn_str}")
 
     engine = sa.create_engine(conn_str, echo=False)
-    dict_of_factory[db_file] = orm.sessionmaker(bind=engine)
+    __factory = orm.sessionmaker(bind=engine)
 
     SqlAlchemyBase.metadata.create_all(engine)
 
 
-def create_session(db_file) -> Session:
-    global dict_of_factory
-    return dict_of_factory[db_file]()
+def create_session() -> Session:
+    global __factory
+    return __factory

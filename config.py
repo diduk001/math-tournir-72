@@ -2,7 +2,7 @@
 
 SERVER_URL = "http://0.0.0.0:80"
 
-from data.users_login_data import User
+from data.users import User
 # Файл, содержащий класс пользователя
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -91,7 +91,7 @@ class LoginForm(FlaskForm):
 
 
 # Форма для заполнения общей информации о игре
-class GameCommonInfo(FlaskForm):
+class GameCommonInfoForm(FlaskForm):
     title = StringField('Название игры', validators=DATA_REQUIRED_VALIDATOR)
     info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
     grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)], coerce=int)
@@ -100,27 +100,27 @@ class GameCommonInfo(FlaskForm):
     end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
     format = SelectField('Формат игры', choices=[('личная', 'personal'), ('командная', 'team')])
     privacy = SelectField('Приватность игры', choices=[('закрытая', 'private'), ('открытая', 'open')])
-    submit = SubmitField("Далее")
+    submit = SubmitField("Создать/изменить игру")
+
 
 # Форма для заполнения информации о блоке задач
-class GameTaskInfo(FlaskForm):
+class GameTasksInfoForm(FlaskForm):
     tasks_number = IntegerField('Количество задач', validators=DATA_REQUIRED_VALIDATOR)
     sets_number = IntegerField('Количество наборов задач', validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Далее")
+    submit = SubmitField('Подтвердить изменения')
 
 
 # Форма для заполнения информации о размере команд
-class GameTeamInfo(FlaskForm):
+class GameTeamInfoForm(FlaskForm):
     min_team_size = IntegerField('Максимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
     max_team_size = IntegerField('Минимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Далее")
-
+    submit = SubmitField('Подтвердить изменения')
 
 # Форма для заполнения информации о авторах и проверяющих
-class GameAuthorsAndCheckersInfo(FlaskForm):
+class GameAuthorsAndCheckersInfoForm(FlaskForm):
     authors = StringField('Имена и Фамилии авторов через пробел')
     checkers = StringField('Имена и Фамилии проверяющих через пробел')
-    submit = SubmitField("Далее")
+    submit = SubmitField('Подтвердить изменения')
 
 
 # Форма для регистрации пользователя с полями логина, пароля, названия команды, выбора класса
@@ -146,13 +146,12 @@ class BanTeamForm(FlaskForm):
 
 
 # Форма для пардона команды
-
 class PardonTeamForm(FlaskForm):
     team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Удалить команду из соревнования")
 
-# Форма для добавления задачи
 
+# Форма для добавления задачи
 class AddTaskForm(FlaskForm):
     grade = SelectField("Класс", choices=[("5", "5"), ("6", "6"), ("7", "7")])
     game_type = SelectField("Тип игры", choices=[("domino", "Домино"), ("penalty", "Пенальти")])

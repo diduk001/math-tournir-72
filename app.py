@@ -4,16 +4,20 @@ import os
 import os.path
 from hashlib import md5
 
-from data.users_login_data import User
+from data.users import User
 import requests
 from flask import Flask, render_template, redirect, request, jsonify, make_response, flash
+from game_creator import create_game, update_game_tasks_info, update_game_team_info,\
+    update_game_authors_and_checkers_info, update_game_common_info, get_game_authors_info,\
+    get_game_checkers_info, get_game_common_info, get_game_tasks_info, get_game_team_info, get_user, get_game
 from flask_login import LoginManager, logout_user, login_required, login_user, current_user
 from data.db_session import global_init
 import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm, SignUpUserForm, GradeGameForm, create_user
+    StartEndTimeForm, PardonTeamForm, SignUpUserForm, GradeGameForm, create_user, GameCommonInfoForm,\
+    GameTasksInfoForm, GameTeamInfoForm, GameAuthorsAndCheckersInfoForm
 from db_interface import *
 
 
@@ -35,12 +39,10 @@ RESULTS_SHOW_TEST = 0
 
 app = Flask(__name__)
 
-# Инициализация бд
-global_init('main_bd')
 
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
-db_session.global_init(os.path.join("db", "login_data_members_data_session.sqlite"))
+db_session.global_init('main_bd')
 app.register_blueprint(api_blueprint)
 
 # Создание и инициализация менеджера входа
@@ -296,6 +298,80 @@ def update_visited_status(team, game):
     con.commit()
     con.close()
 
+
+# Создание игры
+@app.route('/create_game', methods=['POST', 'GET'])
+def create_game():
+    if is_auth():
+        if 'author' in current_user.rights:
+            if request.method == "GET":
+                return render_template('game_creator.html', form=GameCommonInfoForm, title='Создание игры')
+            elif request.method == "POST":
+                title = request.form.get('title')
+                grade = request.form.get('grade')
+                info = request.form.get('info')
+                game_type = request.form.get('game_type')
+                start_time = request.form.get('start_time')
+                end_time = request.form.get('end_time')
+                format = request.form.get('format')
+                privacy = request.form.get('privacy')
+                author = current_user.id
+                session = db_session.create_session()
+                author = session.query(User).filter(User.id == author).first()
+                create_game(title, grade, game_type, start_time, end_time, format, privacy, info, author)
+                return render_template('success.html')
+            else:
+                return render_template('what_are_you_doing_here.html')
+    return render_template('what_are_you_doing_here.html')
+
+
+dict_of_forms = {'tasks': GameTasksInfoForm,
+                 'common': GameCommonInfoForm,
+                 'team': GameTeamInfoForm,
+                 'author_and_checkers': GameAuthorsAndCheckersInfoForm}
+
+
+# Изменение данных о игре
+@app.route('update_game/<game_title>/<block>', methods=["POST"])
+def update_game(game_title, block):
+    global dict_of_forms
+    if is_auth():
+        if 'author' in current_user.rights:
+            game = get_game(game_title)
+            if game != "Not found":
+                if game in current_user.authoring:
+                    if request.method == "GET":
+                        if block == 'common':
+                            default = get_game_common_info(game_title)
+                        elif block == 'tasks':
+                            default = get_game_tasks_info(game_title)
+                        elif block == 'team':
+                            default = get_game_team_info(game_title)
+                        elif block == 'authors_and_checkers':
+                            default = {'authors': get_game_authors_info(game_title),
+                                       'checkers': get_game_checkers_info(game_title)}
+                        else:
+                            return render_template('what_are_you_doing_here.html')
+                        return render_template('game_updater.html', form=dict_of_forms[block], default=default)
+                    elif request.method == "POST":
+                        if block == 'common':
+                            update_game_common_info(game_title, *request.form.values.values())
+                            return render_template('success.html')
+                        elif block == 'tasks':
+                            update_game_tasks_info(game_title, *request.form.values.values())
+                            return render_template('success.html')
+                        elif  block == 'team':
+                            update_game_team_info(game_title, *request.form.values.values())
+                            return render_template('success.html')
+                        elif block == 'authors_and_checkers':
+                            update_game_authors_and_checkers_info(game_title, *request.form.values.values())
+                            return render_template('success.html')
+                        else:
+                            return render_template('what_are_you_doing_here.html')
+                    else:
+                        return render_template('what_are_you_doing_here.html')
+    return render_template('what_are_you_doing_here.html')
+
 # Проверка на честность
 
 @app.route("/anti_cheat", methods=["POST"])
@@ -475,50 +551,6 @@ def add_task():
         return """файл не прошёл проверку <a href="/admin">
                   вернуться обратно</a>"""
 
-
-# Страничка с результатом изменением времени соревнований
-
-@app.route('/8770a9a6c5ab1b00a4e0293d9ebd7bec', methods=['POST'])
-def start_end_time():
-    global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
-
-    try:
-        print("time_start", "time_end")
-        game_type = request.form.get("game_type")
-        time_start = request.form.get("time_start")
-        time_end = request.form.get("time_end")
-        print(time_start)
-        print(time_end)
-        print('end')
-    except Exception as e:
-        return "Исключение: " + str(e)
-
-    try:
-        print('penalty_start_time')
-        date, time = time_start.split()[0], time_start.split()[1]
-        days, months, years = int(date.split('.')[0]), int(date.split('.')[1]), int(date.split('.')[2])
-        hours, minutes, seconds = int(time.split(':')[0]), int(time.split(':')[1]), int(time.split(':')[2])
-        datetime_start = datetime.datetime(years, months, days, hours, minutes, seconds)
-        date, time = time_end.split()[0], time_end.split()[1]
-        days, months, years = int(date.split('.')[0]), int(date.split('.')[1]), int(date.split('.')[2])
-        hours, minutes, seconds = int(time.split(':')[0]), int(time.split(':')[1]), int(time.split(':')[2])
-        datetime_end = datetime.datetime(years, months, days, hours, minutes, seconds)
-        print(datetime_start, datetime_end)
-    except ValueError:
-        return """Время не соответствует формату <a href="/admin"> 
-                  вернуться обратно</a>"""
-    if game_type == "domino":
-        domino_start_time = datetime_start
-        domino_end_time = datetime_end
-    elif game_type == "penalty":
-        penalty_start_time = datetime_start
-        penalty_end_time = datetime_end
-    print(game_status(game_type, datetime.datetime.now() + datetime.timedelta(hours=5)))
-    print(penalty_start_time)
-    print(penalty_end_time)
-    print('new_end')
-    return """Вы установили время и дату соревнования (если я не ошибся). <a href="/admin"> вернуться 
-        обратно</a>"""
 
 
 # Страничка с результатом бана команды

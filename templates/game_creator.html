@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>{{block_title}}</h2>
+<h2>{{title}}</h2>
 <form action="">
     {% for field in form %}
         <div>
@@ -9,7 +9,7 @@
                 {{ field(class="btn btn-primary") }}
             {% else %}
                 {{ field.label() }}
-                {{ field(class="form-control") }}
+                {{ field(class="form-control" text=default[field.name]) }}
             {% endif %}
             {% for error in field.errors %}
                 <br>
