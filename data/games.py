@@ -3,6 +3,11 @@ from sqlalchemy import orm
 
 from .db_session import SqlAlchemyBase
 
+games_to_users = sqlalchemy.Table('games_to_users', SqlAlchemyBase.metadata,
+    sqlalchemy.Column('games', sqlalchemy.Integer, sqlalchemy.ForeignKey('games.id')),
+   sqlalchemy.Column('users', sqlalchemy.Integer, sqlalchemy.ForeignKey('users.id'))
+)
+
 class Game(SqlAlchemyBase):
     __tablename__ = 'games'
     # id игры

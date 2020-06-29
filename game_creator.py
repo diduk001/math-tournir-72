@@ -21,8 +21,9 @@ from data.tasks_states import create_tasks_table
 
 # Функция создающая игру
 def create_game(title, grade, game_type, start_time, end_time, format,  privacy, info, author,
-                task_number=GAMES_DEFAULT_TASK_NUMBERS[game_type], sets_number=GAMES_DEFAULT_SETS_NUMBERS[game_type],
                 min_team_size=4, max_team_size=4):
+    task_number = GAMES_DEFAULT_TASK_NUMBERS[game_type]
+    sets_number = GAMES_DEFAULT_SETS_NUMBERS[game_type]
     game = create_Game_object(title, grade, game_type, start_time, end_time, format, privacy, info, author,
                               task_number, min_team_size, max_team_size, sets_number)
     create_tasks_table(title, task_number)

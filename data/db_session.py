@@ -19,15 +19,15 @@ def global_init(db_file):
     if not db_file or not db_file.strip():
         raise Exception("Необходимо указать файл базы данных.")
 
-    conn_str = f'mysql://root:Whatdoes1tmean@localhost/{db_file.strip()}'
+    conn_str = f'sqlite:///{db_file.strip()}'
     print(f"Подключение к базе данных по адресу {conn_str}")
 
     engine = sa.create_engine(conn_str, echo=False)
     __factory = orm.sessionmaker(bind=engine)
-
+    from data import __all_models
     SqlAlchemyBase.metadata.create_all(engine)
 
 
 def create_session() -> Session:
     global __factory
-    return __factory
+    return __factory()

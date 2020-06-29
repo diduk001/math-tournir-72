@@ -30,13 +30,15 @@ class User(SqlAlchemyBase, UserMixin):
     user_id = orm.relation("UserMembersData", back_populates='user')
     rights = sqlalchemy.Column(sqlalchemy.String, nullable=False, default='user')
     checking = orm.relation('Game',
-                            secondary='games_to_users')
+                            secondary='games_to_users',
+                            backref="users")
     authoring = orm.relation('Game',
-                             secondary='games_to_users')
-    teams = sqlalchemy.Column(sqlalchemy.Text, nullable=True, default='')
-    invitation = sqlalchemy.Column(sqlalchemy.Text, nullabe=True, default='')
-    is_approved = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True, default=False)
-    is_banned = sqlalchemy.Column(sqlalchemy.Boolean, nullable=True, default=True)
+                             secondary='games_to_users',
+                             backref="users")
+    teams = sqlalchemy.Column(sqlalchemy.Text, default='')
+    invitation = sqlalchemy.Column(sqlalchemy.Text, default='')
+    is_approved = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
+    is_banned = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
     is_authenticated = True
 
     def set_password(self, password):

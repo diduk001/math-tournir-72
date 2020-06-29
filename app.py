@@ -42,7 +42,7 @@ app = Flask(__name__)
 
 # конфигурация
 app.config.from_object(__name__ + '.ConfigClass')
-db_session.global_init('main_bd')
+db_session.global_init('db/main_db.db')
 app.register_blueprint(api_blueprint)
 
 # Создание и инициализация менеджера входа
@@ -98,19 +98,13 @@ def profile():
             if is_banned():
                 return render_template("you_are_banned.html", title="Вас дисквалифицировали")
 
-            is_player = ~bool(current_user.member2_name)
             team = current_user.team_name
             grade = current_user.grade
             domino_place = get_place(team, 'domino', grade)
             penalty_place = get_place(team, 'penalty', grade)
-            if is_player:
-                return render_template("profile.html", domino_place=domino_place,
-                                       penalty_place=penalty_place, **(get_cur_user().__dict__()),
-                                       is_player=True)
-            else:
-                return render_template("profile.html", domino_place=domino_place,
-                                       penalty_place=penalty_place, **(get_cur_user().__dict__()),
-                                       is_player=False)
+            return render_template("profile.html", domino_place=domino_place,
+                                   penalty_place=penalty_place, **(get_cur_user().__dict__()),
+                                   is_player=True)
         else:
             # Иначе переправляем на вход
             return redirect("/login")
@@ -173,7 +167,6 @@ def get_task_state(table, task, team, grade):
 
 
 # Изменить таблицу результатов
-
 def update_results(table, points, team, grade):
     con = sqlite3.connect(os.path.join("db", "tasks.db"))
     cur = con.cursor()
@@ -187,7 +180,6 @@ def update_results(table, points, team, grade):
 
 
 # Получить состояние игры
-
 def game_status(game, time):
     global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
     print(time)
@@ -211,7 +203,6 @@ def game_status(game, time):
 
 
 # Возвращает время когда команда последний раз была на сайте
-
 def get_last_time(team):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
@@ -222,7 +213,6 @@ def get_last_time(team):
 
 
 # Изменяет время когда команда последний раз была на сайте
-
 def update_last_time(team, time):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
@@ -235,7 +225,6 @@ def update_last_time(team, time):
 
 
 # Изменяет состояние честности команды
-
 def update_cheater_status(team, game, grade):
     global domino_info
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
@@ -263,7 +252,6 @@ def update_cheater_status(team, game, grade):
 
 
 # Получить состояние честности
-
 def get_cheater_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
@@ -276,8 +264,8 @@ def get_cheater_status(team, game):
     return res
 
 
-# Получить посещал ли пользователь игру
 
+# Получить посещал ли пользователь игру
 def get_visited_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
@@ -286,8 +274,8 @@ def get_visited_status(team, game):
     con.close()
     return res
 
-# Обновить посещал ли пользователь игру
 
+# Обновить посещал ли пользователь игру
 def update_visited_status(team, game):
     con = sqlite3.connect(os.path.join("db", "tasks_info.db"))
     cur = con.cursor()
@@ -332,7 +320,7 @@ dict_of_forms = {'tasks': GameTasksInfoForm,
 
 
 # Изменение данных о игре
-@app.route('update_game/<game_title>/<block>', methods=["POST"])
+@app.route('/update_game/<game_title>/<block>', methods=["POST"])
 def update_game(game_title, block):
     global dict_of_forms
     if is_auth():
@@ -372,8 +360,8 @@ def update_game(game_title, block):
                         return render_template('what_are_you_doing_here.html')
     return render_template('what_are_you_doing_here.html')
 
-# Проверка на честность
 
+# Проверка на честность
 @app.route("/anti_cheat", methods=["POST"])
 def anti_cheat():
     global domino_start_time, domino_end_time, penalty_start_time, penalty_end_time
@@ -403,7 +391,6 @@ def anti_cheat():
 
 
 # Регистрация
-
 @app.route("/sign_up", methods=["GET", "POST"])
 def sign_up():
     global penalty_start_time, domino_start_time
@@ -467,8 +454,8 @@ def sign_up():
 
         return render_template("sign_up_user.html", **params)
 
-# Страница с правилами
 
+# Страница с правилами
 @app.route('/rules')
 def rules():
     params = dict()
@@ -477,7 +464,6 @@ def rules():
 
 
 # Допуск к кабинету админа
-
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_pass():
     if request.method == "GET":
@@ -550,62 +536,6 @@ def add_task():
     else:
         return """файл не прошёл проверку <a href="/admin">
                   вернуться обратно</a>"""
-
-
-
-# Страничка с результатом бана команды
-
-@app.route('/1551c97a3794c5257e7ed3c5b816a825', methods=['POST'])
-def ban_team():
-    team_name = request.form.get("team_name")
-    if not team_name_used(team_name):
-        return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
-               ввели <a href="/admin"> вернуться обратно</a>"""
-
-    session = db_session.create_session()
-
-    try:
-        team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
-                                                       team_name).first().id
-        login_data = session.query(User).filter(User.id == team_id).first()
-        login_data.is_banned = True
-        session.commit()
-
-        return f"""Команда {team_name} отправилась в бан <a 
-                href="/admin"> вернуться обратно</a>"""
-    except Exception as e:
-        return f"""Произошла ошибка: {e} \n <a href="/admin"> 
-                вернуться обратно</a>"""
-
-
-# Прощение (ну то есть прощают типа как бан но наоборот)
-
-@app.route('/7717fdf71bcc8418fb7fabcb5b9c46d2', methods=['POST'])
-def pardon():
-    team_name = request.form.get("team_name")
-    if not team_name_used(team_name):
-        return f"""Команды {repr(team_name)} существует. Пожалуйста, проверьте, всё ли правильно вы
-                   ввели <a href="/admin"> вернуться обратно</a>"""
-
-    session = db_session.create_session()
-    team_id = session.query(UserMemberData).filter(UserMemberData.team_name ==
-                                                   team_name).first().id
-    banned = session.query(User).filter(User.id == team_id).first().is_banned
-
-    if not banned:
-        return f"""Команда {repr(team_name)} не дисквалифицирована. 
-                <a href="/admin"> вернуться обратно</a>"""
-
-    try:
-        login_data = session.query(User).filter(User.id == team_id).first()
-        login_data.is_banned = False
-        session.commit()
-
-        return f"""Команда {repr(team_name)} прощена. <a href="/admin">
-                вернуться обратно</a>"""
-    except Exception as e:
-        return f"""Произошла ошибка: {e} \n <a href="/admin"> 
-                        вернуться обратно</a>"""
 
 
 # Страница, которая переправляет админа на ручную проверку
@@ -1258,27 +1188,16 @@ def logout():
 # user_id - id команды
 # login_data - bool, если True, то загружает данные авторизации, иначе данные о членах команды
 
-def load_user(user_id, login_data):
-    if login_data:
-        load_user_login_data(user_id)
-    else:
-        load_user_members_data(user_id)
+def load_user(user_id):
+    load_user_login_data(user_id)
 
 
 # Функция для получения данных авторизации пользователя по id
 
-@login_manager.user_loader
+фager.user_loader
 def load_user_login_data(user_id):
     session = db_session.create_session()
     return session.query(User).get(user_id)
-
-
-# Функция для получения данных о команде по id
-
-@login_manager.user_loader
-def load_user_members_data(user_id):
-    session = db_session.create_session()
-    return session.query(UserMemberData).get(user_id)
 
 
 # Функция возвращает True если пользователь авторизован, иначе False
@@ -1321,14 +1240,6 @@ def is_banned():
     return None
 
 
-# Возвращает True если в команде один участник
-
-def is_player(team_name):
-    user = get_user_from_team_name(team_name)
-    if None in user.member2:
-        return True
-    return False
-
 
 if __name__ == '__main__':
-    app.run(port=80, host='0.0.0.0')
+    app.run(port=8080, host='127.0.0.1')
