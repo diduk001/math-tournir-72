@@ -3,6 +3,7 @@ from data.db_session import create_session
 from config import GAMES_DEFAULT_TASK_NUMBERS, GAMES_DEFAULT_SETS_NUMBERS
 from data.users import User
 from data.tasks_states import create_tasks_table
+from data.db_session import global_init, create_session
 # Во всём коде:
 # title - Название игры, string
 # grade - Класс, int
@@ -20,43 +21,24 @@ from data.tasks_states import create_tasks_table
 
 
 # Функция создающая игру
-def create_game(title, grade, game_type, start_time, end_time, format,  privacy, info, author,
+def create_game(title, grade, game_type, start_time, end_time, format, privacy, info, author,
                 min_team_size=4, max_team_size=4):
     task_number = GAMES_DEFAULT_TASK_NUMBERS[game_type]
     sets_number = GAMES_DEFAULT_SETS_NUMBERS[game_type]
-    game = create_Game_object(title, grade, game_type, start_time, end_time, format, privacy, info, author,
+    game = Game(title, grade, game_type, start_time, end_time, format, privacy, info, author,
                               task_number, min_team_size, max_team_size, sets_number)
     create_tasks_table(title, task_number)
     author.authoring.append(game)
     session = create_session()
-    session.add(game)
-    session.commit()
+    current_session = session.object_session(game)
+    current_session.add(game)
+    current_session.commit()
 
-
-# Создание объекта класса Game
-def create_Game_object(title, grade, game_type, start_time, end_time, format,  privacy, info, author,
-                task_number, min_team_size, max_team_size, sets_number):
-    game = Game()
-    game.title = title
-    game.grade = grade
-    game.game_type = game_type
-    game.start_time = start_time
-    game.end_time = end_time
-    game.format = format
-    game.privacy = privacy
-    game.info = info
-    game.authors.append(author)
-    game.tasks_number = task_number
-    game.min_team_size = min_team_size
-    game.max_team_size = max_team_size
-    game.sets_number = sets_number
-    return game
 
 
 # Изменить общую информацию о игре
 def update_game_common_info(last_title, current_title, info, grade, game_type, start_time, end_time, format, privacy):
-    session = create_session()
-    game = get_game(last_title)
+    game, session = get_game(last_title)
     if game != 'Not found':
         game.title = current_title
         game.info = info
@@ -74,8 +56,7 @@ def update_game_common_info(last_title, current_title, info, grade, game_type, s
 
 # Изменить информацию о задачах
 def update_game_tasks_info(title, tasks_number, sets_number):
-    session = create_session()
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         game.tasks_number = tasks_number
         game.sets_number = sets_number
@@ -85,8 +66,7 @@ def update_game_tasks_info(title, tasks_number, sets_number):
 
 # Изменить информацию о размере команд
 def update_game_team_info(title, min_team_size, max_team_size):
-    session = create_session()
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         game.min_team_size = min_team_size
         game.max_team_size = max_team_size
@@ -101,8 +81,7 @@ def update_game_team_info(title, min_team_size, max_team_size):
 # delete_checkers - имена и фамилии удалённых проверяющих, list<list<str, str>>
 def update_game_authors_and_checkers_info(title, add_authors=None, delete_authors=None,
                                         add_checkers=None, delete_checkers=None):
-    session = create_session()
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         for author in add_authors:
             right_author = get_user(author[0], author[1])
@@ -126,7 +105,7 @@ def update_game_authors_and_checkers_info(title, add_authors=None, delete_author
 
 # Получить общую информацию о игре по её названию
 def get_game_common_info(title):
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         result = {'title': title,
                   'grade': game.grade,
@@ -142,7 +121,7 @@ def get_game_common_info(title):
 
 # Получить информацию о задачах игры по её названию
 def get_game_tasks_info(title):
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         result = {'tasks_number': game.tasks_number,
                   'sets_number': game.sets_number}
@@ -152,7 +131,7 @@ def get_game_tasks_info(title):
 
 # Получить информацию о размере команд игры по её нахванию
 def get_game_team_info(title):
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         result = {'max_team_size': game.max_team_size,
                   'min_team_size': game.min_team_size}
@@ -162,7 +141,7 @@ def get_game_team_info(title):
 
 # Получить имена и фамилии авторов игры по её названию
 def get_game_authors_info(title):
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         result = list(map(lambda author: (author.name, author.surname), game.authors))
         return result
@@ -171,7 +150,7 @@ def get_game_authors_info(title):
 
 # Получить имена и фамилии проверяющих игру по её названию
 def get_game_checkers_info(title):
-    game = get_game(title)
+    game, session = get_game(title)
     if game != 'Not found':
         result = list(map(lambda checker: (checker.name, checker.surname), game.checkers))
         return result
@@ -183,8 +162,8 @@ def get_game(title):
     session = create_session()
     game = session.query(Game).filter(Game.title == title)
     if game:
-        return game.first()
-    return 'Not found'
+        return game.first(), session
+    return 'Not found', None
 
 
 # Получить пользователя по имени и фамилии

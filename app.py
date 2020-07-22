@@ -16,7 +16,7 @@ import db_interface
 from api import api_blueprint, TOTALLY_RIGHT_APIKEY, VALID_DOMINO_TASKS_NUMBERS, \
     VALID_PENALTY_TASKS_NUMBERS
 from config import SERVER_URL, LoginForm, ForgotPassword, AddTaskForm, BanTeamForm, \
-    StartEndTimeForm, PardonTeamForm, SignUpUserForm, GradeGameForm, create_user, GameCommonInfoForm,\
+    StartEndTimeForm, PardonTeamForm, SignUpUserForm, GradeGameForm, GameCommonInfoForm,\
     GameTasksInfoForm, GameTeamInfoForm, GameAuthorsAndCheckersInfoForm
 from db_interface import *
 
@@ -97,14 +97,10 @@ def profile():
 
             if is_banned():
                 return render_template("you_are_banned.html", title="Вас дисквалифицировали")
-
-            team = current_user.team_name
-            grade = current_user.grade
-            domino_place = get_place(team, 'domino', grade)
-            penalty_place = get_place(team, 'penalty', grade)
-            return render_template("profile.html", domino_place=domino_place,
-                                   penalty_place=penalty_place, **(get_cur_user().__dict__()),
-                                   is_player=True)
+            name = current_user.name
+            surname = current_user.surname
+            school = current_user.school
+            return render_template("profile.html",  name=name, surname=surname, school=school)
         else:
             # Иначе переправляем на вход
             return redirect("/login")
@@ -288,13 +284,12 @@ def update_visited_status(team, game):
 
 
 # Создание игры
-@app.route('/create_game', methods=['POST', 'GET'])
-def create_game():
+@app.route('/create_game_form', methods=['POST', 'GET'])
+def create_game_form():
     if is_auth():
-        if 'author' in current_user.rights:
-            if request.method == "GET":
-                return render_template('game_creator.html', form=GameCommonInfoForm, title='Создание игры')
-            elif request.method == "POST":
+        if 'author' in current_user.rights.split():
+            form = GameCommonInfoForm()
+            if form.validate_on_submit():
                 title = request.form.get('title')
                 grade = request.form.get('grade')
                 info = request.form.get('info')
@@ -308,8 +303,7 @@ def create_game():
                 author = session.query(User).filter(User.id == author).first()
                 create_game(title, grade, game_type, start_time, end_time, format, privacy, info, author)
                 return render_template('success.html')
-            else:
-                return render_template('what_are_you_doing_here.html')
+            return render_template('game_creator.html', form=form, title='Создание игры', create=True)
     return render_template('what_are_you_doing_here.html')
 
 
@@ -320,44 +314,46 @@ dict_of_forms = {'tasks': GameTasksInfoForm,
 
 
 # Изменение данных о игре
-@app.route('/update_game/<game_title>/<block>', methods=["POST"])
+@app.route('/update_game/<game_title>/<block>', methods=["POST", "GET"])
 def update_game(game_title, block):
     global dict_of_forms
     if is_auth():
         if 'author' in current_user.rights:
-            game = get_game(game_title)
+            print('g')
+            game, session = get_game(game_title)
             if game != "Not found":
-                if game in current_user.authoring:
-                    if request.method == "GET":
-                        if block == 'common':
-                            default = get_game_common_info(game_title)
-                        elif block == 'tasks':
-                            default = get_game_tasks_info(game_title)
-                        elif block == 'team':
-                            default = get_game_team_info(game_title)
-                        elif block == 'authors_and_checkers':
-                            default = {'authors': get_game_authors_info(game_title),
-                                       'checkers': get_game_checkers_info(game_title)}
-                        else:
-                            return render_template('what_are_you_doing_here.html')
-                        return render_template('game_updater.html', form=dict_of_forms[block], default=default)
-                    elif request.method == "POST":
-                        if block == 'common':
-                            update_game_common_info(game_title, *request.form.values.values())
-                            return render_template('success.html')
-                        elif block == 'tasks':
-                            update_game_tasks_info(game_title, *request.form.values.values())
-                            return render_template('success.html')
-                        elif  block == 'team':
-                            update_game_team_info(game_title, *request.form.values.values())
-                            return render_template('success.html')
-                        elif block == 'authors_and_checkers':
-                            update_game_authors_and_checkers_info(game_title, *request.form.values.values())
-                            return render_template('success.html')
-                        else:
-                            return render_template('what_are_you_doing_here.html')
+                print('o')
+                if game.title in map(lambda x: x.title, current_user.authoring):
+                    print('o')
+                    form = dict_of_forms[block].__call__()
+                    if block == 'common':
+                        default = get_game_common_info(game_title)
+                    elif block == 'tasks':
+                        default = get_game_tasks_info(game_title)
+                    elif block == 'team':
+                        default = get_game_team_info(game_title)
+                    elif block == 'authors_and_checkers':
+                        default = {'authors': get_game_authors_info(game_title),
+                                   'checkers': get_game_checkers_info(game_title)}
                     else:
                         return render_template('what_are_you_doing_here.html')
+                    if form.validate_on_submit():
+                        print('d')
+                        if block == 'common':
+                            update_game_common_info(game_title, *(list(request.form.values())[1:-1]))
+                            return render_template('success.html')
+                        elif block == 'tasks':
+                            update_game_tasks_info(game_title, *(list(request.form.values())[1:-1]))
+                            return render_template('success.html')
+                        elif block == 'team':
+                            update_game_team_info(game_title, *(list(request.form.values())[1:-1]))
+                            return render_template('success.html')
+                        elif block == 'authors_and_checkers':
+                            update_game_authors_and_checkers_info(game_title, *(list(request.form.values())[1:-1]))
+                            return render_template('success.html')
+                        else:
+                            return render_template('what_are_you_doing_here.html')
+                    return render_template('game_creator.html', form=form, default=default)
     return render_template('what_are_you_doing_here.html')
 
 
@@ -393,66 +389,41 @@ def anti_cheat():
 # Регистрация
 @app.route("/sign_up", methods=["GET", "POST"])
 def sign_up():
-    global penalty_start_time, domino_start_time
-    current_time = datetime.datetime.now() + datetime.timedelta(hours=5)
-    start_time = datetime.datetime(2020, 5, 31, 14, 0, 0)
-    end_time = datetime.datetime(2020, 6, 1, 22, 30, 0)
-    if current_time < start_time:
-        return render_template('registration_has_not_begin.html')
-    elif current_time > end_time:
-        return render_template("registration_is_closed.html")
-    else:
-        sign_up_form = SignUpUserForm()
-        params = dict()
-        params["title"] = "Регистрация"
-        params["form"] = sign_up_form
+    sign_up_form = SignUpUserForm()
+    params = dict()
+    params["title"] = "Регистрация"
+    params["form"] = sign_up_form
 
-        if sign_up_form.validate_on_submit():
-            if is_auth():
-                logout_user()
+    if sign_up_form.validate_on_submit():
+        if is_auth():
+            logout_user()
 
-            is_login_used = login_used(request.form.get("team-login"))
-            if is_login_used:
-                if login_used:
-                    params["login_used"] = True
-                return render_template("sign_up_user.html", **params)
+        is_login_used = login_used(request.form.get("login"))
+        if is_login_used:
+            if login_used:
+                params["login_used"] = True
+            return render_template("sign_up_user.html", **params)
 
-            # Создания объекта User
+        # Создания объекта User
 
-            user = create_user(
-                request.form.get("login"),
-                request.form.get("name"),
-                request.form.get("surname"),
-                request.form.get("email"),
-                int(request.form.get("grade")),
-                request.form.get("school"),
-                request.form.get("teachers"),
-                request.form.get("info"))
+        user = User(
+            request.form.get("login"),
+            request.form.get("name"),
+            request.form.get("surname"),
+            int(request.form.get("grade")),
+            request.form.get("school"),
+            request.form.get("teachers"),
+            request.form.get("info"))
 
-            user.set_password(request.form.get("password"))
+        user.set_password(request.form.get("password"))
+        user.set_email(request.form.get("email"))
+        # Добавление пользователя в базы данных
 
-            # Добавление пользователя в базы данных
-            domino_table = 'domino_tasks' + str(user.grade)
-            penalty_table = 'penalty_tasks' + str(user.grade)
-            about_teams = "about_teams"
-            time = datetime.datetime.now()
-            time = ' '.join(
-                map(str, [time.year, time.month, time.day, time.hour, time.minute, time.second]))
+        add_user(user)
 
-            db_interface.execute(os.path.join("db", "tasks.db"),
-                                 f"INSERT into {domino_table}(title) values ("
-                                 f"'{user.team_name}')")
-            db_interface.execute(os.path.join("db", "tasks.db"),
-                                 f"INSERT into {penalty_table}(title) values ('{user.team_name}')")
-            db_interface.execute(os.path.join("db", "tasks_info.db"),
-                                 f"INSERT into {about_teams}(title, time) values ("
-                                 f"'{user.team_name}', '{time}')")
+        return redirect("/login")
 
-            add_user(user)
-
-            return redirect("/login")
-
-        return render_template("sign_up_user.html", **params)
+    return render_template("sign_up_user.html", **params)
 
 
 # Страница с правилами
@@ -1194,7 +1165,7 @@ def load_user(user_id):
 
 # Функция для получения данных авторизации пользователя по id
 
-фager.user_loader
+@login_manager.user_loader
 def load_user_login_data(user_id):
     session = db_session.create_session()
     return session.query(User).get(user_id)

@@ -3,10 +3,6 @@ from sqlalchemy import orm
 
 from .db_session import SqlAlchemyBase
 
-games_to_users = sqlalchemy.Table('games_to_users', SqlAlchemyBase.metadata,
-    sqlalchemy.Column('games', sqlalchemy.Integer, sqlalchemy.ForeignKey('games.id')),
-   sqlalchemy.Column('users', sqlalchemy.Integer, sqlalchemy.ForeignKey('users.id'))
-)
 
 class Game(SqlAlchemyBase):
     __tablename__ = 'games'
@@ -28,5 +24,25 @@ class Game(SqlAlchemyBase):
     min_team_size = sqlalchemy.Column(sqlalchemy.Integer)
     max_team_size = sqlalchemy.Column(sqlalchemy.Integer)
     solutions = sqlalchemy.Column(sqlalchemy.String)
-    authors = orm.relation("User", secondary='games_to_users')
-    checkers = orm.relation("User", secondary='games_to_users')
+    authors = orm.relation("User",
+                           secondary='authors_to_games',
+                           backref='authors')
+    checkers = orm.relation("User",
+                            secondary='checkers_to_games',
+                            backref='checkers')
+
+    def __init__(self, title, grade, game_type, start_time, end_time, format,  privacy, info, author,
+                task_number, min_team_size, max_team_size, sets_number):
+        self.title = title
+        self.grade = grade
+        self.type = game_type
+        self.start_time = start_time
+        self.end_time = end_time
+        self.format = format
+        self.privacy = privacy
+        self.info = info
+        self.authors.append(author)
+        self.tasks_number = task_number
+        self.min_team_size = min_team_size
+        self.max_team_size = max_team_size
+        self.sets_number = sets_number

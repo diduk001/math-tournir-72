@@ -3,70 +3,23 @@
 {# Шаблон для отображения страницы "Профиль" #}
 
 {% block content %}
-    <h1>Команда {{ team_name }} <a href="/logout" type="button" class="btn btn-primary">Выйти из
+    <h1>{{ name }} <a href="/logout" type="button" class="btn btn-primary">Выйти из
         аккаунта</a>
     </h1>
-
-
-    <h3>Место в рейтинге игры Пенальти: {{ penalty_place }}</h3>
-    <h3>Место в рейтинге игры Домино: {{ domino_place }}</h3>
-
-    {% if not is_player %}
-        <table class="table">
-            <thead class="thead-dark">
-            <tr>
-                <th scope="col">№</th>
-                <th scope="col">Имя участника</th>
-                <th scope="col">Фамилия участника</th>
-                <th scope="col">Школа участника</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <th scope="row">1</th>
-                <td>{{ member1_name }}</td>
-                <td>{{ member1_surname }}</td>
-                <td>{{ member1_school }}</td>
-            </tr>
-            Да
-            <tr>
-                <th scope="row">2</th>
-                <td>{{ member2_name }}</td>
-                <td>{{ member2_surname }}</td>
-                <td>{{ member2_school }}</td>
-            </tr>
-            <tr>
-                <th scope="row">3</th>
-                <td>{{ member3_name }}</td>
-                <td>{{ member3_surname }}</td>
-                <td>{{ member3_school }}</td>
-            </tr>
-            <tr>
-                <th scope="row">4</th>
-                <td>{{ member4_name }}</td>
-                <td>{{ member4_surname }}</td>
-                <td>{{ member4_school }}</td>
-            </tr>
-            </tbody>
-        </table>
-    {% else %}
-        <table class="table">
-            <thead class="thead-dark">
-            <tr>
-                <th scope="col">№</th>
-                <th scope="col">Имя участника</th>
-                <th scope="col">Фамилия участника</th>
-                <th scope="col">Школа участника</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <th scope="row">1</th>
-                <td>{{ member1_name }}</td>
-                <td>{{ member1_surname }}</td>
-                <td>{{ member1_school }}</td>
-            </tr>
-            </tbody>
-        </table>
-    {% endif %}
+    <table class="table">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Имя</th>
+            <th scope="col">Фамилия</th>
+            <th scope="col">Школа</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ surname }}</td>
+            <td>{{ school }}</td>
+        </tr>
+        </tbody>
+    </table>
 {% endblock %}

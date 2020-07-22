@@ -17,7 +17,7 @@ UserLoginData = users.User
 def add_user(user):
     # Проверка типа аргумента
     check_type("user", user, UserLoginData)
-    session = db_session.create_session('users')
+    session = db_session.create_session()
     session.add(user)
     session.commit()
 

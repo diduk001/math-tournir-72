@@ -8,19 +8,22 @@
     <p style="color: red">Имя и фамилия вводятся на русском языке с заглавной буквы;</p>
     <p style="color: red">Запомните логин и пароль, эти данные необходимы для входа;</p>
 
-    <form method="post">
+    <form method="post" novalidate>
         <div>
             {{ form.csrf_token }}
         </div>
-
         {# Форма регистрации пользователя (поля логина, пароля, имени, фамилии, выбора класса, школы,
            учителей, информации #}
 
         <div class="form-group">
-            {% for field in form %}
-                <div class="form-group">
+            {% for field in form if field.name != 'csrf_token' %}
+                {% if field.name == 'submit' %}
+                    {{ field(class="btn btn-primary") }}
+                {% else %}
+                    <div class="form-group">
                     {{ field(class="form-control", placeholder=field.label.text) }}
-                </div>
+                    </div>
+                {% endif %}
                 {% if field.errors %}
                     {% for error in field.errors %}
                         <br>
@@ -43,9 +46,7 @@
 
 
 
-        {# Кнопка отправки #}
 
-        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
     </form>
     <br>
 {% endblock %}

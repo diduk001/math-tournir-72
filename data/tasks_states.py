@@ -6,12 +6,11 @@ from sqlalchemy.orm import mapper, sessionmaker
 # game_title - название игры, str
 # tasks_number - количество задач, int
 def create_tasks_table(game_title, tasks_number):
-    engine = sqlalchemy.create_engine('sqlite:///tasks_states.db')
-
+    engine = sqlalchemy.create_engine('sqlite:///db/tasks_states.db')
     metadata = sqlalchemy.MetaData(engine)
     table = sqlalchemy.Table(game_title, metadata,
                           sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
-                          sqlalchemy.Column('name', sqlalchemy.String)
+                          sqlalchemy.Column('name', sqlalchemy.String),
                           *[sqlalchemy.Column('t' + str(i), sqlalchemy.Integer) for i in range(1, tasks_number + 1)]
                           )
     metadata.create_all(engine)

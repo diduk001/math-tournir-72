@@ -5,6 +5,18 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from .db_session import SqlAlchemyBase
 
+association_table = sqlalchemy.Table(
+                    'authors_to_games', SqlAlchemyBase.metadata,
+                    sqlalchemy.Column('authoring_games', sqlalchemy.ForeignKey('games.id'), primary_key=True),
+                    sqlalchemy.Column('authors', sqlalchemy.ForeignKey('users.id'), primary_key=True)
+)
+
+second_association_table = sqlalchemy.Table(
+                    'checkers_to_games', SqlAlchemyBase.metadata,
+                    sqlalchemy.Column('checking_games', sqlalchemy.ForeignKey('games.id'), primary_key=True),
+                    sqlalchemy.Column('checkers', sqlalchemy.ForeignKey('users.id'), primary_key = True)
+)
+
 
 class User(SqlAlchemyBase, UserMixin):
     __tablename__ = 'users'
@@ -25,16 +37,14 @@ class User(SqlAlchemyBase, UserMixin):
     login = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     # Системная информация о пользователе:
-    # user_id, права, команды, в которых состоит, команды, в которые приглашён,
+    # права, команды, в которых состоит, команды, в которые приглашён,
     # потверждена ли почта, заблокирован ли соответсвенно
-    user_id = orm.relation("UserMembersData", back_populates='user')
     rights = sqlalchemy.Column(sqlalchemy.String, nullable=False, default='user')
-    checking = orm.relation('Game',
-                            secondary='games_to_users',
-                            backref="users")
-    authoring = orm.relation('Game',
-                             secondary='games_to_users',
-                             backref="users")
+    authoring = orm.relationship('Game',
+                                 secondary='authors_to_games',
+                                 backref="authoring_games")
+    checkering = orm.relationship('Game', secondary='checkers_to_games',
+                                  backref='checking_games')
     teams = sqlalchemy.Column(sqlalchemy.Text, default='')
     invitation = sqlalchemy.Column(sqlalchemy.Text, default='')
     is_approved = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
@@ -50,3 +60,12 @@ class User(SqlAlchemyBase, UserMixin):
     def set_email(self, email):
         self.email = email
         self.hashed_email = generate_password_hash(email)
+
+    def __init__(self, login, name, surname, grade, school, teachers, info):
+        self.login = login
+        self.name = name
+        self.surname = surname
+        self.grade = grade
+        self.school = school
+        self.teachers = teachers
+        self.info = info

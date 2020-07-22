@@ -8,18 +8,6 @@ from data.users import User
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# Создание данных о пользователе
-def create_user(login, name, surname, email, grade, school, teacher, info):
-    user = User()
-    user.login = login
-    user.name = name
-    user.surname = surname
-    user.email = email
-    user.grade = grade
-    user.school = school
-    user.teacher = teacher
-    user.info = info
-    return user
 
 
 # Словарь с информацией о том, может ли в игре быть разное количество задач
@@ -44,8 +32,8 @@ VALID_DOMINO_TASKS_NUMBERS = tuple([f"{i}-{j}" for i in range(7) for j in range(
 
 
 # Словарь игр и их названий
-games_dict = {'domino':'Домино',
-              'penalty':'Пенальти'}
+games_dict = [('domino', 'Домино'),
+              ('penalty', 'Пенальти')]
 
 # Файл, содержащий формы для входа и регистрации
 
@@ -92,14 +80,16 @@ class LoginForm(FlaskForm):
 
 # Форма для заполнения общей информации о игре
 class GameCommonInfoForm(FlaskForm):
+    global games_dict
     title = StringField('Название игры', validators=DATA_REQUIRED_VALIDATOR)
     info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
-    grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)], coerce=int)
-    game_type = SelectField('Тип игры', choices=games_dict.items(), coerce=str)
+    grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)],
+                        coerce=int)
+    game_type = SelectField('Тип игры', choices=games_dict, coerce=str)
     start_time = StringField('Время начала', DATA_REQUIRED_VALIDATOR)
     end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
-    format = SelectField('Формат игры', choices=[('личная', 'personal'), ('командная', 'team')])
-    privacy = SelectField('Приватность игры', choices=[('закрытая', 'private'), ('открытая', 'open')])
+    format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
+    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open', 'открытая')])
     submit = SubmitField("Создать/изменить игру")
 
 
@@ -116,6 +106,7 @@ class GameTeamInfoForm(FlaskForm):
     max_team_size = IntegerField('Минимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Подтвердить изменения')
 
+
 # Форма для заполнения информации о авторах и проверяющих
 class GameAuthorsAndCheckersInfoForm(FlaskForm):
     authors = StringField('Имена и Фамилии авторов через пробел')
@@ -124,18 +115,19 @@ class GameAuthorsAndCheckersInfoForm(FlaskForm):
 
 
 # Форма для регистрации пользователя с полями логина, пароля, названия команды, выбора класса
-class SignUpUserForm(Form):
+class SignUpUserForm(FlaskForm):
     login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
     email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
     name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
-    grade = SelectField("Класс*", choices=[(5, 5), (6, 6), (7, 7)], coerce=int)
+    grade = SelectField("Класс*",
+                        choices=[(5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)],
+                        coerce=int)
     school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
-    teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в Ваши успехи",
-                           validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
-    info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, что Вы хотите рассказать о себе)",
-                       validators=DATA_REQUIRED_VALIDATOR)
+    teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в Ваши успехи*",
+                           validators=DATA_REQUIRED_VALIDATOR)
+    info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, что Вы хотите рассказать о себе)")
     submit = SubmitField("Зарегистрироваться")
 
 
