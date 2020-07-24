@@ -10,7 +10,7 @@
         <p style="color: red">Необходимо ввести и логин, и пароль</p>
 
         {# Логин #}
-        {{ form.login(class="form-control", placeholder=form.login.label.text) }}<br>
+        {{ form.login(class="_form-control", placeholder=form.login.label.text) }}<br>
         {% for error in form.login.errors %}
             <div class="alert alert-danger" role="alert">
                 {{ error }}
@@ -19,7 +19,7 @@
 
 
         {# Пароль #}
-        {{ form.password(class="form-control", placeholder=form.password.label.text) }}<br>
+        {{ form.password(class="_form-control", placeholder=form.password.label.text) }}<br>
         {% for error in form.password.errors %}
             <div class="alert alert-danger" role="alert">
                 {{ error }}

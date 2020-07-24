@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h3>Добавление Задачи</h3>
+
+    <form action="" method="post" enctype="multipart/form-data" novalidate>
+        <div>
+            {{ add_task_form.csrf_token }}
+        </div>
+
+        {% if success %}
+            <div class="alert alert-success" role="alert">Задача успешно добавлена</div>
+        {% endif %}
+
+        <div class="warning">
+            <p>Если возможных ответов несколько, введите их, разделяя символом "|"</p>
+            <p>Например, "1 2|1,2|1, 2|1;2"</p>
+            <p>Однако, пожалуйста, уточняйте формат ответа в условиях задачи</p>
+            <p>Всё предугадать невозможно!</p>
+            <br>
+            <p>Поля, отмеченные красным, обязательны для заполнения</p>
+        </div>
+        <br>
+
+        {% for field in add_task_form if field.name != 'csrf_token' %}
+
+            <div>
+                {% if field.type == 'SubmitField' %}
+                    {{ field(class='btn btn-primary') }}
+                {% elif field.type == 'BooleanField' %}
+                    {{ field(class='form-check-input') }}
+                    {% if field.flags.required %}
+                        {{ field.label(class='form-check-label', class='warning') }}
+                    {% else %}
+                        {{ field.label(class='form-check-label') }}
+                    {% endif %}
+                    <br>
+                {% else %}
+                    {% if field.flags.required %}
+                        {{ field.label(class='warning') }}
+                    {% else %}
+                        {{ field.label() }}
+                    {% endif %}
+                    {{ field(class='form-control') }}
+                {% endif %}
+
+                {% for error in field.errors %}
+                    <br>
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                {% endfor %}
+                <br>
+
+            </div>
+        {% endfor %}
+
+    </form>
+{% endblock %}
