@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <table id="archive-table" class="table table-hover">
+        <thead>
+        <tr>
+            <th>id</th>
+            <th>min класс</th>
+            <th>max класс</th>
+            <th>проверяется вручную</th>
+            <th>ответ - рисунок</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks_table %}
+            <tr>
+                <td><b><a href={{ "/tasks/%s" % task.id }}>{{ task.id }}</a></b></td>
+                <td>{{ task.min_grade }}</td>
+                <td>{{ task.max_grade }}</td>
+                {% if task.manual_check %}
+                    <td><p style="color:mediumseagreen;">Да</p></td>
+                {% else %}
+                    <td><p style="color:firebrick;">Нет</p></td>
+                {% endif %}
+                {% if task.ans_picture %}
+                    <td><p style="color:mediumseagreen;">Да</p></td>
+                {% else %}
+                    <td><p style="color:firebrick;">Нет</p></td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <thead>
+
+{% endblock %}

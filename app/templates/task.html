@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <h1>Задача {{ task.id }}</h1>
+    <br>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm">
+                <h4>Минимальный рекомендуемый класс:</h4>
+            </div>
+            <div class="col-sm">
+                <h4>{{ task.min_grade }}</h4>
+            </div>
+        </div>
+
+{#        <style>#}
+{#            iframe[seamless] {#}
+{#                border: none;#}
+{#            }#}
+{#        </style>#}
+
+        <div class="row">
+            <div class="col-sm">
+                <h4>Максимальный рекомендуемый класс:</h4>
+            </div>
+            <div class="col-sm">
+                <h4>{{ task.max_grade }}</h4>
+            </div>
+        </div>
+        <br>
+        <div class="row"><h4>Условие:</h4></div>
+        <div class="row">
+            <iframe src={{ condition_file_path }} width="70%" height="70%" seamless></iframe>
+        </div>
+        <br>
+        {% if have_solution %}
+            <div class="row"><h4>Решение:</h4></div>
+            <iframe src={{ solution_file_path }} width="70%" height="70%" seamless></iframe>
+        {% endif %}
+    </div>
+{% endblock %}
