@@ -965,7 +965,8 @@ def domino():
                 verdicts = ['ok', 'ff', 'fs']
                 # Если всё нормально и пользователь не попытался багануть сайт
                 if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in keys_of_picked_tasks:
-                    result = check_task('domino', grade, domino_tasks_names_by_keys[key], request.form.get('answer'))
+                    result = check_task('domino', grade, domino_tasks_names_by_keys[key],
+                                        request.form.get('answer'))
                     # Если пользователь решил задачу с первой попытки
                     if result and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(
@@ -996,9 +997,12 @@ def domino():
                     for key in keys_of_picked_tasks:
                         picked_tasks.append(
                             {'name': domino_tasks_names_by_keys[key],
-                             'content': str(get_task('domino', int(grade), domino_tasks_names_by_keys[key])),
-                             'manual_check': get_manual_check('domino', grade, domino_tasks_names_by_keys[key]),
-                             'ans_picture': get_ans_picture('domino', grade, domino_tasks_names_by_keys[key])})
+                             'content': str(
+                                 get_task('domino', int(grade), domino_tasks_names_by_keys[key])),
+                             'manual_check': get_manual_check('domino', grade,
+                                                              domino_tasks_names_by_keys[key]),
+                             'ans_picture': get_ans_picture('domino', grade,
+                                                            domino_tasks_names_by_keys[key])})
                     domino_info[grade][key]['number'] += 1
             update('domino_tasks', 'picked_tasks', " ".join(keys_of_picked_tasks), team, grade)
             # Обновление страницы
