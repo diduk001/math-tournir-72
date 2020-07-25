@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <br>
+    <br>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm">
+                <h3>Добавление задачи</h3>
+                <form action="cdb63e6a1a08307c6c44354aa37972b7" method="post"
+                      enctype="multipart/form-data">
+                    <div>
+                        {{ add_task_form.csrf_token }}
+                    </div>
+                    <p style="color: red">Если возможных ответов несколько, перечисляйте через
+                        "!"</p>
+                    <p style="color: red">Например, "1 2!1,2!1, 2!1;2"
+                    <p style="color: red">Однако, пожалуйста, уточняйте формат ввода в условиях</p>
+                    <p style="color: red">Всё предугадать невозможно!</p>
+                    {% for field in add_task_form if field.name != 'csrf_token' %}
+                        <div>
+                            {% if field.type == 'SubmitField' %}
+                                {{ field(class="btn btn-primary") }}
+                            {% elif field.type == 'BooleanField' %}
+                                {{ field(class="form-check-input") }}
+                                {{ field.label(class="form-check-label") }}
+                                <br>
+                            {% else %}
+                                {{ field.label() }}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+
+                            <br>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+            <div class="col-sm">
+                <h3>Изменение времени начала и конца соревнования</h3>
+                <form action="8770a9a6c5ab1b00a4e0293d9ebd7bec" method="post">
+                    <p style="color: red">Данные вводятся в формате ДД.ММ.ГГГГ ЧЧ:ММ:СС в 23-часовом
+                        формате</p>
+                    <p style="color: red">Например, 1.1.2015 13:01:00 или 27.02.2002 01:59:23
+                        допустимы</p>
+                    <div>
+                        {{ start_end_time_form.csrf_token }}
+                    </div>
+                    {% for field in start_end_time_form if field.name != 'csrf_token' %}
+                        <div>
+                            {% if field.name == 'submit' %}
+                                {{ field(class="btn btn-primary") }}
+                            {% else %}
+                                {{ field.label() }}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+
+                            <br>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+        <br>
+        <hr>
+        <br>
+        <div class="row">
+            <div class="col-sm">
+                <h3>Исключение игроков</h3>
+                <p style="color: red">Пожалуйста, вводите полностью правильное название команды</p>
+                <form action="1551c97a3794c5257e7ed3c5b816a825" method="post">
+                    <div>
+                        {{ ban_team_form.csrf_token }}
+                    </div>
+                    {% for field in ban_team_form if field.name != 'csrf_token' %}
+                        <div>
+                            {% if field.name == 'submit' %}
+                                {{ field(class="btn btn-primary") }}
+                            {% else %}
+                                {{ field.label() }}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+
+                            <br>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+            <div class="col-sm">
+                <h3>Прощение игроков</h3>
+                <p style="color: red">Пожалуйста, вводите полностью правильное название команды</p>
+                <form action="7717fdf71bcc8418fb7fabcb5b9c46d2" method="post">
+                    <div>
+                        {{ pardon_team_form.csrf_token }}
+                    </div>
+                    {% for field in pardon_team_form if field.name != 'csrf_token' %}
+                        <div>
+                            {% if field.name == 'submit' %}
+                                {{ field(class="btn btn-primary") }}
+                            {% else %}
+                                {{ field.label() }}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+
+                            <br>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+        <br>
+        <h3>Проверка задач</h3>
+        <form action="b1131abe22277e066731346d53b953f8" method="post">
+            <div>
+                {{ grade_game_form.csrf_token }}
+            </div>
+            {% for field in grade_game_form if field.name != "csrf_token" %}
+                {% if field.name == 'submit' %}
+                    {{ field(class="btn btn-primary") }}
+                {% else %}
+                    {{ field.label() }}
+                    {{ field() }}
+                {% endif %}
+                <br>
+
+            {% endfor %}
+            <br>
+        </form>
+    </div>
+    <br>
+    <br>
+
+{% endblock %}

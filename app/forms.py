@@ -46,67 +46,38 @@ GAME_TYPE_CHOICES = [("domino", "Домино"), ("penalty", "Пенальти")
 
 
 # Форма для входа
-
 class LoginForm(FlaskForm):
     login = StringField("Логин", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Вход")
 
 
-# Форма для регистрации члена команды с полями имени, фамилии, школы
+# Форма для регистрации пользователя с полями логина, пароля, названия команды, выбора класса
+class SignUpUserForm(FlaskForm):
+    login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
+    password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
+    email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
+    name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    grade = SelectField("Класс*",
+                        choices=[(5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)],
+                        coerce=int)
+    school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
+    teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в "
+                           "Ваши успехи*",
+                           validators=DATA_REQUIRED_VALIDATOR)
+    info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, "
+                       "что Вы хотите рассказать о себе)")
+    submit = SubmitField("Зарегистрироваться")
 
-class SignUpMemberForm(Form):
-    surname = StringField("Фамилия", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
-    name_field = StringField("Имя", validators=IS_NAME_VALIDATOR + DATA_REQUIRED_VALIDATOR)
-    school = StringField("Школа", validators=DATA_REQUIRED_VALIDATOR)
 
-
-# Форма для регистрации команды с полями логина, пароля, названия команды, выбора класса
-
-class SignUpTeamForm(Form):
-    login = StringField("Логин", validators=DATA_REQUIRED_VALIDATOR)
-    password = PasswordField("Пароль", validators=DATA_REQUIRED_VALIDATOR)
+# Форма для забывчивых
+class ForgotPassword(FlaskForm):
     email = StringField("Email", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    grade = SelectField("Класс", choices=GRADE_CHOICES)
-
-
-# Всеобобщающая форма с формой регистрацией команды
-
-class SignUpForm(FlaskForm):
-    team = FormField(SignUpTeamForm)
-
-    member1 = FormField(SignUpMemberForm)
-    member2 = FormField(SignUpMemberForm)
-    member3 = FormField(SignUpMemberForm)
-    member4 = FormField(SignUpMemberForm)
-    submit = SubmitField("Регистрация")
-
-
-# Всеобобщающая форма для регистрации команды из одного человека
-
-class SignUpPlayerForm(FlaskForm):
-    team = FormField(SignUpTeamForm)
-    member = FormField(SignUpMemberForm)
-    submit = SubmitField("Регистрация")
-
-
-# Форма для бана команды
-
-class BanTeamForm(FlaskForm):
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Удалить команду из соревнования")
-
-
-# Форма для пардона команды
-
-class PardonTeamForm(FlaskForm):
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Удалить команду из соревнования")
+    submit = SubmitField("Восстановить пароль")
 
 
 # Форма для добавления задачи в архив
-
 class AddTaskForm(FlaskForm):
     min_grade = SelectField("Самый младший рекомендуемый класс", default='5',
                             choices=GRADE_CHOICES)
@@ -118,16 +89,59 @@ class AddTaskForm(FlaskForm):
                                          validators=ALL_IMAGES_FILES)
     solution_file = FileField("*.txt файл с решением", validators=ALL_TEXT_FILES)
     solution_images = MultipleFileField("Файлы иллюстраций к решению (допустимы файлы "
-                                         "*.png/*.jpg/*.jpeg/*.gif)",
-                                         validators=ALL_IMAGES_FILES)
+                                        "*.png/*.jpg/*.jpeg/*.gif)",
+                                        validators=ALL_IMAGES_FILES)
     answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
     manual_check = BooleanField("Задача проверяется вручную")
     ans_picture = BooleanField("Ответом является рисунок (тогда задача проверяется вручную)")
     submit = SubmitField("Добавить задачу")
 
 
-# Форма для выбора начала и конца соревнования
+# Чтобы выбрать класс и тип игры
+class GradeGameForm(FlaskForm):
+    grade = RadioField("Выберите класс", choices=GRADE_CHOICES,
+                       validators=DATA_REQUIRED_VALIDATOR)
+    game = RadioField("Выберите игру", choices=GAME_TYPE_CHOICES)
+    submit = SubmitField("Перейти")
 
+
+# Форма для заполнения общей информации о игре
+class GameCommonInfoForm(FlaskForm):
+    title = StringField('Название игры', validators=DATA_REQUIRED_VALIDATOR)
+    info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
+    grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10),
+                                          (11, 11)], coerce=int)
+    game_type = SelectField('Тип игры', choices=Consts.GAMES_DICT, coerce=str)
+    start_time = StringField('Время начала', DATA_REQUIRED_VALIDATOR)
+    end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
+    format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
+    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open',
+                                                                                 'открытая')])
+    submit = SubmitField("Создать/изменить игру")
+
+
+# Форма для заполнения информации о блоке задач
+class GameTasksInfoForm(FlaskForm):
+    tasks_number = IntegerField('Количество задач', validators=DATA_REQUIRED_VALIDATOR)
+    sets_number = IntegerField('Количество наборов задач', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Подтвердить изменения')
+
+
+# Форма для заполнения информации о размере команд
+class GameTeamInfoForm(FlaskForm):
+    min_team_size = IntegerField('Максимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
+    max_team_size = IntegerField('Минимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Подтвердить изменения')
+
+
+# Форма для заполнения информации о авторах и проверяющих
+class GameAuthorsAndCheckersInfoForm(FlaskForm):
+    authors = StringField('Имена и Фамилии авторов через пробел')
+    checkers = StringField('Имена и Фамилии проверяющих через пробел')
+    submit = SubmitField('Подтвердить изменения')
+
+
+# Форма для выбора начала и конца соревнования
 class StartEndTimeForm(FlaskForm):
     game_type = SelectField("Тип игры", choices=[("domino", "Домино"), ("penalty", "Пенальти")],
                             validators=DATA_REQUIRED_VALIDATOR)
@@ -137,20 +151,16 @@ class StartEndTimeForm(FlaskForm):
     submit = SubmitField("Установить время начала и конца")
 
 
-# Форма для забывчивых
+# Форма для бана команды
+class BanTeamForm(FlaskForm):
+    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Удалить команду из соревнования")
 
-class ForgotPassword(FlaskForm):
-    email = StringField("Email", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
-    submit = SubmitField("Восстановить пароль")
 
-
-# Чтобы выбрать класс и тип игры
-
-class GradeGameForm(FlaskForm):
-    grade = RadioField("Выберите класс", choices=GRADE_CHOICES,
-                       validators=DATA_REQUIRED_VALIDATOR)
-    game = RadioField("Выберите игру", choices=GAME_TYPE_CHOICES)
-    submit = SubmitField("Перейти")
+# Форма для пардона команды
+class PardonTeamForm(FlaskForm):
+    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Удалить команду из соревнования")
 
 
 ''' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ '''

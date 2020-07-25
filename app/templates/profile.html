@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{# Шаблон для отображения страницы "Профиль" #}
+
+{% block content %}
+    <h1>{{ name }} <a href="/logout" type="button" class="btn btn-primary">Выйти из
+        аккаунта</a>
+    </h1>
+    <table class="table">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Имя</th>
+            <th scope="col">Фамилия</th>
+            <th scope="col">Школа</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ surname }}</td>
+            <td>{{ school }}</td>
+        </tr>
+        </tbody>
+    </table>
+{% endblock %}

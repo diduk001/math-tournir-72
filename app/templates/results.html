@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Таблица результатов {{ title }} по {{ grade }} классу</h1>
+    <br>
+    {% if title == "Домино" %}
+        <a href="/static/results/domino_res.xlsx" download>Скачать результаты Домино по всем классам</a>
+        <br>
+    {% else %}
+        <a href="/static/results/penalty_res.xlsx" download>Скачать результаты Пенальти по всем классам</a>
+        <br>
+    {% endif %}
+    <div class="container">
+        <div class="row">
+            {% for grd in ['5', '6', '7'] %}
+                {% set a_grd = "./" + grd %}
+                {% if grd == grade %}
+                    <div class="col-sm">
+                        <a href={{a_grd}} type="button" class="btn btn-primary">{{grd}} класс</a></div>
+                {% else %}
+                    <div class="col-sm">
+                        <a href={{a_grd}} type="button" class="btn btn-secondary">{{grd}} класс</a></div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <br>
+    <table class="table table-bordered table-responsive" id="results">
+        <thead>
+        <tr>
+            <th> Текущее место</th>
+            <th> Название</th>
+            {% for task in keys %}
+                <th width="10%"> {{ info[grade][task]['name'] }} </th>
+            {% endfor %}
+            <th> Сумма</th>
+            <th>Количество решённых задач</th>
+        </tr>
+        </thead>
+        {% for place in range(team_num) %}
+            <tr>
+                {% if results[place][1] == team %}
+                    <td class="table-primary"> {{ place + 1 }} </td>
+                    <td class="table-primary"> {{ results[place][1] }} </td>
+                {% else %}
+                    <td> {{ place + 1 }} </td>
+                    <td> {{ results[place][1] }} </td>
+                {% endif %}
+                {% if title == 'Домино' %}
+                    {% set step = 3 %}
+                {% else %}
+                    {% set step = 2 %}
+                {% endif %}
+                {% for i in range(step, number + step) %}
+                    {% set state = results[place][i][-2:] %}
+                    {% set points = results[place][i][:-2] %}
+                    {% if state == 'af' %}
+                        <td class="table-success" width="30px"> {{ points }} </td>
+                    {% elif state in ['ff', 'as', 'bf'] %}
+                        <td class="table-warning" width="30px"> {{ points }} </td>
+                    {% elif state == 'fs' %}
+                        <td class="table-danger" width="30px"> {{ points }} </td>
+                    {% else %}
+                        <td width="30px"> {{ points }} </td>
+                    {% endif %}
+                {% endfor %}
+                <td width="30px"> {{ results[place][-1] }} </td>
+                <td width="30px"> {{numbers_of_solved[place]}} </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
