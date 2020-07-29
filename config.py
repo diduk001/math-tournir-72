@@ -1,5 +1,4 @@
 import os.path
-import app.forms
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,7 +9,9 @@ class Config(object):
                                'sqlite:///' + os.path.join(basedir, 'databases', 'main.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_BINDS = {
-        'tasks_archive': 'sqlite:///' + os.path.join(basedir, 'databases', 'tasks_archive.db')
+        'tasks_archive': 'sqlite:///' + os.path.join(basedir, 'databases', 'tasks_archive.db'),
+        'games': 'sqlite:///' + os.path.join(basedir, 'databases', 'games.db'),
+        'users': 'sqlite:///' + os.path.join(basedir, 'databases', 'users.db')
     }
     TASKS_UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'tasks_files')
     TASKS_UPLOAD_FROM_TEMPLATES = os.path.join('..', 'static', 'tasks_files')
@@ -41,8 +42,3 @@ class Constants(object):
     # Словарь игр и их названий
     GAMES_DICT = [('domino', 'Домино'),
                   ('penalty', 'Пенальти')]
-
-    DICT_OF_FORMS = {'tasks': app.forms.GameTasksInfoForm,
-                     'common': app.forms.GameCommonInfoForm,
-                     'team': app.forms.GameTeamInfoForm,
-                     'author_and_checkers': app.forms.GameAuthorsAndCheckersInfoForm}

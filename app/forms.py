@@ -4,8 +4,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import *
 from wtforms import *
 from wtforms.validators import *
-
-from config import Constants as Consts
+from config import Constants
 
 
 # Функция-Валидатор для проверки строки на номер задачи
@@ -14,10 +13,10 @@ def is_task_validator(form, field):
     game_type = form.game_type.data
     task = field.data
     if game_type == "domino":
-        if task not in Consts.VALID_DOMINO_TASKS_NUMBERS:
+        if task not in Constants.VALID_DOMINO_TASKS_NUMBERS:
             raise ValidationError("Номер задачи не прошёл проверку")
     elif game_type == "penalty":
-        if task not in Consts.VALID_PENALTY_TASKS_NUMBERS:
+        if task not in Constants.VALID_PENALTY_TASKS_NUMBERS:
             raise ValidationError("Номер задачи не прошёл проверку")
 
 
@@ -35,9 +34,9 @@ DATA_REQUIRED_VALIDATOR = [InputRequired(message="Это поле обязате
 FILE_REQUIRED_VALIDATOR = [FileRequired(message="Нужно отправить этот файл")]
 AT_LEAST_ONE_FILE_REQUIRED_VALIDATOR = []
 IS_TASK_VALIDATOR = [is_task_validator]
-ALL_IMAGES_FILES = [FileAllowed(Consts.ALLOWED_IMAGE_EXTENSIONS, message="Неправильный формат "
+ALL_IMAGES_FILES = [FileAllowed(Constants.ALLOWED_IMAGE_EXTENSIONS, message="Неправильный формат "
                                                                          "файла")]
-ALL_TEXT_FILES = [FileAllowed(Consts.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
+ALL_TEXT_FILES = [FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
 
 EMAIL_VALIDATOR = [Email(message="Формат ввода Email неправильный")]
 
@@ -111,7 +110,7 @@ class GameCommonInfoForm(FlaskForm):
     info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
     grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10),
                                           (11, 11)], coerce=int)
-    game_type = SelectField('Тип игры', choices=Consts.GAMES_DICT, coerce=str)
+    game_type = SelectField('Тип игры', choices=Constants.GAMES_DICT, coerce=str)
     start_time = StringField('Время начала', DATA_REQUIRED_VALIDATOR)
     end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
     format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])

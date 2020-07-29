@@ -4,6 +4,20 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
 
+db.metadata.clear()
+
+authors_to_games_assoc_table = db.Table(
+    'authors_to_games', db.metadata,
+    db.Column('authoring_games', db.ForeignKey('games.id'), primary_key=True),
+    db.Column('authors', db.ForeignKey('users.id'), primary_key=True)
+)
+
+checkers_to_games_assoc_table = db.Table(
+    'checkers_to_games', db.metadata,
+    db.Column('checking_games', db.ForeignKey('games.id'), primary_key=True),
+    db.Column('checkers', db.ForeignKey('users.id'), primary_key=True)
+)
+
 
 class Task(db.Model):
     __bind_key__ = 'tasks_archive'
@@ -19,7 +33,7 @@ class Task(db.Model):
     hidden = db.Column(db.Boolean, default=False)
     hashed_answer = db.Column(db.String(128))
 
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # Установить ответ
 
@@ -59,10 +73,10 @@ class Game(db.Model):
     max_team_size = db.Column(db.Integer)
     solutions = db.Column(db.String)
     authors = orm.relation("User",
-                           secondary='authors_to_games',
-                           backref='authors')
+                           secondary=authors_to_games_assoc_table,
+                           back_populates='authors')
     checkers = orm.relation("User",
-                            secondary='checkers_to_games',
+                            secondary=checkers_to_games_assoc_table,
                             backref='checkers')
 
     def __init__(self, title, grade, game_type, start_time, end_time, game_format, privacy, info,
@@ -122,19 +136,6 @@ def add_user_to_game_table(name, surname, tasks_number, game_title):
     session.commit()
 
 
-association_table = db.Table(
-    'authors_to_games', db.Model.metadata,
-    db.Column('authoring_games', db.ForeignKey('games.id'), primary_key=True),
-    db.Column('authors', db.ForeignKey('users.id'), primary_key=True)
-)
-
-second_association_table = db.Table(
-    # 'checkers_to_games', db.Model.metadata,
-    db.Column('checking_games', db.ForeignKey('games.id'), primary_key=True),
-    db.Column('checkers', db.ForeignKey('users.id'), primary_key=True)
-)
-
-
 class User(db.Model, UserMixin):
     __bind_key__ = 'users'
     __tablename__ = 'users'
@@ -157,13 +158,15 @@ class User(db.Model, UserMixin):
     login = db.Column(db.String, nullable=False)
     hashed_password = db.Column(db.String, nullable=False)
     # Системная информация о пользователе:
-    # права, команды, в которых состоит, команды, в которые приглашён,
+    # задани, которые создал, права, команды, в которых состоит, команды, в которые приглашён,
     # потверждена ли почта, заблокирован ли соответсвенно
+    created_tasks = orm.relationship("Task")
     rights = db.Column(db.String, nullable=False, default='user')
     authoring = orm.relationship('Game',
-                                 secondary='authors_to_games',
+                                 secondary=authors_to_games_assoc_table,
                                  backref="authoring_games")
-    checkering = orm.relationship('Game', secondary='checkers_to_games',
+    checkering = orm.relationship('Game',
+                                  secondary=checkers_to_games_assoc_table,
                                   backref='checking_games')
     teams = db.Column(db.Text, default='')
     invitation = db.Column(db.Text, default='')

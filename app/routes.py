@@ -4,7 +4,7 @@ import os.path
 
 from flask import render_template, request, flash, redirect
 from flask_login import logout_user, current_user, login_user
-
+from app import login_manager
 from app import app
 from app.forms import *
 from app.game_creator import *
@@ -146,7 +146,7 @@ def update_game(game_title, block):
                 print('o')
                 if game.title in map(lambda x: x.title, current_user.authoring):
                     print('o')
-                    form = Consts.DICT_OF_FORMS[block].__call__()
+                    form = DICT_OF_FORMS[block].__call__()
                     if block == 'common':
                         default = get_game_common_info(game_title)
                     elif block == 'tasks':
@@ -612,7 +612,20 @@ def get_extension(filename):
     return filename.rsplit('.', 1)[1].lower()
 
 
+@login_manager.user_loader
+def load_user(user):
+    return User.get(user)
+
+
 # Функция возвращает True если пользователь авторизован, иначе False
 
 def is_auth():
     return current_user.is_authenticated
+
+
+from app import forms
+
+DICT_OF_FORMS = {'tasks': forms.GameTasksInfoForm,
+                 'common': forms.GameCommonInfoForm,
+                 'team': forms.GameTeamInfoForm,
+                 'author_and_checkers': forms.GameAuthorsAndCheckersInfoForm}
