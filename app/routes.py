@@ -33,7 +33,7 @@ def sign_up():
             logout_user()
 
         user_login = request.form.get('login')
-        login_used_query = db.session.query(User).filter_by(login=user_login)
+        login_used_query = db.session.query(User).filter(User.login == user_login)
         login_used = login_used_query.scalar() is not None
 
         if login_used:
@@ -84,8 +84,8 @@ def login():
 
 
 # Вход и профиль (профиль открывается только тогда, когда пользователь авторизован)
-@app.route("/profile", methods=["GET", "POST"])
-def profile():
+@app.route("/profile/<section>", methods=["GET", "POST"])
+def profile(section):
     # Переменная для отладки, значения:
     # 0 - сценарий для релиза
     # 1 - открывает "Вход"
@@ -94,14 +94,14 @@ def profile():
     debug_var = 0
     if debug_var == 0:
         if is_auth():
-            # Если мы забанили команду
+            # Если мы забанили игрока
 
             if current_user.is_banned:
-                return render_template("you_are_banned.html", title="Вас дисквалифицировали")
+                return render_template("you_are_banned.html", title="Ваш аккаунт заблокирован")
             name = current_user.name
             surname = current_user.surname
             school = current_user.school
-            return render_template("profile.html", name=name, surname=surname, school=school)
+            return render_template("profile.html", name=name, surname=surname, school=school, rights=current_user.rights)
         else:
             # Иначе переправляем на вход
             return redirect("/login")
@@ -140,12 +140,9 @@ def create_game_form():
 def update_game(game_title, block):
     if is_auth():
         if 'author' in current_user.rights:
-            print('g')
-            game, session = get_game(game_title)
+            game = get_game(game_title)
             if game != "Not found":
-                print('o')
                 if game.title in map(lambda x: x.title, current_user.authoring):
-                    print('o')
                     form = DICT_OF_FORMS[block].__call__()
                     if block == 'common':
                         default = get_game_common_info(game_title)
@@ -177,6 +174,7 @@ def update_game(game_title, block):
                             return render_template('success.html')
                         else:
                             return render_template('what_are_you_doing_here.html')
+                    print(default)
                     return render_template('game_creator.html', form=form, default=default)
     return render_template('what_are_you_doing_here.html')
 
@@ -613,8 +611,8 @@ def get_extension(filename):
 
 
 @login_manager.user_loader
-def load_user(user):
-    return User.get(user)
+def load_user(user_id):
+    return db.session.query(User).filter(User.id == user_id).first()
 
 
 # Функция возвращает True если пользователь авторизован, иначе False

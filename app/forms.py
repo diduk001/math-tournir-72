@@ -40,8 +40,9 @@ ALL_TEXT_FILES = [FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неп
 
 EMAIL_VALIDATOR = [Email(message="Формат ввода Email неправильный")]
 
-GRADE_CHOICES = [(str(i), str(i)) for i in range(5, 12)]
+GRADE_CHOICES = [(str(i), str(i)) for i in range(4, 12)]
 GAME_TYPE_CHOICES = [("domino", "Домино"), ("penalty", "Пенальти")]
+RIGHT_CHOICES = [('checker', 'Проверяющий'), ('author', 'Автор'), ('moderator', 'Модератор'), ('god', "'Бог'")]
 
 
 # Форма для входа
@@ -59,7 +60,7 @@ class SignUpUserForm(FlaskForm):
     name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     grade = SelectField("Класс*",
-                        choices=[(5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10), (11, 11)],
+                        choices=GRADE_CHOICES,
                         coerce=int)
     school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
     teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в "
@@ -108,14 +109,12 @@ class GradeGameForm(FlaskForm):
 class GameCommonInfoForm(FlaskForm):
     title = StringField('Название игры', validators=DATA_REQUIRED_VALIDATOR)
     info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
-    grade = SelectField('Класс', choices=[(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10),
-                                          (11, 11)], coerce=int)
+    grade = SelectField('Класс', choices=GRADE_CHOICES, coerce=str)
     game_type = SelectField('Тип игры', choices=Constants.GAMES_DICT, coerce=str)
-    start_time = StringField('Время начала', DATA_REQUIRED_VALIDATOR)
-    end_time = StringField('Время конца', DATA_REQUIRED_VALIDATOR)
-    format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
-    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open',
-                                                                                 'открытая')])
+    start_time = StringField('Время начала', validators=DATA_REQUIRED_VALIDATOR)
+    end_time = StringField('Время конца', validators=DATA_REQUIRED_VALIDATOR)
+    game_format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
+    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open', 'открытая')])
     submit = SubmitField("Создать/изменить игру")
 
 
@@ -144,22 +143,48 @@ class GameAuthorsAndCheckersInfoForm(FlaskForm):
 class StartEndTimeForm(FlaskForm):
     game_type = SelectField("Тип игры", choices=[("domino", "Домино"), ("penalty", "Пенальти")],
                             validators=DATA_REQUIRED_VALIDATOR)
-    time_start = DateTimeField("Начало игры", format="%d.%m.%Y %H:%M:%S",
+    time_start = DateTimeField("Начало игры (в формате дд.мм.гггг чч:мм:сс)", format="%d.%m.%Y %H:%M:%S",
                                validators=DATA_REQUIRED_VALIDATOR)
-    time_end = DateTimeField("Конец игры", validators=DATA_REQUIRED_VALIDATOR)
+    time_end = DateTimeField("Конец игры (в формате дд.мм.гггг чч:мм:сс)", format="%d.%m.%Y %H:%M:%S",
+                             validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Установить время начала и конца")
 
 
-# Форма для бана команды
-class BanTeamForm(FlaskForm):
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Удалить команду из соревнования")
+# Форма для бана пользователя
+class BanForm(FlaskForm):
+    name = StringField('Имя', validators=DATA_REQUIRED_VALIDATOR)
+    surname = StringField('Фамилия', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Заблокировать пользователя')
 
 
-# Форма для пардона команды
-class PardonTeamForm(FlaskForm):
-    team_name = StringField("Название команды", validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Удалить команду из соревнования")
+# Форма для пардона пользователя
+class PardonForm(FlaskForm):
+    name = StringField('Имя', validators=DATA_REQUIRED_VALIDATOR)
+    surname = StringField('Фамилия', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Разблокировать пользователя')
+
+
+# Форма для выдачи прав
+class GiveRightForm(FlaskForm):
+    name = StringField("Имя", validators=DATA_REQUIRED_VALIDATOR)
+    surname = StringField("Фамилия", validators=DATA_REQUIRED_VALIDATOR)
+    right = SelectField("Выберите набор прав, который хотите выдать", RIGHT_CHOICES)
+    submit = SubmitField("Выдать набор прав")
+
+
+class MakeNewForm(FlaskForm):
+    picture = FileField("Изображение к новости(допустимы файлы *.png/*.jpg/*.jpeg/*.gif)", validators=ALL_IMAGES_FILES)
+    title = StringField("Название", validators=DATA_REQUIRED_VALIDATOR)
+    info = StringField("Содержание новости", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Опубликовать новость")
+
+
+class UpdateNewForm(FlaskForm):
+    picture = FileField("Изображение к новости(допустимы файлы *.png/*.jpg/*.jpeg/*.gif)", validators=ALL_IMAGES_FILES)
+    title = StringField("Название", validators=DATA_REQUIRED_VALIDATOR)
+    info = StringField("Содержание новости", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Опубликовать новость")
+
 
 
 ''' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ '''

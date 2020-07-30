@@ -27,13 +27,13 @@ def create_game(title, grade, game_type, start_time, end_time, game_format, priv
     create_tasks_table(title, task_number)
     author.authoring.append(game)
     db.session.add(game)
-    db.commit()
+    db.session.commit()
 
 
 # Изменить общую информацию о игре
 def update_game_common_info(last_title, current_title, info, grade, game_type, start_time, end_time,
                             game_format, privacy):
-    game, session = get_game(last_title)
+    game = get_game(last_title)
     if game != 'Not found':
         game.title = current_title
         game.info = info
@@ -45,27 +45,27 @@ def update_game_common_info(last_title, current_title, info, grade, game_type, s
         game.privacy = privacy
         game.tasks_number = Consts.GAMES_DEFAULT_TASK_NUMBERS[game_type]
         game.sets_number = Consts.GAMES_DEFAULT_SETS_NUMBERS[game_type]
-        session.commit()
+        db.session.commit()
     return game
 
 
 # Изменить информацию о задачах
 def update_game_tasks_info(title, tasks_number, sets_number):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         game.tasks_number = tasks_number
         game.sets_number = sets_number
-        session.commit()
+        db.session.commit()
     return game
 
 
 # Изменить информацию о размере команд
 def update_game_team_info(title, min_team_size, max_team_size):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         game.min_team_size = min_team_size
         game.max_team_size = max_team_size
-        session.commit()
+        db.session.commit()
     return game
 
 
@@ -76,7 +76,7 @@ def update_game_team_info(title, min_team_size, max_team_size):
 # delete_checkers - имена и фамилии удалённых проверяющих, list<list<str, str>>
 def update_game_authors_and_checkers_info(title, add_authors=None, delete_authors=None,
                                           add_checkers=None, delete_checkers=None):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         for author in add_authors:
             right_author = get_user(author[0], author[1])
@@ -85,7 +85,7 @@ def update_game_authors_and_checkers_info(title, add_authors=None, delete_author
         for author in delete_authors:
             right_author = get_user(author[0], author[1])
             game.authors.remove(right_author)
-            right_author.authoring.delete(game)
+            right_author.authoring.remove(game)
         for checker in add_checkers:
             right_checker = get_user(checker[0], checker[1])
             game.chechers.append(right_checker)
@@ -94,20 +94,20 @@ def update_game_authors_and_checkers_info(title, add_authors=None, delete_author
             right_checker = get_user(checker[0], checker[1])
             game.chechers.remove(right_checker)
             right_checker.remove(game)
-        session.commit()
+        db.session.commit()
     return game
 
 
 # Получить общую информацию о игре по её названию
 def get_game_common_info(title):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         result = {'title': title,
                   'grade': game.grade,
                   'game_type': game.type,
                   'start_time': game.start_time,
                   'end_time': game.end_time,
-                  'format': game.format,
+                  'game_format': game.game_format,
                   'privacy': game.privacy,
                   'info': game.info}
         return result
@@ -116,7 +116,7 @@ def get_game_common_info(title):
 
 # Получить информацию о задачах игры по её названию
 def get_game_tasks_info(title):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         result = {'tasks_number': game.tasks_number,
                   'sets_number': game.sets_number}
@@ -126,7 +126,7 @@ def get_game_tasks_info(title):
 
 # Получить информацию о размере команд игры по её нахванию
 def get_game_team_info(title):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         result = {'max_team_size': game.max_team_size,
                   'min_team_size': game.min_team_size}
@@ -136,7 +136,7 @@ def get_game_team_info(title):
 
 # Получить имена и фамилии авторов игры по её названию
 def get_game_authors_info(title):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         result = list(map(lambda author: (author.name, author.surname), game.authors))
         return result
@@ -145,7 +145,7 @@ def get_game_authors_info(title):
 
 # Получить имена и фамилии проверяющих игру по её названию
 def get_game_checkers_info(title):
-    game, session = get_game(title)
+    game = get_game(title)
     if game != 'Not found':
         result = list(map(lambda checker: (checker.name, checker.surname), game.checkers))
         return result
@@ -156,8 +156,8 @@ def get_game_checkers_info(title):
 def get_game(title):
     game = db.session.query(Game).filter(Game.title == title)
     if game:
-        return game.first(), db.session
-    return 'Not found', None
+        return game.first()
+    return 'Not found'
 
 
 # Получить пользователя по имени и фамилии

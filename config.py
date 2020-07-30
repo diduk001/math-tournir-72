@@ -8,11 +8,11 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = (os.environ.get('DATABASE_URL') or
                                'sqlite:///' + os.path.join(basedir, 'databases', 'main.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_BINDS = {
-        'tasks_archive': 'sqlite:///' + os.path.join(basedir, 'databases', 'tasks_archive.db'),
-        'games': 'sqlite:///' + os.path.join(basedir, 'databases', 'games.db'),
-        'users': 'sqlite:///' + os.path.join(basedir, 'databases', 'users.db')
-    }
+    # SQLALCHEMY_BINDS = {
+    #     'tasks_archive': 'sqlite:///' + os.path.join(basedir, 'databases', 'tasks_archive.db'),
+    #     'games': 'sqlite:///' + os.path.join(basedir, 'databases', 'games.db'),
+    #     'users': 'sqlite:///' + os.path.join(basedir, 'databases', 'users.db')
+    # }
     TASKS_UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'tasks_files')
     TASKS_UPLOAD_FROM_TEMPLATES = os.path.join('..', 'static', 'tasks_files')
 

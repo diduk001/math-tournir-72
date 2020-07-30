@@ -1,9 +1,10 @@
 from flask_login import UserMixin
 from flask_sqlalchemy import orm
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import sqlalchemy
 from app import db
-
+import os
+from config import basedir
 db.metadata.clear()
 
 authors_to_games_assoc_table = db.Table(
@@ -50,7 +51,7 @@ class Task(db.Model):
 
 
 class Game(db.Model):
-    __bind_key__ = 'games'
+    # __bind_key__ = 'games'
     __tablename__ = 'games'
     __table_args__ = {'extend_existing': True}
     # id игры
@@ -74,10 +75,10 @@ class Game(db.Model):
     solutions = db.Column(db.String)
     authors = orm.relation("User",
                            secondary=authors_to_games_assoc_table,
-                           back_populates='authors')
+                           back_populates='authoring')
     checkers = orm.relation("User",
                             secondary=checkers_to_games_assoc_table,
-                            backref='checkers')
+                            back_populates='checkering')
 
     def __init__(self, title, grade, game_type, start_time, end_time, game_format, privacy, info,
                  author, task_number, min_team_size, max_team_size, sets_number):
@@ -100,12 +101,12 @@ class Game(db.Model):
 # game_title - название игры, str
 # tasks_number - количество задач, int
 def create_tasks_table(game_title, tasks_number):
-    engine = db.create_engine('sqlite:///db/tasks_states.db')
-    metadata = db.MetaData(engine)
-    table = db.Table(game_title, metadata,
-                     db.Column('id', db.Integer, primary_key=True),
-                     db.Column('name', db.String),
-                     *[db.Column('t' + str(i), db.Integer) for i in
+    engine = sqlalchemy.create_engine('sqlite:///' + os.path.join(basedir, 'databases', 'tasks_states.db'))
+    metadata = sqlalchemy.MetaData(engine)
+    table = sqlalchemy.Table(game_title, metadata,
+                     sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+                     sqlalchemy.Column('name', sqlalchemy.String),
+                     *[sqlalchemy.Column('t' + str(i), sqlalchemy.Integer) for i in
                        range(1, tasks_number + 1)]
                      )
     metadata.create_all(engine)
@@ -122,7 +123,7 @@ def add_user_to_game_table(name, surname, tasks_number, game_title):
             for key, val in attr_dict.items():
                 setattr(self, key, val)
 
-    engine = db.create_engine('sqlite:///tasks_states.db')
+    engine = db.create_engine('sqlite:///' + os.path.join(basedir, 'databases', 'tasks_states.db'))
     metadata = db.MetaData(engine)
     table = db.Table(game_title, metadata, autoload=True)
     orm.mapper(UserTasks, table)
@@ -137,7 +138,7 @@ def add_user_to_game_table(name, surname, tasks_number, game_title):
 
 
 class User(db.Model, UserMixin):
-    __bind_key__ = 'users'
+    # __bind_key__ = 'users'
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
 
@@ -164,10 +165,10 @@ class User(db.Model, UserMixin):
     rights = db.Column(db.String, nullable=False, default='user')
     authoring = orm.relationship('Game',
                                  secondary=authors_to_games_assoc_table,
-                                 backref="authoring_games")
+                                 back_populates="authors")
     checkering = orm.relationship('Game',
                                   secondary=checkers_to_games_assoc_table,
-                                  backref='checking_games')
+                                  back_populates='checkers')
     teams = db.Column(db.Text, default='')
     invitation = db.Column(db.Text, default='')
     is_approved = db.Column(db.Boolean, default=False)

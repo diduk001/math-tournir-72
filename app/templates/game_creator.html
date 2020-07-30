@@ -16,7 +16,8 @@
                             {% if create %}
                                 {{ field(class="form-control") }}
                             {% else %}
-                                {{ field(class="form-control", text=default[field.name]) }}
+                                <a>{{ field.name }} {{ default[field.name] }}</a>
+                                {{ field(class="form-control", data=default[field.name]) }}
                             {% endif %}
                         </div>
                     {% endif %}
