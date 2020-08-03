@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "profile.html" %}
 
-{% block content %}
-    <h2>{{title}}</h2>
+{% block section %}
+    <h3>Выдать набор прав</h3>
     <form method="post" novalidate>
         <div>
             {{ form.csrf_token }}

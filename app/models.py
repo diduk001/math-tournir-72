@@ -61,8 +61,8 @@ class Game(db.Model):
     # задач, максимальный размер команды, минимальный размер команды, путь к файлу с решениями,
     # id авторов и проверяющих соответсвенно
     title = db.Column(db.String)
-    grade = db.Column(db.Integer)
-    type = db.Column(db.String)
+    grade = db.Column(db.String)
+    game_type = db.Column(db.String)
     start_time = db.Column(db.String)
     end_time = db.Column(db.String)
     game_format = db.Column(db.String)
@@ -84,7 +84,7 @@ class Game(db.Model):
                  author, task_number, min_team_size, max_team_size, sets_number):
         self.title = title
         self.grade = grade
-        self.type = game_type
+        self.game_type = game_type
         self.start_time = start_time
         self.end_time = end_time
         self.game_format = game_format

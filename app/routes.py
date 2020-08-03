@@ -98,15 +98,105 @@ def profile(section):
 
             if current_user.is_banned:
                 return render_template("you_are_banned.html", title="Ваш аккаунт заблокирован")
+
+            # Имя, Фамилия, школа, класс, наборы прав, логин пользователя и словарь с разделами для наборов прав
             name = current_user.name
             surname = current_user.surname
             school = current_user.school
-            return render_template("profile.html", name=name, surname=surname, school=school, rights=current_user.rights)
+            grade = current_user.grade
+            rights = current_user.rights.split()
+            login = current_user.login
+            dict_of_rights = {'god': 'Выдать набор прав',
+                              'moderator': 'Заблокировать/Разблокировать пользователя',
+                              'author': 'Игры'}
+            # Если пользователь перешёл в раздел в который ему можно перейти
+            if section in current_user.rights.split():
+                # Если раздел "Пользователь" то просто возвращаем профиль без дополнительной информации
+                if section == 'user':
+                    return render_template("profile.html", name=name, surname=surname, school=school, grade=grade,
+                                           login=login, rights=rights, dict_of_rights=dict_of_rights)
+                # Если раздел "Бог" то возвращаем профиль с формой для выдачи прав
+                elif section == 'god':
+                    # Сама форма
+                    form = GiveRightForm()
+                    # Если форма правильно заполнена
+                    if form.validate_on_submit():
+                        # Логин пользователя, которому выдают права, набор прав который выдаётся
+                        login = request.form.get('login')
+                        right = request.form.get('right')
+                        # Сам пользователь, которому выдают права
+                        user = db.session.query(User).filter(User.login == login).first()
+                        # Сообщение о отсутствии пользователя с таким логином
+                        if user is None:
+                            return render_template('users_not_found.html', users=[login], last='/profile/god')
+                        # Выдача набора прав
+                        user.rights = user.rights + f' {right}'
+                        db.session.commit()
+                        # Сообщение о успехе выдачи прав
+                        return render_template('success.html', last='/profile/god')
+                    return render_template('profile_god.html', name=name, surname=surname, school=school, grade=grade,
+                                           rights=rights, login=login, dict_of_rights=dict_of_rights, form=form)
+                # Если раздел "Модератор", то воозвращаем формы для блокирования и разблокирования пользователей
+                elif section == 'moderator':
+                    # Формы для блокирования и разблокирования
+                    ban_form = BanForm()
+                    pardon_form = PardonForm()
+                    # Если форма для блокирования заполнена корректно
+                    if ban_form.validate_on_submit():
+                        # Логин пользователя, которого хотят заблокировать
+                        login = request.form.get('login')
+                        # Сам пользователь, которого хотят заблокировать
+                        user = db.session.query(User).filter(User.login == login).first()
+                        # Сообщение о отсутствии пользователя с таким логином
+                        if user is None:
+                            return render_template('users_not_found.html', users=[login], last='/profile/moderator')
+                        # Блокировка пользователя
+                        user.is_banned = True
+                        db.session.commit()
+                        return render_template('success.html', last='/profile/moderator')
+                    # Если форма для разблокировки заполнена  корректно
+                    if pardon_form.validate_on_submit():
+                        # Логин пользователя, которого хотят разблокировать
+                        login = request.form.get('login')
+                        # Сам пользователь, которого хотят разблокировать
+                        user = db.session.query(User).filter(User.login == login).first()
+                        # Сообщение о отсутствии пользователя с таким логином
+                        if user is None:
+                            return render_template('users_not_found.html', users=[login], last='/profile/moderator')
+                        # Разблокировка пользователя
+                        user.is_banned = False
+                        db.session.commit()
+                        return render_template('success.html', last='/profile/moderator')
+                    return render_template('profile_moderator.html', name=name, surname=surname, school=school,
+                                           grade=grade, rights=rights, login=login, dict_of_rights=dict_of_rights,
+                                           ban_form=ban_form, pardon_form=pardon_form)
+                # Если раздел "Автор", то возвращаем профиль с ссылкой на создание игр, отображаем все игры и их
+                elif section == 'author':
+                    games = []
+                    for game in current_user.authoring:
+                        new_game = {'common': get_game_common_info_human_format(game.title),
+                                    'tasks':  get_game_tasks_info_human_format(game.title),
+                                    'authors_and_checkers': get_game_authors_and_checkers_info_human_format(game.title)}
+                        if new_game['common'][5][1] == 'командная':
+                            new_game['team'] = get_game_team_info_human_format(game.title)
+                        else:
+                            new_game['team'] = [('Минимальный размер команды', '-'),
+                                                ('Максимальный размер команды', '-')]
+                        games.append(new_game)
+                    return render_template('profile_author.html', name=name, surname=surname, school=school,
+                                           grade=grade, rights=rights, login=login, dict_of_rights=dict_of_rights,
+                                           games=games)
+                else:
+                    return render_template('what_are_you_doing_here.html')
+            else:
+                return render_template('what_are_you_doing_here.html')
         else:
             # Иначе переправляем на вход
             return redirect("/login")
     elif debug_var == 1:
         return redirect("/login")
+
+
 
 
 # Создание игры
@@ -129,9 +219,8 @@ def create_game_form():
                 author = session.query(User).filter(User.id == author).first()
                 create_game(title, grade, game_type, start_time, end_time, game_format, privacy,
                             info, author)
-                return render_template('success.html')
-            return render_template('game_creator.html', form=form, title='Создание игры',
-                                   create=True)
+                return render_template('success.html', last='../../profile/author')
+            return render_template('game_creator.html', form=form, title='Создание игры')
     return render_template('what_are_you_doing_here.html')
 
 
@@ -151,30 +240,33 @@ def update_game(game_title, block):
                     elif block == 'team':
                         default = get_game_team_info(game_title)
                     elif block == 'authors_and_checkers':
-                        default = {'authors': get_game_authors_info(game_title),
-                                   'checkers': get_game_checkers_info(game_title)}
+                        default = {'authors': ', '.join(get_game_authors_info(game_title)),
+                                   'checkers': ', '.join(get_game_checkers_info(game_title))}
                     else:
                         return render_template('what_are_you_doing_here.html')
                     if form.validate_on_submit():
-                        print('d')
                         if block == 'common':
                             update_game_common_info(game_title, *(list(request.form.values())[1:-1]))
-                            return render_template('success.html')
+                            return render_template('success.html', last='../../profile/author')
                         elif block == 'tasks':
                             update_game_tasks_info(game_title, *(list(request.form.values())[1:-1]))
-                            return render_template('success.html')
+                            return render_template('success.html', last='../../profile/author')
                         elif block == 'team':
                             update_game_team_info(game_title, *(list(request.form.values())[1:-1]))
-                            return render_template('success.html')
+                            return render_template('success.html', last='../../profile/author')
                         elif block == 'authors_and_checkers':
-                            update_game_authors_and_checkers_info(
+                            game, not_found_users = update_game_authors_and_checkers_info(
                                 game_title,
                                 *(list(request.form.values())[
                                   1:-1]))
-                            return render_template('success.html')
+                            if len(not_found_users) == 0:
+                                return render_template('success.html', last='../../profile/author')
+                            else:
+                                return render_template('users_not_found.html', users=not_found_users,
+                                                       last='../../profile/author')
                         else:
                             return render_template('what_are_you_doing_here.html')
-                    print(default)
+                    form.set_defaults(default)
                     return render_template('game_creator.html', form=form, default=default)
     return render_template('what_are_you_doing_here.html')
 
@@ -626,4 +718,4 @@ from app import forms
 DICT_OF_FORMS = {'tasks': forms.GameTasksInfoForm,
                  'common': forms.GameCommonInfoForm,
                  'team': forms.GameTeamInfoForm,
-                 'author_and_checkers': forms.GameAuthorsAndCheckersInfoForm}
+                 'authors_and_checkers': forms.GameAuthorsAndCheckersInfoForm}

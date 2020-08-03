@@ -4,27 +4,29 @@
 
 {% block content %}
     <div>
-        <h1>{{ name }} <a href="/logout" type="button" class="btn btn-primary">Выйти из
-            аккаунта</a>
-        </h1>
-        <table class="table">
-            <thead class="thead-dark">
-            <tr>
-                <th scope="col">Имя</th>
-                <th scope="col">Фамилия</th>
-                <th scope="col">Школа</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>{{ name }}</td>
-                <td>{{ surname }}</td>
-                <td>{{ school }}</td>
-            </tr>
-            </tbody>
-        </table>
+        <div class="row">
+            <div class="col">
+                <p>{{ login }}</p>
+            </div>
+            <div class="col">
+                <a href="/logout" type="button" class="btn btn-primary">Выйти из
+                аккаунта</a>
+        <br>
+            </div>
+        </div>
+        <p>
+            <b>{{ name }} {{ surname }}</b>
+        </p>
+        <p>Школа: {{ school }}</p>
+        <p>{{ grade }} класс</p>
     </div>
-    <div id="section">
-        {% block section %}{% endblock %}
+    <div class="row">
+        {% for right in rights %}
+            <div class="col">
+                <a href="/profile/{{ right }}">{{ dict_of_rights[right] }}</a>
+            </div>
+        {% endfor %}
     </div>
+    {% block section %}
+    {% endblock %}
 {% endblock %}
