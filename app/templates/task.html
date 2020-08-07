@@ -13,11 +13,6 @@
             </div>
         </div>
 
-{#        <style>#}
-{#            iframe[seamless] {#}
-{#                border: none;#}
-{#            }#}
-{#        </style>#}
 
         <div class="row">
             <div class="col-sm">
@@ -30,12 +25,19 @@
         <br>
         <div class="row"><h4>Условие:</h4></div>
         <div class="row">
-            <iframe src={{ condition_file_path }} width="70%" height="70%" seamless></iframe>
+            <p id="condition" style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+                {{ condition }}
+            </p>
         </div>
+
         <br>
-        {% if have_solution %}
+        {% if task.have_solution == True %}
             <div class="row"><h4>Решение:</h4></div>
-            <iframe src={{ solution_file_path }} width="70%" height="70%" seamless></iframe>
+            <div class="row">
+            <p id="solution" style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+                {{ solution }}
+            </p>
+            </div>
         {% endif %}
     </div>
 {% endblock %}

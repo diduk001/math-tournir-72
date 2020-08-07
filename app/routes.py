@@ -4,8 +4,9 @@ import os.path
 
 from flask import render_template, request, flash, redirect
 from flask_login import logout_user, current_user, login_user
-from app import login_manager
+
 from app import app
+from app import login_manager
 from app.forms import *
 from app.game_creator import *
 from config import Config, Constants
@@ -213,7 +214,8 @@ def profile(section):
                         user = db.session.query(User).filter(User.login == login).first()
                         # Сообщение о отсутствии пользователя с таким логином
                         if user is None:
-                            return render_template('users_not_found.html', users=[login], last='/profile/god')
+                            return render_template('users_not_found.html', users=[login],
+                                                   last='/profile/god')
                         # Выдача набора прав
                         user.rights = user.rights + f' {right}'
                         db.session.commit()
@@ -235,7 +237,8 @@ def profile(section):
                         user = db.session.query(User).filter(User.login == login).first()
                         # Сообщение о отсутствии пользователя с таким логином
                         if user is None:
-                            return render_template('users_not_found.html', users=[login], last='/profile/moderator')
+                            return render_template('users_not_found.html', users=[login],
+                                                   last='/profile/moderator')
                         # Блокировка пользователя
                         user.is_banned = True
                         db.session.commit()
@@ -248,7 +251,8 @@ def profile(section):
                         user = db.session.query(User).filter(User.login == login).first()
                         # Сообщение о отсутствии пользователя с таким логином
                         if user is None:
-                            return render_template('users_not_found.html', users=[login], last='/profile/moderator')
+                            return render_template('users_not_found.html', users=[login],
+                                                   last='/profile/moderator')
                         # Разблокировка пользователя
                         user.is_banned = False
                         db.session.commit()
@@ -263,8 +267,9 @@ def profile(section):
                     # Добавление игр в список с играми
                     for game in current_user.authoring:
                         new_game = {'common': get_game_common_info_human_format(game.title),
-                                    'tasks':  get_game_tasks_info_human_format(game.title),
-                                    'authors_and_checkers': get_game_authors_and_checkers_info_human_format(game.title)}
+                                    'tasks': get_game_tasks_info_human_format(game.title),
+                                    'authors_and_checkers': get_game_authors_and_checkers_info_human_format(
+                                        game.title)}
                         if new_game['common'][5][1] == 'командная':
                             new_game['team'] = get_game_team_info_human_format(game.title)
                         else:
@@ -406,9 +411,9 @@ def add_task():
         min_grade = request.form.get("min_grade")
         max_grade = request.form.get("max_grade")
         manual_check = request.form.get("manual_check")
-        condition_file = request.files.get("condition_file")
+        condition = request.form.get("condition")
         condition_images = request.files.getlist("condition_images")
-        solution_file = request.files.get("solution_file")
+        solution = request.form.get("solution")
         solution_images = request.files.getlist("solution_images")
         ans_picture = request.form.get("ans_picture")
         answer = request.form.get("answer")
@@ -427,6 +432,9 @@ def add_task():
         task.ans_picture = bool(ans_picture)
         task.set_ans(answer)
 
+        if solution:
+            task.have_solution = True
+
         db.session.add(task)
         db.session.commit()
 
@@ -434,19 +442,19 @@ def add_task():
         condition_directory = os.path.join(task_directory, "condition")
         os.mkdir(task_directory)
         os.mkdir(condition_directory)
-        condition_file.save(os.path.join(condition_directory, rename_file(condition_file.filename,
-                                                                          "condition")))
+        with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
+            wfile.write(condition)
+
         if condition_images:
             for image in condition_images:
                 if image.filename:
                     image.save(os.path.join(condition_directory, image.filename))
 
-        if solution_file:
-            task.have_solution = True
+        if solution:
             solution_directory = os.path.join(task_directory, "solution")
             os.mkdir(solution_directory)
-            solution_file.save(os.path.join(solution_directory, rename_file(solution_file.filename,
-                                                                            "solution")))
+            with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
+                wfile.write(solution)
 
             if solution_images:
                 for image in solution_images:
@@ -466,7 +474,7 @@ def archive():
     params = dict()
     params['title'] = 'Архив'
 
-    tasks_table = Task.quer
+    tasks_table = db.session.query(Task).all()
 
     params["tasks_table"] = tasks_table
 
@@ -482,19 +490,23 @@ def task(task_id):
     task = db.session.query(Task).filter_by(id=task_id).first()
     params['task'] = task
 
-    task_dir_from_templates = os.path.join(Config.TASKS_UPLOAD_FROM_TEMPLATES,
-                                           f'task_{task.id}')
-    condition_dir_from_templates = os.path.join(task_dir_from_templates, 'condition')
-    condition_from_templates = os.path.join(condition_dir_from_templates, 'condition.txt')
+    task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
+    condition_directory = os.path.join(task_directory, "condition")
 
-    params["condition_file_path"] = condition_from_templates
+    with open(os.path.join(condition_directory, "condition.txt"), mode="r") as rfile:
+        condition = rfile.read()
+
+    params["condition"] = condition
 
     if task.have_solution:
         params["have_solution"] = True
-        solution_dir_from_templates = os.path.join(task_dir_from_templates, 'solution')
-        solution_from_templates = os.path.join(solution_dir_from_templates, 'solution.txt')
 
-        params["solution_file_path"] = solution_from_templates
+        solution_directory = os.path.join(task_directory, "solution")
+
+        with open(os.path.join(solution_directory, "solution.txt"), mode="r") as rfile:
+            solution = rfile.read()
+
+        params["solution"] = solution
 
     return render_template("task.html", **params)
 

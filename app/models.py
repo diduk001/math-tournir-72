@@ -44,7 +44,6 @@ players_to_games_assoc_table = db.Table(
 )
 
 class Task(db.Model):
-    __bind_key__ = 'tasks_archive'
     __tablename__ = 'tasks_archive'
     __table_args__ = {'extend_existing': True}
 
@@ -74,7 +73,6 @@ class Task(db.Model):
 
 
 class Game(db.Model):
-    # __bind_key__ = 'games'
     __tablename__ = 'games'
     __table_args__ = {'extend_existing': True}
     # id игры
@@ -167,7 +165,6 @@ def add_user_to_game_table(name, surname, tasks_number, game_title):
 
 
 class User(db.Model, UserMixin):
-    # __bind_key__ = 'users'
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
 

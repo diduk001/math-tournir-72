@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import *
 from wtforms import *
 from wtforms.validators import *
+
 from config import Constants
 from datetime import datetime
 
@@ -54,14 +55,16 @@ FILE_REQUIRED_VALIDATOR = [FileRequired(message="Нужно отправить �
 AT_LEAST_ONE_FILE_REQUIRED_VALIDATOR = []
 IS_TASK_VALIDATOR = [is_task_validator]
 ALL_IMAGES_FILES = [FileAllowed(Constants.ALLOWED_IMAGE_EXTENSIONS, message="Неправильный формат "
-                                                                         "файла")]
-ALL_TEXT_FILES = [FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
+                                                                            "файла")]
+ALL_TEXT_FILES = [
+    FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
 
 EMAIL_VALIDATOR = [Email(message="Формат ввода Email неправильный")]
 
 GRADE_CHOICES = [(str(i), str(i)) for i in range(4, 12)]
 GAME_TYPE_CHOICES = [("domino", "Домино"), ("penalty", "Пенальти")]
-RIGHT_CHOICES = [('checker', 'Проверяющий'), ('author', 'Автор'), ('moderator', 'Модератор'), ('god', "'Бог'")]
+RIGHT_CHOICES = [('checker', 'Проверяющий'), ('author', 'Автор'), ('moderator', 'Модератор'),
+                 ('god', "'Бог'")]
 
 
 # Форма для входа
@@ -116,14 +119,17 @@ class AddTaskForm(FlaskForm):
                             choices=GRADE_CHOICES)
     max_grade = SelectField("Самый старший рекомендуемый класс", default='5',
                             choices=GRADE_CHOICES)
-    condition_file = FileField("*.txt файл с условием", validators=FILE_REQUIRED_VALIDATOR)
+    condition = TextAreaField("Условие задачи (Синтаксис MathJax)",
+                              validators=DATA_REQUIRED_VALIDATOR)
     condition_images = MultipleFileField("Файлы иллюстраций к условию (допустимы файлы "
                                          "*.png/*.jpg/*.jpeg/*.gif)",
                                          validators=ALL_IMAGES_FILES)
-    solution_file = FileField("*.txt файл с решением", validators=ALL_TEXT_FILES)
+
+    solution = TextAreaField("Решение задачи (Синтаксис MathJax)", )
     solution_images = MultipleFileField("Файлы иллюстраций к решению (допустимы файлы "
                                         "*.png/*.jpg/*.jpeg/*.gif)",
                                         validators=ALL_IMAGES_FILES)
+
     answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
     manual_check = BooleanField("Задача проверяется вручную")
     ans_picture = BooleanField("Ответом является рисунок (тогда задача проверяется вручную)")
@@ -147,7 +153,8 @@ class GameCommonInfoForm(FlaskForm):
     start_time = StringField('Время начала в формате дд.мм.гггг чч:мм:сс', validators=DATA_REQUIRED_VALIDATOR)
     end_time = StringField('Время конца в формате дд.мм.гггг чч:мм:сс', validators=DATA_REQUIRED_VALIDATOR)
     game_format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
-    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open', 'открытая')])
+    privacy = SelectField('Приватность игры',
+                          choices=[('private', 'закрытая'), ('open', 'открытая')])
     submit = SubmitField("Создать/изменить игру")
 
     # Установить дефолтные значения
@@ -213,7 +220,8 @@ class PardonForm(FlaskForm):
 # Форма для выдачи прав
 class GiveRightForm(FlaskForm):
     login = StringField("Логин пользователя", validators=DATA_REQUIRED_VALIDATOR)
-    right = SelectField("Выберите набор прав, который хотите выдать", choices=RIGHT_CHOICES, coerce=str)
+    right = SelectField("Выберите набор прав, который хотите выдать", choices=RIGHT_CHOICES,
+                        coerce=str)
     submit = SubmitField("Выдать набор прав")
 
 
