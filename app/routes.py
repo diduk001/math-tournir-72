@@ -8,22 +8,52 @@ from app import login_manager
 from app import app
 from app.forms import *
 from app.game_creator import *
-from config import Config
+from config import Config, Constants
 
 
 # Главная страница
-@app.route('/')
-@app.route('/index/')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index/', methods=['GET', 'POST'])
 def index():
     params = dict()
     params['title'] = 'ТЮМ 72'
+    params['is_teacher'] = False
+    if is_auth() and current_user.is_teacher:
+        params['form'] = CreateTeamForm()
+        params['is_teacher'] = True
+        if params['form'].validate_on_submit():
+            title = request.form.get('title')
+            grade = request.form.get('grade')
+            login = request.form.get('login')
+            password = request.form.get('password')
+            if db.session.query(Team).filter(Team.title == title).first() is not None:
+                return render_template('team_already_exists.html', attribute='названием', value=title, last='/')
+            if db.session.query(Team).filter(Team.login == login).first() is not None:
+                return render_template('team_already_exists.html', attribute='логином', value=login, last='/')
+            team = Team(title, grade, login)
+            team.set_password(password)
+            db.sesion.add(team)
+            domino = db.session.query(Game).filter(Game.title == f"ТЮМ72 Домино {grade} класс").first()
+            domino.teams.append(team)
+            team.games.append(domino)
+            penalty = db.session.query(Game).filter(Game.title == f"ТЮМ72 Пенальти {grade} класс").first()
+            penalty.teams.append(team)
+            team.games.append(penalty)
+            current_user.managed_teams.append(team)
+            team.teacher.append(current_user)
+            db.session.commit()
     return render_template('index.html', **params)
 
 
 # Регистрация
-@app.route('/sign_up/', methods=['GET', 'POST'])
-def sign_up():
-    sign_up_form = SignUpUserForm()
+@app.route('/sign_up/<role>', methods=['GET', 'POST'])
+def sign_up(role):
+    if role == 'Student':
+        sign_up_form = SignUpStudentForm()
+    elif role == 'Teacher':
+        sign_up_form = SignUpTeacherForm()
+    else:
+        return render_template('what_are_you_doing_here.html')
     params = dict()
     params["title"] = "Регистрация"
     params["form"] = sign_up_form
@@ -42,16 +72,28 @@ def sign_up():
             return render_template("sign_up_user.html", **params)
 
         # Создания объекта User
-
-        user = User(
-            request.form.get("login"),
-            request.form.get("name"),
-            request.form.get("surname"),
-            int(request.form.get("grade")),
-            request.form.get("school"),
-            request.form.get("teachers"),
-            request.form.get("info"))
-
+        if role == 'Student':
+            user = User(
+                'Student',
+                {'login': request.form.get("login"),
+                 'name':  request.form.get("name"),
+                 'surname': request.form.get("surname"),
+                 'last_name': request.form.get('last_name'),
+                 'grade': int(request.form.get("grade")),
+                 'school': request.form.get("school"),
+                 'teachers': request.form.get("teachers"),
+                 'info': request.form.get("info")}
+            )
+        elif role == 'Teacher':
+            user = User(
+                'Teacher',
+                {'login': request.form.get('login'),
+                 'name': request.form.get('name'),
+                 'surname': request.form.get('surname'),
+                 'last_name': request.form.get('last_name'),
+                 'work_place': request.form.get('work_place'),
+                 'phone_number': request.form.get('phone_number')}
+            )
         user.set_password(request.form.get("password"))
         user.set_email(request.form.get("email"))
         # Добавление пользователя в базы данных
@@ -83,6 +125,12 @@ def login():
     return render_template("login.html", **params)
 
 
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    logout_user()
+    return redirect('/login')
+
+
 # Вход и профиль (профиль открывается только тогда, когда пользователь авторизован)
 @app.route("/profile/<section>", methods=["GET", "POST"])
 def profile(section):
@@ -102,19 +150,56 @@ def profile(section):
             # Имя, Фамилия, школа, класс, наборы прав, логин пользователя и словарь с разделами для наборов прав
             name = current_user.name
             surname = current_user.surname
+            last_name = current_user.last_name
             school = current_user.school
             grade = current_user.grade
             rights = current_user.rights.split()
             login = current_user.login
             dict_of_rights = {'god': 'Выдать набор прав',
                               'moderator': 'Заблокировать/Разблокировать пользователя',
-                              'author': 'Игры'}
+                              'author': 'Игры',
+                              'user': 'Команды'}
+            if section == 'common':
+                return render_template("profile.html", name=name, surname=surname, last_name=last_name, school=school,
+                                       grade=grade, login=login, rights=rights, dict_of_rights=dict_of_rights)
             # Если пользователь перешёл в раздел в который ему можно перейти
-            if section in current_user.rights.split():
-                # Если раздел "Пользователь" то просто возвращаем профиль без дополнительной информации
+            elif section in current_user.rights.split():
+                # Если раздел "Пользователь" то возвращаем команды, в кототрых пользователь состоит/ которыми руководит
                 if section == 'user':
-                    return render_template("profile.html", name=name, surname=surname, school=school, grade=grade,
-                                           login=login, rights=rights, dict_of_rights=dict_of_rights)
+                    formatted_teams = []
+                    is_teacher = current_user.is_teacher
+                    if is_teacher:
+                        form = None
+                        not_formatted_teams = current_user.managed_teams
+                    else:
+                        form = EnterTeamForm()
+                        not_formatted_teams = current_user.teams
+                        if form.validate_on_submit():
+                            login = request.form.get('login')
+                            password = request.form.get('password')
+                            team = db.session.query(Team).filter(Team.login == login).first()
+                            if team is None:
+                                return render_template('team_not_found.html', login=login, last='/profile/teams')
+                            if not team.check_password(password):
+                                return render_template('wrong_password.html', last='/profile/teams')
+                            team.members.append(current_user)
+                            db.session.commit()
+                            return render_template('success.html', last='profile/teams')
+                    for team in not_formatted_teams:
+                        formatted_team = dict()
+                        formatted_team['title'] = team.title
+                        formatted_team['grade'] = team.grade
+                        formatted_team['members'] = []
+                        for player in team.members:
+                            formatted_team['members'].append({'name': player.name,
+                                                              'surname': player.surname,
+                                                              'last_name': player.last_name})
+                        formatted_team['size'] = len(formatted_team['members'])
+                        formatted_teams.append(formatted_team)
+                    return render_template("profile_teams.html", name=name, surname=surname, last_name=last_name,
+                                           school=school, grade=grade, login=login, rights=rights,
+                                           dict_of_rights=dict_of_rights, teams=formatted_teams, is_teacher=is_teacher,
+                                           form=form)
                 # Если раздел "Бог" то возвращаем профиль с формой для выдачи прав
                 elif section == 'god':
                     # Сама форма
@@ -134,8 +219,9 @@ def profile(section):
                         db.session.commit()
                         # Сообщение о успехе выдачи прав
                         return render_template('success.html', last='/profile/god')
-                    return render_template('profile_god.html', name=name, surname=surname, school=school, grade=grade,
-                                           rights=rights, login=login, dict_of_rights=dict_of_rights, form=form)
+                    return render_template('profile_god.html', name=name, surname=surname, last_name=last_name,
+                                           school=school, grade=grade, rights=rights, login=login,
+                                           dict_of_rights=dict_of_rights, form=form)
                 # Если раздел "Модератор", то воозвращаем формы для блокирования и разблокирования пользователей
                 elif section == 'moderator':
                     # Формы для блокирования и разблокирования
@@ -167,12 +253,14 @@ def profile(section):
                         user.is_banned = False
                         db.session.commit()
                         return render_template('success.html', last='/profile/moderator')
-                    return render_template('profile_moderator.html', name=name, surname=surname, school=school,
-                                           grade=grade, rights=rights, login=login, dict_of_rights=dict_of_rights,
-                                           ban_form=ban_form, pardon_form=pardon_form)
+                    return render_template('profile_moderator.html', name=name, surname=surname, last_name=last_name,
+                                           school=school, grade=grade, rights=rights, login=login,
+                                           dict_of_rights=dict_of_rights, ban_form=ban_form, pardon_form=pardon_form)
                 # Если раздел "Автор", то возвращаем профиль с ссылкой на создание игр, отображаем все игры и их
                 elif section == 'author':
+                    # Список с играми
                     games = []
+                    # Добавление игр в список с играми
                     for game in current_user.authoring:
                         new_game = {'common': get_game_common_info_human_format(game.title),
                                     'tasks':  get_game_tasks_info_human_format(game.title),
@@ -183,9 +271,9 @@ def profile(section):
                             new_game['team'] = [('Минимальный размер команды', '-'),
                                                 ('Максимальный размер команды', '-')]
                         games.append(new_game)
-                    return render_template('profile_author.html', name=name, surname=surname, school=school,
-                                           grade=grade, rights=rights, login=login, dict_of_rights=dict_of_rights,
-                                           games=games)
+                    return render_template('profile_author.html', name=name, surname=surname, last_name=last_name,
+                                           school=school, grade=grade, rights=rights, login=login,
+                                           dict_of_rights=dict_of_rights, games=games)
                 else:
                     return render_template('what_are_you_doing_here.html')
             else:
@@ -197,7 +285,41 @@ def profile(section):
         return redirect("/login")
 
 
-
+# Лента новостей
+# @app.route("/article/<section>", methods=["GET"])
+# def article(section):
+#     if section == 'common':
+#         games = db.session.query(Game).filter(True).all()
+#         formated_games = []
+#         for game in games:
+#             new_formated_game = {'title': game.title,
+#                                  'grade': game.grade,
+#                                  'game_type': Constants.DICT_OF_HUMAN_FORMAT[game.game_type],
+#                                  'start_time': game.start_time,
+#                                  'end_time': game.end_time,
+#                                  'game_format': Constants.DICT_OF_HUMAN_FORMAT[game.game_format],
+#                                  'info': game.info,
+#                                  'max_team_size': game.max_team_size,
+#                                  'min_team_size': game.min_team_size
+#                                  }
+#             formated_games.append(new_formated_game)
+#         return render_template('news.html', games=formated_games)
+#     else:
+#         game = db.session.querry(Game).filter(Game.title == section).first()
+#         if game is None:
+#             return render_template('what_are_you_doing_here.html')
+#         else:
+#             new_formated_game = {'title': game.title,
+#                                  'grade': game.grade,
+#                                  'game_type': Constants.DICT_OF_HUMAN_FORMAT[game.game_type],
+#                                  'start_time': game.start_time,
+#                                  'end_time': game.end_time,
+#                                  'game_format': Constants.DICT_OF_HUMAN_FORMAT[game.game_format],
+#                                  'info': game.info,
+#                                  'max_team_size': game.max_team_size,
+#                                  'min_team_size': game.min_team_size
+#                                  }
+#             return render_template('game_news.html', game=new_formated_game)
 
 # Создание игры
 @app.route('/create_game_form', methods=['POST', 'GET'])

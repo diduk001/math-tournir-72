@@ -1,18 +1,8 @@
-{% extends "base.html" %}
+{% extends "profile.html" %}
 
-{# Шаблон для отображения главной страницы" #}
-
-{% block content %}
-    <h1 style="text-align: center">Главное о ТЮМ 72</h1>
-    <h3>
-        Здесь должны быть слова, но пока их нет
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras tristique libero est, quis
-        lacinia ligula blandit at. Phasellus sodales ex vitae magna pulvinar suscipit. Cras purus
-        ligula, porta id urna vitae, luctus eleifend diam. Donec placerat massa vestibulum metus
-        tincidunt maximus. Etiam vestibulum finibus velit, sollicitudin ullamcorper libero semperut.
-    </h3>
-    {% if is_teacher %}
-         <h3>Зарегистрировать команду</h3>
+{% block section %}
+    {% if not is_teacher %}
+         <h3>Вступить в команду</h3>
     <form method="post" novalidate>
         <div>
             {{ form.csrf_token }}
@@ -39,4 +29,12 @@
             </div>
     </form>
     {% endif %}
+    {% for team in teams %}
+        <h3>{{ team['title'] }} </h3>
+        <h4>{{ team['grade'] }} класс</h4>
+        {% for i in range(1, team['size'] + 1) %}
+            <h5>{{ i }}. {{ team['members'][i - 1]['name'] }} {{ team['members'][i - 1]['surname'] }}
+                {{ team['members'][i - 1]['last_name'] }}</h5>
+        {% endfor %}
+    {% endfor %}
 {% endblock %}

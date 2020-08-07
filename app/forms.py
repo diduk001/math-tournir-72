@@ -5,7 +5,7 @@ from flask_wtf.file import *
 from wtforms import *
 from wtforms.validators import *
 from config import Constants
-
+from datetime import datetime
 
 # Функция-Валидатор для проверки строки на номер задачи
 
@@ -32,6 +32,25 @@ def at_least_one_file_validator(form, field):
 IS_NAME_VALIDATOR = [Regexp(regex="^[А-Я+Ё][а-я+ё]+", message="Неверный формат записи")]
 DATA_REQUIRED_VALIDATOR = [InputRequired(message="Это поле обязательно для заполения")]
 FILE_REQUIRED_VALIDATOR = [FileRequired(message="Нужно отправить этот файл")]
+
+
+# def DATE_TIME_REQUIRED_VALIDATOR(form, field):
+#     if field.data.split(' ') != 2:
+#         raise ValidationError('Неверный формат даты и времени')
+#     date, time = field.data.split(' ')
+#     try:
+#         date = datetime.strptime(date, '%Y.%M.%D')
+#     except:
+#         raise ValidationError('Некоректная дата')
+#     if time.split(':') != 3:
+#         raise ValidationError('Некоректный формат времени')
+#     if len(list(filter(lambda x: x.isdecimal(), time.split(':')))) != 3:
+#         raise ValidationError('Некоректный формат времени')
+#     hours, minutes, seconds = map(int, time.split(':'))
+#     if not ( 0<= hours <= 23 and 0 <= minutes <= 59 and 0 <= seconds <= 59):
+#         raise ValidationError('Некоректный формат времени')
+
+
 AT_LEAST_ONE_FILE_REQUIRED_VALIDATOR = []
 IS_TASK_VALIDATOR = [is_task_validator]
 ALL_IMAGES_FILES = [FileAllowed(Constants.ALLOWED_IMAGE_EXTENSIONS, message="Неправильный формат "
@@ -52,22 +71,36 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Вход")
 
 
-# Форма для регистрации пользователя с полями логина, пароля, названия команды, выбора класса
-class SignUpUserForm(FlaskForm):
+# Форма для регистрации ученика с полями логина, пароля, названия команды, выбора класса
+class SignUpStudentForm(FlaskForm):
     login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
     email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
     name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    last_name = StringField("Отчество", validators=IS_NAME_VALIDATOR)
     grade = SelectField("Класс*",
                         choices=GRADE_CHOICES,
                         coerce=str)
-    school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
+    school = StringField("Учебное заведение (полное название)*", validators=DATA_REQUIRED_VALIDATOR)
     teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в "
                            "Ваши успехи*",
                            validators=DATA_REQUIRED_VALIDATOR)
     info = StringField("Дополнительная информация о Вас (как с Вами можно связаться, "
                        "что Вы хотите рассказать о себе)")
+    submit = SubmitField("Зарегистрироваться")
+
+
+# Форма для регистрации учителя с полями логина, пароля, местом работы, email и номером телефона
+class SignUpTeacherForm(FlaskForm):
+    login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
+    password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
+    name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
+    last_name = StringField("Отчество (если отсутсвует пропустите это поле)")
+    work_place = StringField("Место работы*", validators=DATA_REQUIRED_VALIDATOR)
+    email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
+    phone_number = StringField("Номер телефона*", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Зарегистрироваться")
 
 
@@ -111,8 +144,8 @@ class GameCommonInfoForm(FlaskForm):
     info = TextAreaField('Описание игры', validators=DATA_REQUIRED_VALIDATOR)
     grade = SelectField('Класс', choices=GRADE_CHOICES, coerce=str)
     game_type = SelectField('Тип игры', choices=Constants.GAMES_DICT, coerce=str)
-    start_time = StringField('Время начала', validators=DATA_REQUIRED_VALIDATOR)
-    end_time = StringField('Время конца', validators=DATA_REQUIRED_VALIDATOR)
+    start_time = StringField('Время начала в формате дд.мм.гггг чч:мм:сс', validators=DATA_REQUIRED_VALIDATOR)
+    end_time = StringField('Время конца в формате дд.мм.гггг чч:мм:сс', validators=DATA_REQUIRED_VALIDATOR)
     game_format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
     privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open', 'открытая')])
     submit = SubmitField("Создать/изменить игру")
@@ -164,6 +197,7 @@ class GameAuthorsAndCheckersInfoForm(FlaskForm):
         self.authors.data = defaults['authors']
         self.checkers.data = defaults['checkers']
 
+
 # Форма для бана пользователя
 class BanForm(FlaskForm):
     login = StringField("Логин пользователя", validators=DATA_REQUIRED_VALIDATOR)
@@ -183,6 +217,13 @@ class GiveRightForm(FlaskForm):
     submit = SubmitField("Выдать набор прав")
 
 
+# Форма для вступления в команду
+class EnterTeamForm(FlaskForm):
+    login = StringField("Логин", validators=DATA_REQUIRED_VALIDATOR)
+    password = PasswordField("Пароль", validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField("Вступить")
+
+
 # Форма для создания новостей
 class NewsForm(FlaskForm):
     title = StringField("Название", validators=DATA_REQUIRED_VALIDATOR)
@@ -193,6 +234,14 @@ class NewsForm(FlaskForm):
     def set_defaults(self, defaults):
         self.title.data = defaults['title']
         self.info.data = defaults['info']
+
+
+class CreateTeamForm(FlaskForm):
+    title = StringField('Название команды', validators=DATA_REQUIRED_VALIDATOR)
+    grade = SelectField('Класс', choices=[('5', '5'), ('6', '6'), ('7', '7')], coerce=str)
+    login = StringField('Логин', validators=DATA_REQUIRED_VALIDATOR)
+    password = PasswordField('Пароль', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Зарегистрировать')
 
 
 ''' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ '''

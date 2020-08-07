@@ -5,7 +5,7 @@
 {% block content %}
     <h1>Регистрация</h1>
     <p style="color: red">Все поля с знаком "*" обязательны для заполнения</p>
-    <p style="color: red">Имя и фамилия вводятся на русском языке с заглавной буквы;</p>
+    <p style="color: red">Фамилия, имя и отчество вводятся на русском языке с заглавной буквы;</p>
     <p style="color: red">Запомните логин и пароль, эти данные необходимы для входа;</p>
 
     <form method="post" novalidate>
@@ -21,7 +21,8 @@
                     {{ field(class="btn btn-primary") }}
                 {% else %}
                     <div class="form-group">
-                    {{ field(class="form-control", placeholder=field.label.text) }}
+                    {{ field.label }}
+                    {{ field(class="form-control") }}
                     </div>
                 {% endif %}
                 {% if field.errors %}

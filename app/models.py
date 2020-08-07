@@ -9,16 +9,39 @@ db.metadata.clear()
 
 authors_to_games_assoc_table = db.Table(
     'authors_to_games', db.metadata,
-    db.Column('authoring_games', db.ForeignKey('games.id'), primary_key=True),
-    db.Column('authors', db.ForeignKey('users.id'), primary_key=True)
+    db.Column('authoring_game', db.ForeignKey('games.id'), primary_key=True),
+    db.Column('author', db.ForeignKey('users.id'), primary_key=True)
 )
 
 checkers_to_games_assoc_table = db.Table(
     'checkers_to_games', db.metadata,
-    db.Column('checking_games', db.ForeignKey('games.id'), primary_key=True),
-    db.Column('checkers', db.ForeignKey('users.id'), primary_key=True)
+    db.Column('checking_game', db.ForeignKey('games.id'), primary_key=True),
+    db.Column('checker', db.ForeignKey('users.id'), primary_key=True)
 )
 
+members_to_teams_assoc_table = db.Table(
+    'members_to_teams', db.metadata,
+    db.Column('team', db.ForeignKey('teams.id'), primary_key=True),
+    db.Column('member', db.ForeignKey('users.id'), primary_key=True)
+)
+
+teachers_to_teams_assoc_table = db.Table(
+    'teachers_to_teams', db.metadata,
+    db.Column('team', db.ForeignKey('teams.id'), primary_key=True),
+    db.Column('teacher', db.ForeignKey('users.id'), primary_key=True)
+)
+
+teams_to_games_assoc_table = db.Table(
+    'teams_to_games', db.metadata,
+    db.Column('team', db.ForeignKey('teams.id'), primary_key=True),
+    db.Column('game', db.ForeignKey('games.id'), primary_key=True)
+)
+
+players_to_games_assoc_table = db.Table(
+    'players_to_games', db.metadata,
+    db.Column('player', db.ForeignKey('users.id'), primary_key=True),
+    db.Column('game', db.ForeignKey('games.id'), primary_key=True)
+)
 
 class Task(db.Model):
     __bind_key__ = 'tasks_archive'
@@ -79,6 +102,12 @@ class Game(db.Model):
     checkers = orm.relation("User",
                             secondary=checkers_to_games_assoc_table,
                             back_populates='checkering')
+    teams = orm.relationship('Team',
+                             secondary=teams_to_games_assoc_table,
+                             back_populates='games')
+    players = orm.relation('User',
+                           secondary=players_to_games_assoc_table,
+                           back_populates='playing')
 
     def __init__(self, title, grade, game_type, start_time, end_time, game_format, privacy, info,
                  author, task_number, min_team_size, max_team_size, sets_number):
@@ -150,8 +179,11 @@ class User(db.Model, UserMixin):
     # логин, хеш пароля соответсвенно
     name = db.Column(db.String, nullable=False)
     surname = db.Column(db.String, nullable=False)
-    grade = db.Column(db.Integer, nullable=False)
-    school = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=False)
+    grade = db.Column(db.Integer, nullable=True)
+    school = db.Column(db.String, nullable=True)
+    work_place = db.Column(db.String, nullable=True)
+    phone_number = db.Column(db.String, nullable=True)
     teachers = db.Column(db.Text, nullable=True)
     info = db.Column(db.Text, nullable=True)
     email = db.Column(db.String, nullable=False)
@@ -169,11 +201,19 @@ class User(db.Model, UserMixin):
     checkering = orm.relationship('Game',
                                   secondary=checkers_to_games_assoc_table,
                                   back_populates='checkers')
-    teams = db.Column(db.Text, default='')
-    invitation = db.Column(db.Text, default='')
+    playing = orm.relationship('Game',
+                               secondary=players_to_games_assoc_table,
+                               back_populates='players')
+    teams = orm.relationship('Team',
+                             secondary=members_to_teams_assoc_table,
+                             back_populates='members')
+    managed_teams = orm.relationship('Team',
+                                     secondary=teachers_to_teams_assoc_table,
+                                     back_populates='teacher')
     is_approved = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
     is_authenticated = True
+    is_teacher = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
@@ -185,14 +225,54 @@ class User(db.Model, UserMixin):
         self.email = email
         self.hashed_email = generate_password_hash(email)
 
-    def __init__(self, login, name, surname, grade, school, teachers, info):
-        self.login = login
-        self.name = name
-        self.surname = surname
+    def __init__(self, role, params):
+        self.login = params['login']
+        self.name = params['name']
+        self.surname = params['surname']
+        self.last_name = params['last_name']
+        if role == 'Student':
+            self.grade = params['grade']
+            self.school = params['school']
+            self.teachers = params['teachers']
+            self.info = params['info']
+        elif role == 'Teacher':
+            self.is_teacher = True
+            self.work_place = params['work_place']
+            self.phone_number = params['phone_number']
+
+
+class Team(db.Model):
+    __tablename__ = 'teams'
+    __table_args__ = {'extend_existing': True}
+
+    # id в бд
+    id = db.Column(db.Integer,
+                   primary_key=True, autoincrement=True, index=True)
+    title = db.Column(db.String, nullable=False)
+    login = db.Column(db.String, nullable=False)
+    grade = db.Column(db.String, nullable=False)
+    hashed_password = db.Column(db.String, nullable=False)
+    members = orm.relation('User',
+                           secondary=members_to_teams_assoc_table,
+                           back_populates='teams')
+    teacher = orm.relation('User',
+                           secondary=teachers_to_teams_assoc_table,
+                           back_populates='managed_teams')
+    games = orm.relation('Game',
+                         secondary=teams_to_games_assoc_table,
+                         back_populates='teams'
+    )
+
+    def __init__(self, title, grade, login):
+        self.title = title
         self.grade = grade
-        self.school = school
-        self.teachers = teachers
-        self.info = info
+        self.login = login
+
+    def set_password(self, password):
+        self.hashed_password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.hashed_password, password)
 
 
 if __name__ == '__main__':

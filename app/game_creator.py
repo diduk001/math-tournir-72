@@ -116,26 +116,17 @@ def get_game_common_info(title):
     return game
 
 
-DICT_OF_HUMAN_FORMAT = {'open': 'открытая',
-                        'private': 'закрытая',
-                        'domino': 'Домино',
-                        'penalty': 'Пенальти',
-                        'team': 'командная',
-                        'personal': 'личная'
-                        }
-
-
 # Получить общую информацию о игре по её названию в читаемом для пользователя формате
 def get_game_common_info_human_format(title):
     game = get_game(title)
     if game != 'Not found':
         result = [('Название', title),
                   ('Класс', game.grade),
-                  ('Тип игры', DICT_OF_HUMAN_FORMAT[game.game_type]),
+                  ('Тип игры', Consts.DICT_OF_HUMAN_FORMAT[game.game_type]),
                   ('Время начала', game.start_time),
                   ('Время конца', game.end_time),
-                  ('Формат игры', DICT_OF_HUMAN_FORMAT[game.game_format]),
-                  ('Приватность игры', DICT_OF_HUMAN_FORMAT[game.privacy]),
+                  ('Формат игры', Consts.DICT_OF_HUMAN_FORMAT[game.game_format]),
+                  ('Приватность игры', Consts.DICT_OF_HUMAN_FORMAT[game.privacy]),
                   ('Описание игры', game.info)]
         return result
     return game

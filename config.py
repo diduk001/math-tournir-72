@@ -43,3 +43,11 @@ class Constants(object):
     GAMES_DICT = [('domino', 'Домино'),
                   ('penalty', 'Пенальти')]
 
+    # Словарь для перевода из бд формата в формат удобный пользователю
+    DICT_OF_HUMAN_FORMAT = {'open': 'открытая',
+                            'private': 'закрытая',
+                            'domino': 'Домино',
+                            'penalty': 'Пенальти',
+                            'team': 'командная',
+                            'personal': 'личная'
+                            }

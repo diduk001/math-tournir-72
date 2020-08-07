@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% for game in games %}
+        <div>
+            <h4>{{ game['title'] }}</h4>
+            <p>Класс: {{ game['grade'] }}</p>
+            <p>Тип игры: {{ game['game_type'] }}</p>
+            <a href="/article/{{ game['title'] }}">Подробнее</a>
+        </div>
+    {% endfor %}
+{% endblock %}
