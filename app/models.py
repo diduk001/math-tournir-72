@@ -31,14 +31,14 @@ class Task(db.Model):
     ans_picture = db.Column(db.Boolean)
     have_solution = db.Column(db.Boolean, default=False)
     hidden = db.Column(db.Boolean, default=False)
-    hashed_answer = db.Column(db.String(128))
+    hashed_answer = db.Column(db.String())
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # Установить ответ
 
     def set_ans(self, ans):
-        self.hashed_answer = generate_password_hash(ans)
+        self.hashed_answer += '|' + generate_password_hash(ans)
 
     # Проверить ответ
 

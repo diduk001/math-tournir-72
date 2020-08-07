@@ -312,7 +312,9 @@ def add_task():
         task.max_grade = max_grade
         task.manual_check = bool(manual_check)
         task.ans_picture = bool(ans_picture)
-        task.set_ans(answer)
+
+        for ans in answer.split('|'):
+            task.set_ans(ans)
 
         if solution:
             task.have_solution = True
@@ -356,7 +358,7 @@ def archive():
     params = dict()
     params['title'] = 'Архив'
 
-    tasks_table = db.session.query(Task).all()
+    tasks_table = db.session.query(Task).all().filter_by(Task.hidden == False)
 
     params["tasks_table"] = tasks_table
 
@@ -369,7 +371,19 @@ def task(task_id):
     params = dict()
     params['title'] = 'Задача ' + str(task_id)
 
-    task = db.session.query(Task).filter_by(id=task_id).first()
+    task = db.session.query(Task).filter_by(Task.id == task_id).first()
+
+    if not task:
+        return render_template("no_task.html")
+
+    if task.hidden:
+        if is_auth():
+            rights = current_user.rights.split()
+            if not ('author' in rights or 'god' in rights or current_user.id == task.author_id):
+                return render_template("what_are_you_doing_here.html")
+        else:
+            return render_template("what_are_you_doing_here.html")
+
     params['task'] = task
 
     task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
