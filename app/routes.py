@@ -430,36 +430,38 @@ def add_task(game_title, task_position, current_value):
             if ans_picture:
                 manual_check = True
 
-            task = Task()
-            task.min_grade = min_grade
-            task.max_grade = max_grade
-            task.manual_check = bool(manual_check)
-            task.ans_picture = bool(ans_picture)
-            task.set_ans(answer)
+        task = Task()
+        task.min_grade = min_grade
+        task.max_grade = max_grade
+        task.manual_check = bool(manual_check)
+        task.ans_picture = bool(ans_picture)
 
-            if solution:
-                task.have_solution = True
+        for ans in answer.split('|'):
+            task.set_ans(ans)
 
-            db.session.add(task)
-            db.session.commit()
+        if solution:
+            task.have_solution = True
 
-            task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
-            condition_directory = os.path.join(task_directory, "condition")
-            os.mkdir(task_directory)
-            os.mkdir(condition_directory)
-            with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
-                wfile.write(condition)
+        db.session.add(task)
+        db.session.commit()
 
-            if condition_images:
-                for image in condition_images:
-                    if image.filename:
-                        image.save(os.path.join(condition_directory, image.filename))
+        task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
+        condition_directory = os.path.join(task_directory, "condition")
+        os.mkdir(task_directory)
+        os.mkdir(condition_directory)
+        with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
+            wfile.write(condition)
 
-            if solution:
-                solution_directory = os.path.join(task_directory, "solution")
-                os.mkdir(solution_directory)
-                with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
-                    wfile.write(solution)
+        if condition_images:
+            for image in condition_images:
+                if image.filename:
+                    image.save(os.path.join(condition_directory, image.filename))
+
+        if solution:
+            solution_directory = os.path.join(task_directory, "solution")
+            os.mkdir(solution_directory)
+            with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
+                wfile.write(solution)
 
                 if solution_images:
                     for image in solution_images:
@@ -484,7 +486,9 @@ def add_task(game_title, task_position, current_value):
 def archive():
     params = dict()
     params['title'] = 'Архив'
-    tasks_table = db.session.query(Task).all()
+
+    tasks_table = db.session.query(Task).all().filter_by(Task.hidden == False)
+
     params["tasks_table"] = tasks_table
 
     return render_template("archive.html", **params)
@@ -496,7 +500,19 @@ def task(task_id):
     params = dict()
     params['title'] = 'Задача ' + str(task_id)
 
-    task = db.session.query(Task).filter_by(id=task_id).first()
+    task = db.session.query(Task).filter_by(Task.id == task_id).first()
+
+    if not task:
+        return render_template("no_task.html")
+
+    if task.hidden:
+        if is_auth():
+            rights = current_user.rights.split()
+            if not (current_user.id == task.author_id or 'god' in rights):
+                return render_template("what_are_you_doing_here.html")
+        else:
+            return render_template("what_are_you_doing_here.html")
+
     params['task'] = task
 
     task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
