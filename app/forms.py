@@ -10,6 +10,7 @@ from datetime import datetime
 
 # Функция-Валидатор для проверки строки на номер задачи
 
+
 def is_task_validator(form, field):
     game_type = form.game_type.data
     task = field.data

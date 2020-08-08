@@ -89,6 +89,7 @@ class Game(db.Model):
     game_format = db.Column(db.String)
     privacy = db.Column(db.String)
     info = db.Column(db.Text)
+    tasks_positions = db.Column(db.Text)
     tasks_number = db.Column(db.Integer)
     sets_number = db.Column(db.Integer)
     min_team_size = db.Column(db.Integer)
@@ -108,7 +109,7 @@ class Game(db.Model):
                            back_populates='playing')
 
     def __init__(self, title, grade, game_type, start_time, end_time, game_format, privacy, info,
-                 author, task_number, min_team_size, max_team_size, sets_number):
+                 author, task_number, min_team_size, max_team_size, sets_number, tasks_positions):
         self.title = title
         self.grade = grade
         self.game_type = game_type
@@ -122,7 +123,7 @@ class Game(db.Model):
         self.min_team_size = min_team_size
         self.max_team_size = max_team_size
         self.sets_number = sets_number
-
+        self.tasks_positions = tasks_positions
 
 # Создать таблицу состояния задач для игры
 # game_title - название игры, str

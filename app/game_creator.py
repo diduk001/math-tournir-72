@@ -22,8 +22,9 @@ def create_game(title, grade, game_type, start_time, end_time, game_format, priv
                 min_team_size=4, max_team_size=4):
     task_number = Consts.GAMES_DEFAULT_TASK_NUMBERS[game_type]
     sets_number = Consts.GAMES_DEFAULT_SETS_NUMBERS[game_type]
+    tasks_positions = Consts.GAMES_DEFAULT_TASKS_POSITIONS[game_type]
     game = Game(title, grade, game_type, start_time, end_time, game_format, privacy, info, author,
-                task_number, min_team_size, max_team_size, sets_number)
+                task_number, min_team_size, max_team_size, sets_number, tasks_positions)
     create_tasks_table(title, task_number)
     author.authoring.append(game)
     db.session.add(game)
@@ -181,6 +182,14 @@ def get_game_authors_and_checkers_info_human_format(title):
         return result
     return game
 
+
+# Получить какие позиции задач игры по названию
+def get_game_tasks_positions(title):
+    game = get_game(title)
+    if game != 'Not found':
+        result = list(map(lambda x: x.split(':'), game.tasks_positions.split('|')))
+        return result
+    return game
 
 # Получить логины авторов игры по её названию
 def get_game_authors_info(title):

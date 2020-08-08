@@ -183,6 +183,9 @@ def profile(section):
                                 return render_template('team_not_found.html', login=login, last='/profile/teams')
                             if not team.check_password(password):
                                 return render_template('wrong_password.html', last='/profile/teams')
+                            if team.grade != current_user.grade:
+                                return render_template('error.html', message='Ваш класс не соответсвует классу команды',
+                                                       last='profile/teams')
                             team.members.append(current_user)
                             db.session.commit()
                             return render_template('success.html', last='profile/teams')
@@ -268,6 +271,7 @@ def profile(section):
                     for game in current_user.authoring:
                         new_game = {'common': get_game_common_info_human_format(game.title),
                                     'tasks': get_game_tasks_info_human_format(game.title),
+                                    'tasks_positions': get_game_tasks_positions(game.title),
                                     'authors_and_checkers': get_game_authors_and_checkers_info_human_format(
                                         game.title)}
                         if new_game['common'][5][1] == 'командная':
@@ -341,11 +345,11 @@ def create_game_form():
                 end_time = request.form.get('end_time')
                 game_format = request.form.get('game_format')
                 privacy = request.form.get('privacy')
-                author = current_user.id
-                session = db.session
-                author = session.query(User).filter(User.id == author).first()
+                if db.session.query(Game).filter(Game.title == title) is not None:
+                    return render_template('error.html', message='Игра с таким названием уже существует',
+                                           last='../../profile/author')
                 create_game(title, grade, game_type, start_time, end_time, game_format, privacy,
-                            info, author)
+                            info, current_user)
                 return render_template('success.html', last='../../profile/author')
             return render_template('game_creator.html', form=form, title='Создание игры')
     return render_template('what_are_you_doing_here.html')
@@ -399,72 +403,79 @@ def update_game(game_title, block):
 
 
 # Добавить задачу
-@app.route('/add_task/', methods=['GET', 'POST'])
-def add_task():
-    add_task_form = AddTaskForm()
-    params = dict()
-    params['title'] = 'Добавить Задачу'
-    params['add_task_form'] = add_task_form
-    params['success'] = False
+@app.route('/add_task/<game_title>/<task_position>/<current_value>', methods=['GET', 'POST'])
+def add_task(game_title, task_position, current_value):
+    if is_auth() and 'author' in current_user.rights.split():
+        add_task_form = AddTaskForm()
+        params = dict()
+        params['title'] = 'Добавить Задачу'
+        params['add_task_form'] = add_task_form
+        params['success'] = False
 
-    if request.method == 'POST' and add_task_form.validate_on_submit():
-        min_grade = request.form.get("min_grade")
-        max_grade = request.form.get("max_grade")
-        manual_check = request.form.get("manual_check")
-        condition = request.form.get("condition")
-        condition_images = request.files.getlist("condition_images")
-        solution = request.form.get("solution")
-        solution_images = request.files.getlist("solution_images")
-        ans_picture = request.form.get("ans_picture")
-        answer = request.form.get("answer")
+        if request.method == 'POST' and add_task_form.validate_on_submit():
+            min_grade = request.form.get("min_grade")
+            max_grade = request.form.get("max_grade")
+            manual_check = request.form.get("manual_check")
+            condition = request.form.get("condition")
+            condition_images = request.files.getlist("condition_images")
+            solution = request.form.get("solution")
+            solution_images = request.files.getlist("solution_images")
+            ans_picture = request.form.get("ans_picture")
+            answer = request.form.get("answer")
 
-        if min_grade > max_grade:
-            flash("Младший класс старше Старшего класса")
-            return render_template('add_task.html', **params)
+            if min_grade > max_grade:
+                flash("Младший класс старше Старшего класса")
+                return render_template('add_task.html', **params)
 
-        if ans_picture:
-            manual_check = True
+            if ans_picture:
+                manual_check = True
 
-        task = Task()
-        task.min_grade = min_grade
-        task.max_grade = max_grade
-        task.manual_check = bool(manual_check)
-        task.ans_picture = bool(ans_picture)
-        task.set_ans(answer)
+            task = Task()
+            task.min_grade = min_grade
+            task.max_grade = max_grade
+            task.manual_check = bool(manual_check)
+            task.ans_picture = bool(ans_picture)
+            task.set_ans(answer)
 
-        if solution:
-            task.have_solution = True
+            if solution:
+                task.have_solution = True
 
-        db.session.add(task)
-        db.session.commit()
+            db.session.add(task)
+            db.session.commit()
 
-        task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
-        condition_directory = os.path.join(task_directory, "condition")
-        os.mkdir(task_directory)
-        os.mkdir(condition_directory)
-        with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
-            wfile.write(condition)
+            task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
+            condition_directory = os.path.join(task_directory, "condition")
+            os.mkdir(task_directory)
+            os.mkdir(condition_directory)
+            with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
+                wfile.write(condition)
 
-        if condition_images:
-            for image in condition_images:
-                if image.filename:
-                    image.save(os.path.join(condition_directory, image.filename))
-
-        if solution:
-            solution_directory = os.path.join(task_directory, "solution")
-            os.mkdir(solution_directory)
-            with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
-                wfile.write(solution)
-
-            if solution_images:
-                for image in solution_images:
+            if condition_images:
+                for image in condition_images:
                     if image.filename:
-                        image.save(os.path.join(solution_directory, image.filename))
+                        image.save(os.path.join(condition_directory, image.filename))
 
-        params["success"] = True
-        return render_template("add_task.html", **params)
+            if solution:
+                solution_directory = os.path.join(task_directory, "solution")
+                os.mkdir(solution_directory)
+                with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
+                    wfile.write(solution)
 
-    return render_template('add_task.html', **params)
+                if solution_images:
+                    for image in solution_images:
+                        if image.filename:
+                            image.save(os.path.join(solution_directory, image.filename))
+            game = db.session.query(Game).filter(Game.title == game_title).first()
+            tasks_positions = list(lambda x: x.split(':'), game.tasks_positions.split('|'))
+            tasks_positions[tasks_positions.index([task_position, current_value])] = (task_position, task.id)
+            game.tasks_positions = '|'.join(list(map(lambda x: ':'.join(x), tasks_positions)))
+            db.session.commit()
+            params["success"] = True
+            return render_template("add_task.html", **params)
+
+        return render_template('add_task.html', **params)
+    else:
+        return render_template('what_are_you_doing_here.html')
 
 
 # Архив
@@ -473,9 +484,7 @@ def add_task():
 def archive():
     params = dict()
     params['title'] = 'Архив'
-
     tasks_table = db.session.query(Task).all()
-
     params["tasks_table"] = tasks_table
 
     return render_template("archive.html", **params)
