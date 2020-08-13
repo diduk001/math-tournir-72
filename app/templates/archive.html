@@ -9,6 +9,7 @@
             <th>max класс</th>
             <th>проверяется вручную</th>
             <th>ответ - рисунок</th>
+            <th>описано решение</th>
         </tr>
         </thead>
         <tbody>
@@ -23,6 +24,11 @@
                     <td><p style="color:firebrick;">Нет</p></td>
                 {% endif %}
                 {% if task.ans_picture %}
+                    <td><p style="color:mediumseagreen;">Да</p></td>
+                {% else %}
+                    <td><p style="color:firebrick;">Нет</p></td>
+                {% endif %}
+                {% if task.have_solution %}
                     <td><p style="color:mediumseagreen;">Да</p></td>
                 {% else %}
                     <td><p style="color:firebrick;">Нет</p></td>

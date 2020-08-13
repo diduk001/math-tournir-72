@@ -22,10 +22,20 @@
         <br>
 
         {% for field in add_task_form if field.name != 'csrf_token' %}
-
             <div>
                 {% if field.type == 'SubmitField' %}
                     {{ field(class='btn btn-primary') }}
+                {% elif field.type == 'MultipleFileField' %}
+                    <label for="{{ field.name[:-7] }}_preview">Предпросмотр</label>
+                    <p id="{{ field.name[:-7] }}_preview"
+                       style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+                    </p>
+                    <script>
+                        $("#{{ field.name[:-7] }}").on("keyup", function () {
+                            $("#{{ field.name[:-7] }}_preview").text($("#{{ field.name[:-7] }}").val())
+                            MathJax.typeset()
+                        })
+                    </script>
                 {% elif field.type == 'BooleanField' %}
                     {{ field(class='form-check-input') }}
                     {% if field.flags.required %}

@@ -70,32 +70,34 @@ def update_game_team_info(title, min_team_size, max_team_size):
 
 
 # Изменение информации о авторах и проверяющих
-# add_authors - имена и фамилии добавленных авторов, list<tuple<str, str>>
-# delete_authors - имена и фамилии удалённых авторов, list<tuple<str, str>>
-# add_checkers - имена и фамилии добавленных проверяющих, list<list<str, str>>
-# delete_checkers - имена и фамилии удалённых проверяющих, list<list<str, str>>
-def update_game_authors_and_checkers_info(title, add_authors=None, delete_authors=None,
-                                          add_checkers=None, delete_checkers=None):
+# authors - логины авторов, str
+# checkers - логины проверяющих, str
+def update_game_authors_and_checkers_info(title, authors, checkers):
     game = get_game(title)
+    authors = authors.split(', ')
+    checkers = checkers.split(', ')
+    game.authors = []
+    game.checkers = []
+    not_found_users = []
     if game != 'Not found':
-        for author in add_authors:
-            right_author = get_user(author[0], author[1])
-            game.authors.append(right_author)
-            right_author.authoring.append(game)
-        for author in delete_authors:
-            right_author = get_user(author[0], author[1])
-            game.authors.remove(right_author)
-            right_author.authoring.remove(game)
-        for checker in add_checkers:
-            right_checker = get_user(checker[0], checker[1])
-            game.chechers.append(right_checker)
-            right_checker.append(game)
-        for checker in delete_checkers:
-            right_checker = get_user(checker[0], checker[1])
-            game.chechers.remove(right_checker)
-            right_checker.remove(game)
+        for author in authors:
+            right_author = get_user(author)
+            if right_author == "Not found":
+                not_found_users.append(author)
+            else:
+                game.authors.append(right_author)
+                if game not in right_author.authoring:
+                    right_author.authoring.append(game)
+        for checker in checkers:
+            right_checker = get_user(checker)
+            if right_checker == 'Not found':
+                not_found_users.append(checker)
+            else:
+                game.chechers.append(right_checker)
+                if game not in right_checker.checkering:
+                    right_checker.append(game)
         db.session.commit()
-    return game
+    return game, not_found_users
 
 
 # Получить общую информацию о игре по её названию
@@ -104,12 +106,47 @@ def get_game_common_info(title):
     if game != 'Not found':
         result = {'title': title,
                   'grade': game.grade,
-                  'game_type': game.type,
+                  'game_type': game.game_type,
                   'start_time': game.start_time,
                   'end_time': game.end_time,
                   'game_format': game.game_format,
                   'privacy': game.privacy,
                   'info': game.info}
+        return result
+    return game
+
+
+DICT_OF_HUMAN_FORMAT = {'open': 'открытая',
+                        'private': 'закрытая',
+                        'domino': 'Домино',
+                        'penalty': 'Пенальти',
+                        'team': 'командная',
+                        'personal': 'личная'
+                        }
+
+
+# Получить общую информацию о игре по её названию в читаемом для пользователя формате
+def get_game_common_info_human_format(title):
+    game = get_game(title)
+    if game != 'Not found':
+        result = [('Название', title),
+                  ('Класс', game.grade),
+                  ('Тип игры', DICT_OF_HUMAN_FORMAT[game.game_type]),
+                  ('Время начала', game.start_time),
+                  ('Время конца', game.end_time),
+                  ('Формат игры', DICT_OF_HUMAN_FORMAT[game.game_format]),
+                  ('Приватность игры', DICT_OF_HUMAN_FORMAT[game.privacy]),
+                  ('Описание игры', game.info)]
+        return result
+    return game
+
+
+# Получить информацию о задачах игры по её названию в читаемом для пользователя формате
+def get_game_tasks_info_human_format(title):
+    game = get_game(title)
+    if game != 'Not found':
+        result = [('Количество задач', game.tasks_number),
+                  ('Количество наборов задач', game.sets_number)]
         return result
     return game
 
@@ -124,7 +161,17 @@ def get_game_tasks_info(title):
     return game
 
 
-# Получить информацию о размере команд игры по её нахванию
+# Получить информацию о размере команд игры по её названию в читаемом для пользователя формате
+def get_game_team_info_human_format(title):
+    game = get_game(title)
+    if game != 'Not found':
+        result = [('Минимальный размер команды', game.min_team_size),
+                  ('Максимальный размер команды', game.max_team_size)]
+        return result
+    return game
+
+
+# Получить информацию о размере команд игры по её названию
 def get_game_team_info(title):
     game = get_game(title)
     if game != 'Not found':
@@ -134,20 +181,30 @@ def get_game_team_info(title):
     return game
 
 
-# Получить имена и фамилии авторов игры по её названию
-def get_game_authors_info(title):
+# Получить информацию о авторах и проверяющих игры по её названию в читаемом для пользователя формате
+def get_game_authors_and_checkers_info_human_format(title):
     game = get_game(title)
     if game != 'Not found':
-        result = list(map(lambda author: (author.name, author.surname), game.authors))
+        result = [('Авторы', ', '.join(get_game_authors_info(title))),
+                  ('Проверяющие', ', '.join(get_game_checkers_info(title)))]
         return result
     return game
 
 
-# Получить имена и фамилии проверяющих игру по её названию
+# Получить логины авторов игры по её названию
+def get_game_authors_info(title):
+    game = get_game(title)
+    if game != 'Not found':
+        result = list(map(lambda author: author.login, game.authors))
+        return result
+    return game
+
+
+# Получить логины проверяющих игру по её названию
 def get_game_checkers_info(title):
     game = get_game(title)
     if game != 'Not found':
-        result = list(map(lambda checker: (checker.name, checker.surname), game.checkers))
+        result = list(map(lambda checker: checker.login, game.checkers))
         return result
     return game
 
@@ -155,14 +212,14 @@ def get_game_checkers_info(title):
 # Получить игру по названию
 def get_game(title):
     game = db.session.query(Game).filter(Game.title == title)
-    if game:
+    if game.first() is not None:
         return game.first()
     return 'Not found'
 
 
 # Получить пользователя по имени и фамилии
-def get_user(name, surname):
-    user = db.session.query(User).filter(User.name == name, User.surname == surname)
-    if user:
+def get_user(login):
+    user = db.session.query(User).filter(User.login == login)
+    if user.first() is not None:
         return user.first()
     return "Not found"

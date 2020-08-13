@@ -39,6 +39,7 @@ class Constants(object):
     GAMES_DEFAULT_SETS_NUMBERS = {'domino': 1,
                                   'penalty': 1}
 
-    # Словарь игр и их названий
+    # Список игр и их названий
     GAMES_DICT = [('domino', 'Домино'),
                   ('penalty', 'Пенальти')]
+

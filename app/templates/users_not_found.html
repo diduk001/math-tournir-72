@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h3>Не были найдены пользователи со следующими логинами:</h3>
+    {%   for user in users %}
+        <h4>{{ user }}</h4>
+    {%   endfor %}
+    <a href={{ last }}>Вернуться назад</a>
+{% endblock %}

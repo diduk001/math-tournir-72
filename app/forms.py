@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import *
 from wtforms import *
 from wtforms.validators import *
+
 from config import Constants
 
 
@@ -35,14 +36,16 @@ FILE_REQUIRED_VALIDATOR = [FileRequired(message="Нужно отправить �
 AT_LEAST_ONE_FILE_REQUIRED_VALIDATOR = []
 IS_TASK_VALIDATOR = [is_task_validator]
 ALL_IMAGES_FILES = [FileAllowed(Constants.ALLOWED_IMAGE_EXTENSIONS, message="Неправильный формат "
-                                                                         "файла")]
-ALL_TEXT_FILES = [FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
+                                                                            "файла")]
+ALL_TEXT_FILES = [
+    FileAllowed(Constants.ALLOWED_TEXT_EXTENSIONS, message="Неправильный формат файла")]
 
 EMAIL_VALIDATOR = [Email(message="Формат ввода Email неправильный")]
 
 GRADE_CHOICES = [(str(i), str(i)) for i in range(4, 12)]
 GAME_TYPE_CHOICES = [("domino", "Домино"), ("penalty", "Пенальти")]
-RIGHT_CHOICES = [('checker', 'Проверяющий'), ('author', 'Автор'), ('moderator', 'Модератор'), ('god', "'Бог'")]
+RIGHT_CHOICES = [('checker', 'Проверяющий'), ('author', 'Автор'), ('moderator', 'Модератор'),
+                 ('god', "'Бог'")]
 
 
 # Форма для входа
@@ -61,7 +64,7 @@ class SignUpUserForm(FlaskForm):
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     grade = SelectField("Класс*",
                         choices=GRADE_CHOICES,
-                        coerce=int)
+                        coerce=str)
     school = StringField("Школа*", validators=DATA_REQUIRED_VALIDATOR)
     teachers = StringField("Учителя математики и руководители кружков, которые внесли вклад в "
                            "Ваши успехи*",
@@ -83,15 +86,19 @@ class AddTaskForm(FlaskForm):
                             choices=GRADE_CHOICES)
     max_grade = SelectField("Самый старший рекомендуемый класс", default='5',
                             choices=GRADE_CHOICES)
-    condition_file = FileField("*.txt файл с условием", validators=FILE_REQUIRED_VALIDATOR)
+    condition = TextAreaField("Условие задачи (Синтаксис MathJax)",
+                              validators=DATA_REQUIRED_VALIDATOR)
     condition_images = MultipleFileField("Файлы иллюстраций к условию (допустимы файлы "
                                          "*.png/*.jpg/*.jpeg/*.gif)",
                                          validators=ALL_IMAGES_FILES)
-    solution_file = FileField("*.txt файл с решением", validators=ALL_TEXT_FILES)
+
+    solution = TextAreaField("Решение задачи (Синтаксис MathJax)", )
     solution_images = MultipleFileField("Файлы иллюстраций к решению (допустимы файлы "
                                         "*.png/*.jpg/*.jpeg/*.gif)",
                                         validators=ALL_IMAGES_FILES)
+
     answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
+    hidden = BooleanField("Задача скрыта")
     manual_check = BooleanField("Задача проверяется вручную")
     ans_picture = BooleanField("Ответом является рисунок (тогда задача проверяется вручную)")
     submit = SubmitField("Добавить задачу")
@@ -114,8 +121,20 @@ class GameCommonInfoForm(FlaskForm):
     start_time = StringField('Время начала', validators=DATA_REQUIRED_VALIDATOR)
     end_time = StringField('Время конца', validators=DATA_REQUIRED_VALIDATOR)
     game_format = SelectField('Формат игры', choices=[('personal', 'личная'), ('team', 'командная')])
-    privacy = SelectField('Приватность игры', choices=[('private', 'закрытая'), ('open', 'открытая')])
+    privacy = SelectField('Приватность игры',
+                          choices=[('private', 'закрытая'), ('open', 'открытая')])
     submit = SubmitField("Создать/изменить игру")
+
+    # Установить дефолтные значения
+    def set_defaults(self, defaults):
+        self.title.data = defaults['title']
+        self.info.data = defaults['info']
+        self.grade.data = defaults['grade']
+        self.game_type.data = defaults['game_type']
+        self.start_time.data = defaults['start_time']
+        self.end_time.data = defaults['end_time']
+        self.game_format.data = defaults['game_format']
+        self.privacy.data = defaults['privacy']
 
 
 # Форма для заполнения информации о блоке задач
@@ -124,6 +143,11 @@ class GameTasksInfoForm(FlaskForm):
     sets_number = IntegerField('Количество наборов задач', validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Подтвердить изменения')
 
+    # Установить дефолтные значения
+    def set_defaults(self, defaults):
+        self.tasks_number.data = defaults['tasks_number']
+        self.sets_number.data = defaults['sets_number']
+
 
 # Форма для заполнения информации о размере команд
 class GameTeamInfoForm(FlaskForm):
@@ -131,60 +155,54 @@ class GameTeamInfoForm(FlaskForm):
     max_team_size = IntegerField('Минимальный размер команды', validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Подтвердить изменения')
 
+    # Установить дефолтные значения
+    def set_defaults(self, defaults):
+        self.min_team_size.data = defaults['min_team_size']
+        self.max_team_size.data = defaults['max_team_size']
+
 
 # Форма для заполнения информации о авторах и проверяющих
 class GameAuthorsAndCheckersInfoForm(FlaskForm):
-    authors = StringField('Имена и Фамилии авторов через пробел')
-    checkers = StringField('Имена и Фамилии проверяющих через пробел')
+    authors = StringField('Логины авторов через запятую с пробелом')
+    checkers = StringField('Логины проверяющих через запятую с пробелом')
     submit = SubmitField('Подтвердить изменения')
 
-
-# Форма для выбора начала и конца соревнования
-class StartEndTimeForm(FlaskForm):
-    game_type = SelectField("Тип игры", choices=[("domino", "Домино"), ("penalty", "Пенальти")],
-                            validators=DATA_REQUIRED_VALIDATOR)
-    time_start = DateTimeField("Начало игры (в формате дд.мм.гггг чч:мм:сс)", format="%d.%m.%Y %H:%M:%S",
-                               validators=DATA_REQUIRED_VALIDATOR)
-    time_end = DateTimeField("Конец игры (в формате дд.мм.гггг чч:мм:сс)", format="%d.%m.%Y %H:%M:%S",
-                             validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Установить время начала и конца")
+    # Установить дефолтные значения
+    def set_defaults(self, defaults):
+        self.authors.data = defaults['authors']
+        self.checkers.data = defaults['checkers']
 
 
 # Форма для бана пользователя
 class BanForm(FlaskForm):
-    name = StringField('Имя', validators=DATA_REQUIRED_VALIDATOR)
-    surname = StringField('Фамилия', validators=DATA_REQUIRED_VALIDATOR)
+    login = StringField("Логин пользователя", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Заблокировать пользователя')
 
 
 # Форма для пардона пользователя
 class PardonForm(FlaskForm):
-    name = StringField('Имя', validators=DATA_REQUIRED_VALIDATOR)
-    surname = StringField('Фамилия', validators=DATA_REQUIRED_VALIDATOR)
+    login = StringField("Логин пользователя", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Разблокировать пользователя')
 
 
 # Форма для выдачи прав
 class GiveRightForm(FlaskForm):
-    name = StringField("Имя", validators=DATA_REQUIRED_VALIDATOR)
-    surname = StringField("Фамилия", validators=DATA_REQUIRED_VALIDATOR)
-    right = SelectField("Выберите набор прав, который хотите выдать", RIGHT_CHOICES)
+    login = StringField("Логин пользователя", validators=DATA_REQUIRED_VALIDATOR)
+    right = SelectField("Выберите набор прав, который хотите выдать", choices=RIGHT_CHOICES,
+                        coerce=str)
     submit = SubmitField("Выдать набор прав")
 
 
-class MakeNewForm(FlaskForm):
-    picture = FileField("Изображение к новости(допустимы файлы *.png/*.jpg/*.jpeg/*.gif)", validators=ALL_IMAGES_FILES)
+# Форма для создания новостей
+class NewsForm(FlaskForm):
     title = StringField("Название", validators=DATA_REQUIRED_VALIDATOR)
     info = StringField("Содержание новости", validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField("Опубликовать новость")
 
-
-class UpdateNewForm(FlaskForm):
-    picture = FileField("Изображение к новости(допустимы файлы *.png/*.jpg/*.jpeg/*.gif)", validators=ALL_IMAGES_FILES)
-    title = StringField("Название", validators=DATA_REQUIRED_VALIDATOR)
-    info = StringField("Содержание новости", validators=DATA_REQUIRED_VALIDATOR)
-    submit = SubmitField("Опубликовать новость")
-
+    # Установить дефолтные значения
+    def set_defaults(self, defaults):
+        self.title.data = defaults['title']
+        self.info.data = defaults['info']
 
 
 ''' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ '''

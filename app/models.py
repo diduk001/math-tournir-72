@@ -21,7 +21,6 @@ checkers_to_games_assoc_table = db.Table(
 
 
 class Task(db.Model):
-    __bind_key__ = 'tasks_archive'
     __tablename__ = 'tasks_archive'
     __table_args__ = {'extend_existing': True}
 
@@ -32,14 +31,14 @@ class Task(db.Model):
     ans_picture = db.Column(db.Boolean)
     have_solution = db.Column(db.Boolean, default=False)
     hidden = db.Column(db.Boolean, default=False)
-    hashed_answer = db.Column(db.String(128))
+    hashed_answer = db.Column(db.String())
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # Установить ответ
 
     def set_ans(self, ans):
-        self.hashed_answer = generate_password_hash(ans)
+        self.hashed_answer += '|' + generate_password_hash(ans)
 
     # Проверить ответ
 
@@ -51,7 +50,6 @@ class Task(db.Model):
 
 
 class Game(db.Model):
-    # __bind_key__ = 'games'
     __tablename__ = 'games'
     __table_args__ = {'extend_existing': True}
     # id игры
@@ -61,8 +59,8 @@ class Game(db.Model):
     # задач, максимальный размер команды, минимальный размер команды, путь к файлу с решениями,
     # id авторов и проверяющих соответсвенно
     title = db.Column(db.String)
-    grade = db.Column(db.Integer)
-    type = db.Column(db.String)
+    grade = db.Column(db.String)
+    game_type = db.Column(db.String)
     start_time = db.Column(db.String)
     end_time = db.Column(db.String)
     game_format = db.Column(db.String)
@@ -84,7 +82,7 @@ class Game(db.Model):
                  author, task_number, min_team_size, max_team_size, sets_number):
         self.title = title
         self.grade = grade
-        self.type = game_type
+        self.game_type = game_type
         self.start_time = start_time
         self.end_time = end_time
         self.game_format = game_format
@@ -138,7 +136,6 @@ def add_user_to_game_table(name, surname, tasks_number, game_title):
 
 
 class User(db.Model, UserMixin):
-    # __bind_key__ = 'users'
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
 
