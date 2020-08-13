@@ -4,110 +4,147 @@
     {% if state == 'not started' %}
         <h1 id="timer"></h1>
         <script>
-        // Set the date we're counting down to
-        let countDownDate = new Date('{{start_time}}').getTime();
-        // Get todays date and time
-        let now = new Date('{{now_time}}').getTime();
-        // Update the count down every 1 second
-        let x = setInterval(function() {
-            // Find the distance between now an the count down date
-            let distance = countDownDate - now;
+            // Set the date we're counting down to
+            let countDownDate = new Date('{{start_time}}').getTime();
+            // Get todays date and time
+            let now = new Date('{{now_time}}').getTime();
+            // Update the count down every 1 second
+            let x = setInterval(function() {
+                // Find the distance between now an the count down date
+                let distance = countDownDate - now;
 
-            // Time calculations for days, hours, minutes and seconds
-            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                // Time calculations for days, hours, minutes and seconds
+                let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Output the result in an element with id="demo"
-            let message = "Cоревнование начнётся через ";
-            if (days > 0){
-                message += days + " д ";
-            }
-            message += hours + " ч "
-            + minutes + " мин " + seconds + " с";
-            document.getElementById("timer").innerHTML = message;
-            // If the count down is over, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
-            }
-            now += 1000;
-        }, 1000);
+                // Output the result in an element with id="demo"
+                let message = "Cоревнование начнётся через ";
+                if (days > 0){
+                    message += days + " д ";
+                }
+                message += hours + " ч "
+                + minutes + " мин " + seconds + " с";
+                document.getElementById("timer").innerHTML = message;
+                // If the count down is over, write some text
+                if (distance < 0) {
+                    clearInterval(x);
+                    document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
+                }
+                now += 1000;
+            }, 1000);
         </script>
     {% elif state == 'ended' %}
         <h1>Соревнование уже закончилось</h1>
     {% else %}
         <h1 id="timer"></h1>
         <script>
-        // Set the date we're counting down to
-        let countDownDate = new Date('{{end_time}}').getTime();
-        // Get todays date and time
-        let now = new Date('{{now_time}}').getTime();
-        // Update the count down every 1 second
-        let x = setInterval(function() {
+            // Set the date we're counting down to
+            let countDownDate = new Date('{{end_time}}').getTime();
+            // Get todays date and time
+            let now = new Date('{{now_time}}').getTime();
+            // Update the count down every 1 second
+            let x = setInterval(function() {
 
 
-            // Find the distance between now an the count down date
-            let distance = countDownDate - now;
+                // Find the distance between now an the count down date
+                let distance = countDownDate - now;
 
-            // Time calculations for days, hours, minutes and seconds
-            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            if (seconds < 10) seconds = "0" + seconds;
-            if (minutes < 10) minutes = "0" + minutes;
-            if (hours < 10) hours = "0" + hours;
-            // Output the result in an element with id="demo"
-            let message = "До конца соревнования ";
-            message += hours + ":"
-            + minutes + ":" + seconds;
-            document.getElementById("timer").innerHTML = message;
-            // If the count down is over, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerHTML = "Соревнование завершилось";
-            }
-            now += 1000;
-        }, 1000);
+                // Time calculations for days, hours, minutes and seconds
+                let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                if (seconds < 10) seconds = "0" + seconds;
+                if (minutes < 10) minutes = "0" + minutes;
+                if (hours < 10) hours = "0" + hours;
+                // Output the result in an element with id="demo"
+                let message = "До конца соревнования ";
+                message += hours + ":"
+                + minutes + ":" + seconds;
+                document.getElementById("timer").innerHTML = message;
+                // If the count down is over, write some text
+                if (distance < 0) {
+                    clearInterval(x);
+                    document.getElementById("timer").innerHTML = "Соревнование завершилось";
+                }
+                now += 1000;
+            }, 1000);
         </script>
+        <a href="../../results/{{ title }}"
         <table class="domino_table_task">
             {% set rows = [0, 1, 2, 3] %}
             {% for row in rows %}
                 <tr class="domino_row_task">
                     {% for key in keys[row * 7: row * 7 + 7] %}
-                    {% set task = tasks[key] %}
+                        {% set task = tasks[key] %}
                         <td class="domino_col_task">
                             {% if task['state'][-2:] == 'ok' %}
-                                <div class="ok_task" title="Вы можете взять эту задачу">
-                                    <button class="btn btn-primary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
-                                </div>
+                                {% if is_member %}
+                                    <div class="ok_task" title="Вы можете взять эту задачу">
+                                        <button class="btn btn-primary btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="ok_task" title="Вы можете взять эту задачу">
+                                        <button class="btn btn-primary btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% elif task['state'][-2:] == 'fs' %}
-                                <div class="fs_task" title="У вас закончились попытки на сдачу этой задачи">
-                                    <button class="btn btn-danger btn-lg btn-block" id={{key}}>{{task['name']}}</button>
-                                </div>
+                                {% if is_member %}
+                                    <div class="fs_task" title="У вас закончились попытки на сдачу этой задачи">
+                                        <button class="btn btn-danger btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="fs_task" title="У вас закончились попытки на сдачу этой задачи">
+                                        <button class="btn btn-danger btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% elif task['state'][-2:] == 'ff' %}
-                                <div class="ff_task" title="У вас осталась 1 попытка на сдачу этой задачи">
-                                    <button class="btn btn-warning btn-lg btn-block" id={{key}}>{{task['name']}}</button>
-                                </div>
+                                {% if is_member %}
+                                    <div class="ff_task" title="У вас осталась 1 попытка на сдачу этой задачи">
+                                        <button class="btn btn-warning btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="ff_task" title="У вас осталась 1 попытка на сдачу этой задачи">
+                                        <button class="btn btn-warning btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% elif task['state'][-2:] == 'af' or task['state'][-2:] == 'as' %}
-                                <div class="accepted_task" title="Вы решили эту задачу">
-                                    <button class="btn btn-success btn-lg btn-block" id={{key}}>{{task['name']}}</button>
-                                </div>
+                                {% if is_member %}
+                                    <div class="accepted_task" title="Вы решили эту задачу">
+                                        <button class="btn btn-success btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="accepted_task" title="Вы решили эту задачу">
+                                        <button class="btn btn-success btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% elif task['state'][-2:] in ['cf', 'cs'] %}
-                                <div class="ab_task" title="Задача проверяется">
-                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
-                                </div>
+                                {% if is_member %}
+                                    <div class="ab_task" title="Задача проверяется">
+                                        <button class="btn btn-secondary btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="ab_task" title="Задача проверяется">
+                                        <button class="btn btn-secondary btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% else %}
-                                <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
-                                    <button class="btn btn-secondary btn-lg btn-block" id={{key}}>{{task['name']}}</button>
+                                {% if is_member %}
+                                    <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
+                                    <button class="btn btn-secondary btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
                                 </div>
+                                {% else %}
+                                    <div class="ab_task" title="Все экземпляры этой задачи сейчас 'на руках' у других участников">
+                                        <button class="btn btn-secondary btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
                             {% endif %}
 
                             <script>
                                 send{{key}} = function() {
-                                    $.post('/domino', {'picked': '{{task['name']}}'});
+                                    $.post('/domino/{{ title }}', {'picked': '{{task['name']}}'});
                                     setTimeout(
                                       function()
                                       {
@@ -132,137 +169,157 @@
                 {% set submit = "submit" + i %}
                 {% set answer = 'answer' + i %}
                 <div class="col">
-                    <a>{{task['name']}}</a>
-                    <br>
-                    <img src={{task['content']}}>
-                    {% if not task['manual_check'] %}
-                            <div class="form-group">
-                                <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                            </div>
-                            <button id={{submit}} class="btn btn-primary" type="submit">Отправить</button>
-                            <script>
-                                    send{{i}} = function() {
-                                        let task_answer = document.getElementById('{{answer}}').value;
-                                        $.post('/domino', {name: '{{task['name']}}', answer: task_answer});
-                                        setTimeout(
-                                          function()
-                                          {
-                                             location.reload(true);
-                                        }, 500);
-                                    }
-                                    document.getElementById('{{submit}}').onclick = send{{i}};
-                                </script>
-                    {% elif task['manual_check'] and task['ans_picture'] %}
-                        {% set canvas = "canvas_" + i %}
-                        {% set back = "back_" + i %}
-                        {% set clear = "clear_" + i %}
-                        {% set submit = "submit_" + i %}
-                        <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
-                        <div class="row">
-                            <div class="col">
-                            <button id={{back}} class="btn btn-primary">Отменить действие</button>
-                            </div>
-                            <div class="col">
-                                <button id={{clear}} class="btn btn-primary">Очистить</button>
-                            </div>
-                            <div class="col">
-                            <button id={{submit}} class="btn btn-primary">Отправить</button>
-                            </div>
+                    <div>
+                        <a>{{task['name']}}</a>
+                        <br>
+                        <div>
+                            <p id="condition" style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+                                {{ task['condition'] }}
+                            </p>
                         </div>
-                        <script>
-                            var result{{i}} = new Array();
-                            canvas{{i}} = document.getElementById('{{canvas}}');
-                            writing{{i}} = function(e) {
-                              var x = e.offsetX==undefined?e.layerX:e.offsetX;
-                              var y = e.offsetY==undefined?e.layerY:e.offsetY;
+                        {% if not task['manual_check'] %}
+                                <div class="form-group">
+                                    <input id="{{answer}}" class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                </div>
+                                {% if is_member %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                                {% else %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                                {% endif %}
+                                <script>
+                                        send{{i}} = function() {
+                                            let task_answer = document.getElementById('{{answer}}').value;
+                                            $.post('/domino/{{ title }}', {name: '{{task['name']}}', answer: task_answer});
+                                            setTimeout(
+                                              function()
+                                              {
+                                                 location.reload(true);
+                                            }, 500);
+                                        }
+                                        document.getElementById('{{submit}}').onclick = send{{i}};
+                                    </script>
+                        {% elif task['manual_check'] and task['ans_picture'] %}
+                            {% set canvas = "canvas_" + i %}
+                            {% set back = "back_" + i %}
+                            {% set clear = "clear_" + i %}
+                            {% set submit = "submit_" + i %}
+                            <canvas id="{{canvas}}" height="300" width="400" style = "border:2px solid black"></canvas>
+                            <div class="row">
+                                <div class="col">
+                                <button id='{{back}}' class="btn btn-primary">Отменить действие</button>
+                                </div>
+                                <div class="col">
+                                    <button id='{{clear}}' class="btn btn-primary">Очистить</button>
+                                </div>
+                                <div class="col">
+                                {% if is_member %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                                {% else %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                                {% endif %}
+                                </div>
+                            </div>
+                            <script>
+                                var result{{i}} = new Array();
+                                canvas{{i}} = document.getElementById('{{canvas}}');
+                                writing{{i}} = function(e) {
+                                  var x = e.offsetX==undefined?e.layerX:e.offsetX;
+                                  var y = e.offsetY==undefined?e.layerY:e.offsetY;
 
-                              if (result{{i}}.length % 2 == 0){
-                                if (canvas{{i}}.getContext) {
-                                    var ctx = canvas{{i}}.getContext('2d');
-                                    ctx.fillRect(x - 1, y - 1, 3, 3);
-                                    ctx.beginPath();
-                                    ctx.moveTo(x, y);
-                                }
-                              }
-                              else{
-                                  if (canvas{{i}}.getContext) {
-                                    var ctx = canvas{{i}}.getContext('2d');
-                                    ctx.lineTo(x, y);
-                                    ctx.closePath();
-                                    ctx.stroke();
-                                    ctx.fillRect(x - 1, y - 1, 3, 3);
-                                  }
-                              }
-                              result{{i}}.push([x, y]);
-                            }
-                            get_back{{i}} = function() {
-                              if (result{{i}}.length > 0){
-                                  points = [result{{i}}.pop(), result{{i}}.pop()];
-                                  if (canvas{{i}}.getContext) {
+                                  if (result{{i}}.length % 2 == 0){
+                                    if (canvas{{i}}.getContext) {
                                         var ctx = canvas{{i}}.getContext('2d');
-                                        ctx.fillStyle = '#FFFFFF';
-                                        ctx.strokeStyle = '#FFFFFF';
-                                        ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
+                                        ctx.fillRect(x - 1, y - 1, 3, 3);
                                         ctx.beginPath();
-                                        ctx.moveTo(points[1][0], points[1][1]);
-                                        ctx.lineTo(points[0][0], points[0][1]);
+                                        ctx.moveTo(x, y);
+                                    }
+                                  }
+                                  else{
+                                      if (canvas{{i}}.getContext) {
+                                        var ctx = canvas{{i}}.getContext('2d');
+                                        ctx.lineTo(x, y);
                                         ctx.closePath();
                                         ctx.stroke();
-                                        ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
-                                        ctx.fillStyle = 'rgb(0,0,0)';
-                                        ctx.strokeStyle = 'rgb(0,0,0)';
+                                        ctx.fillRect(x - 1, y - 1, 3, 3);
+                                      }
                                   }
-                              }
-                            }
-                            clear{{i}} = function(){
-                              result = new Array();
-                              if (canvas{{i}}.getContext) {
-                                 var ctx = canvas{{i}}.getContext('2d');
-                                 ctx.clearRect(0, 0, 400, 300);
-                              }
-                            }
-                            submit{{i}} = function(){
-                                let new_result = "";
-                                for (let i = 0; i < result{{i}}.length; i++){
-                                    new_result += ' ' + result{{i}}[i].join(';');
+                                  result{{i}}.push([x, y]);
                                 }
+                                get_back{{i}} = function() {
+                                  if (result{{i}}.length > 0){
+                                      points = [result{{i}}.pop(), result{{i}}.pop()];
+                                      if (canvas{{i}}.getContext) {
+                                            var ctx = canvas{{i}}.getContext('2d');
+                                            ctx.fillStyle = '#FFFFFF';
+                                            ctx.strokeStyle = '#FFFFFF';
+                                            ctx.fillRect(points[1][0] - 1, points[1][1] - 1, 3, 3);
+                                            ctx.beginPath();
+                                            ctx.moveTo(points[1][0], points[1][1]);
+                                            ctx.lineTo(points[0][0], points[0][1]);
+                                            ctx.closePath();
+                                            ctx.stroke();
+                                            ctx.fillRect(points[0][0] - 1, points[0][1] - 1, 3, 3);
+                                            ctx.fillStyle = 'rgb(0,0,0)';
+                                            ctx.strokeStyle = 'rgb(0,0,0)';
+                                      }
+                                  }
+                                }
+                                clear{{i}} = function(){
+                                  result = new Array();
+                                  if (canvas{{i}}.getContext) {
+                                     var ctx = canvas{{i}}.getContext('2d');
+                                     ctx.clearRect(0, 0, 400, 300);
+                                  }
+                                }
+                                submit{{i}} = function(){
+                                    let new_result = "";
+                                    for (let i = 0; i < result{{i}}.length; i++){
+                                        new_result += ' ' + result{{i}}[i].join(';');
+                                    }
 
-                                $.post('/add_task_for_manual_checking', {game: "domino",
-                                                 task: "{{task['name']}}",
-                                                 result: new_result});
-                                setTimeout(
-                                          function()
-                                          {
-                                             location.reload(true);
-                                        }, 500);
-                            }
-                            document.getElementById('{{back}}').onclick = get_back{{i}};
-                            document.getElementById('{{canvas}}').onclick = writing{{i}};
-                            document.getElementById('{{clear}}').onclick = clear{{i}};
-                            document.getElementById('{{submit}}').onclick = submit{{i}};
-                        </script>
-                    {% elif task['manual_check'] %}
-                        {% set answer = "answer_" + i %}
-                        {% set submit = "submit_" + i %}
-                        <input value={{task['name']}} id={{task['name']}} name="name" hidden>
-                        <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ"
-                               name="answer">
-                        <button id={{submit}} class="btn btn-primary">Отправить</button>
-                        <script>
-                            submit{{i}} = function(){
-                                let new_result = document.getElementById('{{answer}}').value;
-                                $.post('/add_task_for_manual_checking', {game: "domino",
-                                                 task: "{{task['name']}}",
-                                                 result: new_result});
-                                setTimeout(
-                                          function()
-                                          {
-                                             location.reload(true);
-                                        }, 500);
-                            }
-                            document.getElementById('{{submit}}').onclick = submit{{i}};
-                        </script>
-                    {% endif %}
+                                    $.post('/add_task_for_manual_checking', {game_title: "{{title}}",
+                                                                             task: "{{task['name']}}",
+                                                                             task_position: '{{ task['name'] }}',
+                                                                             result: new_result});
+                                    setTimeout(
+                                              function()
+                                              {
+                                                 location.reload(true);
+                                            }, 500);
+                                }
+                                document.getElementById('{{back}}').onclick = get_back{{i}};
+                                document.getElementById('{{canvas}}').onclick = writing{{i}};
+                                document.getElementById('{{clear}}').onclick = clear{{i}};
+                                document.getElementById('{{submit}}').onclick = submit{{i}};
+                            </script>
+                        {% elif task['manual_check'] %}
+                            {% set answer = "answer_" + i %}
+                            {% set submit = "submit_" + i %}
+                            <input value="{{task['name']}}" id="{{task['name']}}" name="name" hidden>
+                            <input id='{{answer}}' class="form-control" type="text" placeholder="Введите Ваш ответ"
+                                   name="answer">
+                            {% if is_member %}
+                                <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                            {% else %}
+                                <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                            {% endif %}
+                            <script>
+                                submit{{i}} = function(){
+                                    let new_result = document.getElementById('{{answer}}').value;
+                                    $.post('/add_task_for_manual_checking', {game_title: "{{title}}",
+                                                                             task_id: "{{task['id']}}",
+                                                                             task_position: '{{ task['name'] }}',
+                                                                             result: new_result});
+                                    setTimeout(
+                                              function()
+                                              {
+                                                 location.reload(true);
+                                            }, 500);
+                                }
+                                document.getElementById('{{submit}}').onclick = submit{{i}};
+                            </script>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>

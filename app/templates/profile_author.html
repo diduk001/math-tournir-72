@@ -2,81 +2,126 @@
 
 {% block section %}
     <h3><a href="/create_game_form">Создать игру</a></h3>
+    <div>
     {% for game in games %}
-        <div>
+        <h4>
+        <a href="#{{ game['common'][0][1] }}">Перейти к игре "{{ game['common'][0][1] }}"</a>
+        </h4>
+        <br>
+    {% endfor %}
+    </div>
+    {% for game in games %}
+        <div id="{{ game['common'][0][1] }}">
             <h3>{{ game['common'][0][1] }}</h3>
-            <div class="row">
-                <div class="col">
-                    <h4>Общая информация</h4>
-                </div>
-                <div class="col">
-                    <h4><a href="/update_game/{{ game['common'][0][1] }}/common">Изменить</a></h4>
-                </div>
-            </div>
-            {% for row in game['common'] %}
-                <div class="row">
-                    <div class="col">
-                        <p>{{ row[0] }}</p>
-                    </div>
-                    <div class="col">
-                        <p>{{ row[1] }}</p>
-                    </div>
-                </div>
-            {% endfor %}
-            <div class="row">
-                <div class="col">
-                    <h4>Информация о задачах</h4>
-                </div>
-                <div class="col">
-                    <h4><a href="/update_game/{{ game['common'][0][1] }}/tasks">Изменить</a></h4>
-                </div>
-            </div>
-            {% for row in game['tasks'] %}
-                <div class="row">
-                    <div class="col">
-                        <p>{{ row[0] }}</p>
-                    </div>
-                    <div class="col">
-                        <p>{{ row[1] }}</p>
-                    </div>
-                </div>
-            {% endfor %}
-            <div class="row">
-                <div class="col">
-                    <h4>Информация о авторах и проверяющих</h4>
-                </div>
-                <div class="col">
-                    <h4><a href="/update_game/{{ game['common'][0][1] }}/authors_and_checkers">Изменить</a></h4>
-                </div>
-            </div>
-            {% for row in game['authors_and_checkers'] %}
-                <div class="row">
-                    <div class="col">
-                        <p>{{ row[0] }}</p>
-                    </div>
-                    <div class="col">
-                        <p>{{ row[1] }}</p>
-                    </div>
-                </div>
-            {% endfor %}
-            <div class="row">
-                    <div class="col">
-                        <h4>Информация о допустимых размерах команд</h4>
-                    </div>
-                    <div class="col">
-                        <h4><a href="/update_game/{{ game['common'][0][1] }}/team">Изменить</a></h4>
-                    </div>
-            </div>
-            {% for row in game['team'] %}
-                <div class="row">
-                    <div class="col">
-                        <p>{{ row[0] }}</p>
-                    </div>
-                    <div class="col">
-                        <p>{{ row[1] }}</p>
-                    </div>
-                </div>
-            {% endfor %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"><h4>Общая информация</h4></th>
+                        <th scope="col">
+                            <h4>
+                                <a href="/update_game/{{ game['common'][0][1] }}/common">Изменить</a>
+                            </h4>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in game['common'] %}
+                    <tr>
+                        <th scope="row">{{ row[0] }}</th>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"><h4>Информация о наборах задачах</h4></th>
+                        <th scope="col">
+                            <h4>
+                                <a href="/update_game/{{ game['common'][0][1] }}/tasks">Изменить</a>
+                            </h4>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in game['tasks'] %}
+                    <tr>
+                        <th scope="row">{{ row[0] }}</th>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <h4>Информация о задачах</h4>
+            <table class="table">
+                <thead>
+                    <th scope="col">Позиция</th>
+                    <th scope="col">Текущая задача</th>
+                    <th scope="col">Изменить/добавить задачу</th>
+                </thead>
+                <tbody>
+                    {% for task in game['tasks_positions'] %}
+                            <tr>
+                                <td>{{ task[0] }}</td>
+                                <td>
+                                    {% if task[1] == '-' %}
+                                        {{ task[1] }}
+                                    {% else %}
+                                        <a href="../../tasks/{{ task[1] }}">{{ task[1] }}</a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a class="btn btn-primary"
+                                       href="/add_task/{{  game['common'][0][1]  }}/{{ task[0] }}/{{ task[1] }}">
+                                        Изменить/добавить новую задачу
+                                    </a>
+                                </td>
+
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"><h4>Информация о авторах и проверяющих</h4></th>
+                        <th scope="col">
+                            <h4>
+                                <a href="/update_game/{{ game['common'][0][1] }}/authors_and_checkers">Изменить</a>
+                            </h4>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in game['authors_and_checkers'] %}
+                    <tr>
+                        <th scope="row">{{ row[0] }}</th>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"><h4>Информация о допустимых размерах команд</h4></th>
+                        <th scope="col">
+                            <h4>
+                                <a href="/update_game/{{ game['common'][0][1] }}/team">Изменить</a>
+                            </h4>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in game['team'] %}
+                    <tr>
+                        <th scope="row">{{ row[0] }}</th>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     {% endfor %}
 {% endblock %}

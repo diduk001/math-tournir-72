@@ -11,4 +11,46 @@
         ligula, porta id urna vitae, luctus eleifend diam. Donec placerat massa vestibulum metus
         tincidunt maximus. Etiam vestibulum finibus velit, sollicitudin ullamcorper libero semperut.
     </h3>
+    {% if is_teacher %}
+        <h3>Зарегистрировать команду</h3>
+        <form method="post" novalidate>
+            <div>
+                {{ form.csrf_token }}
+            </div>
+            <div class="form-group">
+                    {% for field in form if field.name != 'csrf_token' %}
+                        {% if field.name == 'submit' %}
+                            {{ field(class="btn btn-primary") }}
+                        {% else %}
+                            <div class="form-group">
+                                {{ field.label() }}
+                                {{ field(class="form-control")}}
+                            </div>
+                        {% endif %}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <br>
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+        </form>
+        {% for grade in range(5, 8) %}
+            <h3><a href="results/ТЮМ72 Домино {{ grade }} класс">Перейти к результатам Домино {{ grade }} класса</a></h3>
+            <br>
+            <h3><a href="results/ТЮМ72 Пенальти {{ grade }} класс">Перейти к результатам Пенальти {{ grade }} класса</a></h3>
+        {% endfor %}
+    {% else %}
+        <h3><a href="domino/ТЮМ72 Домино {{ grade }} класс">Перейти к Домино</a></h3>
+        <br>
+        <h3><a href="penalty/ТЮМ72 Пенальти {{ grade }} класс">Перейти к Пенальти</a></h3>
+        <br>
+        <h3><a href="results/ТЮМ72 Домино {{ grade }} класс">Перейти к результатам Домино</a></h3>
+        <br>
+        <h3><a href="results/ТЮМ72 Пенальти {{ grade }} класс">Перейти к результатам Пенальти</a></h3>
+    {% endif %}
+
 {% endblock %}
