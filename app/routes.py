@@ -456,80 +456,79 @@ def update_game(game_title, block):
 # Добавить задачу
 @app.route('/add_task/<game_title>/<task_position>/<current_value>', methods=['GET', 'POST'])
 def add_task(game_title, task_position, current_value):
-  if is_auth() and 'author' in current_user.rights.split():
-    add_task_form = AddTaskForm()
-    params = dict()
-    params['title'] = 'Добавить Задачу'
-    params['add_task_form'] = add_task_form
-    params['success'] = False
+    if is_auth() and 'author' in current_user.rights.split():
+        add_task_form = AddTaskForm()
+        params = dict()
+        params['title'] = 'Добавить Задачу'
+        params['add_task_form'] = add_task_form
+        params['success'] = False
+        if request.method == 'POST' and add_task_form.validate_on_submit():
+            game = db.session.query(Game).filter(Game.title == game_title).first()
+            if game is None:
+                return render_template('what_are_you_doing_here.html')
+            min_grade = request.form.get("min_grade")
+            max_grade = request.form.get("max_grade")
+            manual_check = request.form.get("manual_check")
+            hidden = request.form.get("hidden")
+            condition = request.form.get("condition")
+            condition_images = request.files.getlist("condition_images")
+            solution = request.form.get("solution")
+            solution_images = request.files.getlist("solution_images")
+            ans_picture = request.form.get("ans_picture")
+            answer = request.form.get("answer")
 
-    if request.method == 'POST' and add_task_form.validate_on_submit():
-        min_grade = request.form.get("min_grade")
-        max_grade = request.form.get("max_grade")
-        manual_check = request.form.get("manual_check")
-        hidden = request.form.get("hidden")
-        condition = request.form.get("condition")
-        condition_images = request.files.getlist("condition_images")
-        solution = request.form.get("solution")
-        solution_images = request.files.getlist("solution_images")
-        ans_picture = request.form.get("ans_picture")
-        answer = request.form.get("answer")
+            if min_grade > max_grade:
+                flash("Младший класс старше Старшего класса")
+                return render_template('add_task.html', **params)
 
-        if min_grade > max_grade:
-            flash("Младший класс старше Старшего класса")
-            return render_template('add_task.html', **params)
+            if ans_picture:
+                manual_check = True
 
-        if ans_picture:
-            manual_check = True
+            task = Task()
+            task.min_grade = min_grade
+            task.max_grade = max_grade
+            task.manual_check = bool(manual_check)
+            task.hidden = bool(hidden)
+            task.ans_picture = bool(ans_picture)
 
-        task = Task()
-        task.min_grade = min_grade
-        task.max_grade = max_grade
-        task.manual_check = bool(manual_check)
-        task.hidden = bool(hidden)
-        task.ans_picture = bool(ans_picture)
+            for ans in answer.split('|'):
+                task.set_ans(ans)
 
-        for ans in answer.split('|'):
-            task.set_ans(ans)
+            if solution:
+                task.have_solution = True
 
-        if solution:
-            task.have_solution = True
+            db.session.add(task)
+            db.session.commit()
 
-        db.session.add(task)
-        db.session.commit()
+            task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
+            condition_directory = os.path.join(task_directory, "condition")
+            os.makedirs(task_directory)
+            os.makedirs(condition_directory)
+            with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
+                wfile.write(condition)
 
-        task_directory = os.path.join(Config.TASKS_UPLOAD_FOLDER, f'task_{task.id}')
-        condition_directory = os.path.join(task_directory, "condition")
-        os.makedirs(task_directory)
-        os.makedirs(condition_directory)
-        with open(os.path.join(condition_directory, "condition.txt"), mode="w") as wfile:
-            wfile.write(condition)
-
-        if condition_images:
-            for image in condition_images:
-                if image.filename:
-                    image.save(os.path.join(condition_directory, image.filename))
-
-        if solution:
-            solution_directory = os.path.join(task_directory, "solution")
-            os.makedirs(solution_directory)
-            with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
-                wfile.write(solution)
-
-            if solution_images:
-                for image in solution_images:
+            if condition_images:
+                for image in condition_images:
                     if image.filename:
-                        image.save(os.path.join(condition_directory, image.filename)
-        game = db.session.query(Game).filter(Game.title == game_title).first()
-        tasks_positions = list(map(lambda x: x.split(':'), game.tasks_positions.split('|')))
-        tasks_positions[tasks_positions.index([task_position, current_value])] = (task_position, str(task.id))
-        game.tasks_positions = '|'.join(list(map(lambda x: ':'.join(x), tasks_positions)))
-        db.session.commit()
-        params["success"] = True
-        return render_template("add_task.html", **params)
+                        image.save(os.path.join(condition_directory, image.filename))
 
-    return render_template('add_task.html', **params)
-else:
+            if solution:
+                solution_directory = os.path.join(task_directory, "solution")
+                os.makedirs(solution_directory)
+                with open(os.path.join(solution_directory, "solution.txt"), mode="w") as wfile:
+                    wfile.write(solution)
+
+                if solution_images:
+                    for image in solution_images:
+                        if image.filename:
+                            image.save(os.path.join(condition_directory, image.filename))
+            tasks_positions = list(map(lambda x: x.split(':'), game.tasks_positions.split('|')))
+            tasks_positions[tasks_positions.index([task_position, current_value])] = (task_position, str(task.id))
+            game.tasks_positions = '|'.join(list(map(lambda x: ':'.join(x), tasks_positions)))
+            db.session.commit()
+            params["success"] = True
+            return render_template("add_task.html", **params)
+        return render_template('add_task.html', **params)
     return render_template('what_are_you_doing_here.html')
 
 
