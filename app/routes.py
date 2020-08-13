@@ -19,6 +19,10 @@ def index():
     params['title'] = 'ТЮМ 72'
     return render_template('index.html', **params)
 
+# П₽@Вi/\@
+@app.route('/rules/')
+def rules():
+    return render_template("rules.html")
 
 # Регистрация
 @app.route('/sign_up/', methods=['GET', 'POST'])
@@ -65,7 +69,7 @@ def sign_up():
 
 
 # Страница для авторизации
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     params = dict()
@@ -209,7 +213,7 @@ def profile(section):
 
 
 # Создание игры
-@app.route('/create_game_form', methods=['POST', 'GET'])
+@app.route('/create_game_form/', methods=['POST', 'GET'])
 def create_game_form():
     if is_auth():
         if 'author' in current_user.rights.split():
@@ -293,6 +297,7 @@ def add_task():
         min_grade = request.form.get("min_grade")
         max_grade = request.form.get("max_grade")
         manual_check = request.form.get("manual_check")
+        hidden = request.form.get("hidden")
         condition = request.form.get("condition")
         condition_images = request.files.getlist("condition_images")
         solution = request.form.get("solution")
@@ -311,6 +316,7 @@ def add_task():
         task.min_grade = min_grade
         task.max_grade = max_grade
         task.manual_check = bool(manual_check)
+        task.hidden = bool(hidden)
         task.ans_picture = bool(ans_picture)
 
         for ans in answer.split('|'):
