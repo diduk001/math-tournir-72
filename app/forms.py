@@ -132,6 +132,7 @@ class AddTaskForm(FlaskForm):
                                         validators=ALL_IMAGES_FILES)
 
     answer = StringField("Ответ", validators=DATA_REQUIRED_VALIDATOR)
+    hidden = BooleanField("Задача скрыта")
     manual_check = BooleanField("Задача проверяется вручную")
     ans_picture = BooleanField("Ответом является рисунок (тогда задача проверяется вручную)")
     submit = SubmitField("Добавить задачу")
