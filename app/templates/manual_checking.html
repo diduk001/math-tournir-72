@@ -4,17 +4,27 @@
 {% if not_task %}
     <h3>На данный момент нет непроверенных задач</h3>
 {% else %}
-    <p>{{task_name}}, команда: "{{team}}"</p>
+    <p>Задача: {{position}}</p>
+    <p>Логин команды/игрока: "{{login}}"</p>
+    <p>Сдано {{ time }}</p>
+    <div>
+        <p id="condition" style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+            {{ condition }}
+        </p>
+    </div>
     {% if ans_picture %}
         <canvas id="canvas" height="300" width="400" style = "border:2px solid black"></canvas>
         <button class="btn btn-success" id='accepted'>Верно</button>
         <button class="btn btn-danger" id="wrong_answer">Неверно</button>
         <script>
-            let result = "{{task_result}}";
+            let result = "{{answer}}";
             if (result == ''){
-                $.post("/cdb63e6a1a08307c6c44354aa37972b7/{{game}}/{{grade}}", {team: '{{team}}',
-                                                           task: '{{task_name}}',
-                                                           result: false});
+                $.post("/checking/{{game_title}}", {login: '{{login}}',
+                                                    task_id: '{{task_id}}',
+                                                    task_position: '{{ position }}',
+                                                    answer: '{{ answer }}',
+                                                    time: '{{ time }}',
+                                                    result: false});
                 setTimeout(
                                           function()
                                           {
@@ -41,9 +51,12 @@
               }
             }
             accepted = function(){
-            $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                           task: '{{task_name}}',
-                                                           result: true});
+            $.post("/checking/{{game_title}}", {login: '{{login}}',
+                                                task_id: '{{task_id}}',
+                                                task_position: '{{ position }}',
+                                                answer: '{{ answer }}',
+                                                time: '{{ time }}',
+                                                result: true});
             setTimeout(
                                           function()
                                           {
@@ -51,9 +64,12 @@
                                         }, 500);
             }
             wrong_answer = function(){
-            $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                           task: '{{task_name}}',
-                                                           result: false});
+            $.post("/checking/{{game_title}}", {login: '{{login}}',
+                                                task_id: '{{task_id}}',
+                                                task_position: '{{ position }}',
+                                                answer: '{{ answer }}',
+                                                time: '{{ time }}',
+                                                result: false});
             setTimeout(
                                           function()
                                           {
@@ -65,14 +81,17 @@
 
         </script>
     {% else %}
-        <a id="result">{{task_result}}</a>
+        <a id="result">{{answer}}</a>
         <button class="btn btn-success" id='accepted'>Верно</button>
         <button class="btn btn-danger" id="wrong_answer">Неверно</button>
         <script>
             accepted = function(){
-                $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                               task: '{{task_name}}',
-                                                               result: true});
+                $.post("/checking/{{game_title}}", {login: '{{login}}',
+                                                    task_id: '{{task_id}}',
+                                                    task_position: '{{ position }}',
+                                                    answer: '{{ answer }}',
+                                                    time: '{{ time }}',
+                                                    result: true});
                 setTimeout(
                       function()
                       {
@@ -80,9 +99,12 @@
                       }, 500);
             }
             wrong_answer = function(){
-                $.post("/deb5b702b8e7cd15788ce1a96fa93e7c/{{game}}/{{grade}}", {team: '{{team}}',
-                                                               task: '{{task_name}}',
-                                                               result: false});
+                $.post("/checking/{{game_title}}", {login: '{{login}}',
+                                                    task_id: '{{task_id}}',
+                                                    task_position: '{{ position }}',
+                                                    answer: '{{ answer }}',
+                                                    time: '{{ time }}',
+                                                    result: false});
                 setTimeout(
                       function()
                       {

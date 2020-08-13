@@ -1,3 +1,6 @@
 {% extends 'base.html' %}
-<h3>{{ message }}</h3>
-<a href="{{ last }}">Вернуться назад</a>
+
+{% block content %}
+    <h3>{{ message }}</h3>
+    <a href="{{ last }}">Вернуться назад</a>
+{% endblock %}

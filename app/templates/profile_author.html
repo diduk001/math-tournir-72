@@ -1,10 +1,17 @@
 {% extends "profile.html" %}
 
 {% block section %}
-    <h3><a href="/add_task">Добавить задачу</a> </h3>
     <h3><a href="/create_game_form">Создать игру</a></h3>
+    <div>
     {% for game in games %}
-        <tr>
+        <h4>
+        <a href="#{{ game['common'][0][1] }}">Перейти к игре "{{ game['common'][0][1] }}"</a>
+        </h4>
+        <br>
+    {% endfor %}
+    </div>
+    {% for game in games %}
+        <div id="{{ game['common'][0][1] }}">
             <h3>{{ game['common'][0][1] }}</h3>
             <table class="table">
                 <thead>
@@ -38,7 +45,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for row in game['common'] %}
+                {% for row in game['tasks'] %}
                     <tr>
                         <th scope="row">{{ row[0] }}</th>
                         <td>{{ row[1] }}</td>
@@ -48,22 +55,32 @@
             </table>
             <h4>Информация о задачах</h4>
             <table class="table">
-                {% for task in game['tasks_positions'] %}
-                        <tr>
-                            <td>{{ task[0] }}</td>
-                            <td>{{ task[1] }}</td>
-                            <td>
-                                <a class="btn btn-primary" href="">Выбрать задачу из архива</a>
-                            </td>
-                            <td>
-                                <a class="btn btn-primary"
-                                   href="/add_task/{{  game['common'][0][1]  }}/{{ task[0] }}/{{ task[1] }}">
-                                    Добавить новую задачу
-                                </a>
-                            </td>
+                <thead>
+                    <th scope="col">Позиция</th>
+                    <th scope="col">Текущая задача</th>
+                    <th scope="col">Изменить/добавить задачу</th>
+                </thead>
+                <tbody>
+                    {% for task in game['tasks_positions'] %}
+                            <tr>
+                                <td>{{ task[0] }}</td>
+                                <td>
+                                    {% if task[1] == '-' %}
+                                        {{ task[1] }}
+                                    {% else %}
+                                        <a href="../../tasks/{{ task[1] }}">{{ task[1] }}</a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a class="btn btn-primary"
+                                       href="/add_task/{{  game['common'][0][1]  }}/{{ task[0] }}/{{ task[1] }}">
+                                        Изменить/добавить новую задачу
+                                    </a>
+                                </td>
 
-                        </tr>
-                {% endfor %}
+                            </tr>
+                    {% endfor %}
+                </tbody>
             </table>
             <table class="table">
                 <thead>
@@ -77,7 +94,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for row in game['common'] %}
+                {% for row in game['authors_and_checkers'] %}
                     <tr>
                         <th scope="row">{{ row[0] }}</th>
                         <td>{{ row[1] }}</td>
@@ -97,7 +114,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for row in game['common'] %}
+                {% for row in game['team'] %}
                     <tr>
                         <th scope="row">{{ row[0] }}</th>
                         <td>{{ row[1] }}</td>

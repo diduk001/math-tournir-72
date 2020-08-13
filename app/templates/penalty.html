@@ -73,6 +73,7 @@
                 now += 1000;
             }, 1000);
         </script>
+        <a href="../../results/{{ title }}">Результаты</a>
         {% for j in range(16) %}
             {% set i = keys[j][1:] %}
             {% set key = keys[j] %}
@@ -82,7 +83,11 @@
             {% set name = "name" + i %}
             {% set submit = "submit_" + i %}
                 <div>
-                    <img src={{info[key]['content']}}>
+                    <div>
+                            <p id="condition" style="border:1px solid; padding: 3px; width:50%; margin-top:5px">
+                                {{ task['condition'] }}
+                            </p>
+                        </div>
                     <br>
                     {% if task['state'][-2:] in ['af', 'as'] %}
                         <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
@@ -92,23 +97,27 @@
                         <p class="failed">{{task['name']}}. У вас закончились попытки на сдачу этой задачи</p>
                     {% else %}
                         {% if not task['manual_check'] %}
-                                <div class="form-group">
-                                    {% if task['state'][-2:] == 'ff' %}
-                                        <label class="first_try_failed" for="name">{{task['name']}}. У Вас осталась одна попытка на сдачу
-                                            этой задачи. Эта задача стоит для Вас 3 б.</label>
-                                    {% else %}
-                                        <label class={{state}} for="name">{{task['name']}}. Эта задача стоит
-                                        {{info[key]['cost']}} б.</label>
-                                    {% endif %}
-                                    <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
-                                </div>
+                                    <div class="form-group">
+                                        {% if task['state'][-2:] == 'ff' %}
+                                            <label class="first_try_failed" for="name">{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                                этой задачи. Эта задача стоит для Вас 3 б.</label>
+                                        {% else %}
+                                            <label class="{{state}}" for="name">{{task['name']}}. Эта задача стоит
+                                            {{info[key]['cost']}} б.</label>
+                                        {% endif %}
+                                        <input id="{{answer}}" class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
+                                    </div>
                                     {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
-                                        <button id={{submit}} class="btn btn-primary" type="submit">Отправить</button>
+                                        {% if is_member %}
+                                            <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                                        {% else %}
+                                            <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                                        {% endif %}
                                     {% endif %}
                                 <script>
                                     send{{i}} = function() {
                                         let task_answer = document.getElementById('{{answer}}').value;
-                                        $.post('/penalty', {name: '{{task['name']}}', answer: task_answer});
+                                        $.post('/penalty/{{ title }}', {name: '{{task['name']}}', answer: task_answer});
                                         setTimeout(
                                           function()
                                           {
@@ -122,23 +131,27 @@
                             {% set back = "back_" + i %}
                             {% set clear = "clear_" + i %}
                             {% if task['state'][-2:] == 'ff' %}
-                                <label class="first_try_failed" for={{canvas}}>{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                <label class="first_try_failed" for="{{canvas}}">{{task['name']}}. У Вас осталась одна попытка на сдачу
                                     этой задачи. Эта задача стоит для Вас 3 б.</label>
                             {% else %}
-                                <label class={{state}} for={{canvas}}>{{task['name']}}. Эта задача стоит
+                                <label class="{{state}}" for="{{canvas}}">{{task['name']}}. Эта задача стоит
                                     {{info[key]['cost']}} б.</label>
                             {% endif %}
                             <br>
-                            <canvas id={{canvas}} height="300" width="400" style = "border:2px solid black"></canvas>
+                            <canvas id="{{canvas}}" height="300" width="400" style = "border:2px solid black"></canvas>
                             <div class="row">
                                 <div class="col">
-                                <button id={{back}} class="btn btn-primary">Отменить действие</button>
+                                <button id="{{back}}" class="btn btn-primary">Отменить действие</button>
                                 </div>
                                 <div class="col">
-                                    <button id={{clear}} class="btn btn-primary">Очистить</button>
+                                    <button id="{{clear}}" class="btn btn-primary">Очистить</button>
                                 </div>
                                 <div class="col">
-                                <button id={{submit}} class="btn btn-primary">Отправить</button>
+                                    {% if is_member %}
+                                        <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                                    {% else %}
+                                        <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                                    {% endif %}
                                 </div>
                             </div>
                             <script>
@@ -199,9 +212,10 @@
                                     new_result += ' ' + result{{i}}[i].join(';');
                                 }
 
-                                $.post('/add_task_for_manual_checking', {game: "penalty",
-                                                 task: "{{task['name']}}",
-                                                 result: new_result});
+                                $.post('/add_task_for_manual_checking', {game_title: "{{title}}",
+                                                                         task: "{{task['name']}}",
+                                                                         task_position: '{{ task['name'] }}',
+                                                                         result: new_result});
                                setTimeout(
                                           function()
                                           {
@@ -217,22 +231,27 @@
                             {% set answer = "answer_" + i %}
                             {% set submit = "submit_" + i %}
                             {% if task['state'][-2:] == 'ff' %}
-                                <label class="first_try_failed" for={{task['name']}}>{{task['name']}}. У Вас осталась одна попытка на сдачу
+                                <label class="first_try_failed" for="{{task['name']}}">{{task['name']}}. У Вас осталась одна попытка на сдачу
                                     этой задачи. Эта задача стоит для Вас 3 б.</label>
                             {% else %}
-                                <label class={{state}} for={{task['name']}}>{{task['name']}}. Эта задача стоит
+                                <label class="{{state}}" for="{{task['name']}}">{{task['name']}}. Эта задача стоит
                                     {{info[key]['cost']}} б.</label>
                             {% endif %}
-                            <input value={{task['name']}} id={{task['name']}} name="name" hidden>
-                            <input id={{answer}} class="form-control" type="text" placeholder="Введите Ваш ответ"
+                            <input value="{{task['name']}}" id="{{task['name']}}" name="name" hidden>
+                            <input id="{{answer}}" class="form-control" type="text" placeholder="Введите Ваш ответ"
                                    name="answer">
-                            <button id={{submit}} class="btn btn-primary">Отправить</button>
+                            {% if is_member %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit" disabled>Отправить</button>
+                                {% else %}
+                                    <button id="{{submit}}" class="btn btn-primary" type="submit">Отправить</button>
+                                {% endif %}
                             <script>
                                 submit{{i}} = function(){
                                     let new_result = document.getElementById('{{answer}}').value;
-                                    $.post('/add_task_for_manual_checking', {game: "penalty",
-                                                     task: "{{task['name']}}",
-                                                     result: new_result});
+                                    $.post('/add_task_for_manual_checking', {game_title: "{{ title }}",
+                                                                             task_id: "{{task['id']}}",
+                                                                             task_position: '{{ task['name'] }}',
+                                                                             result: new_result});
                                     setTimeout(
                                           function()
                                           {

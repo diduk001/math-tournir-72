@@ -253,6 +253,12 @@ class CreateTeamForm(FlaskForm):
     submit = SubmitField('Зарегистрировать')
 
 
+class MakeCaptainForm(FlaskForm):
+    login = StringField('Логин игрока', validators=DATA_REQUIRED_VALIDATOR)
+    team_title = StringField('Название команды', validators=DATA_REQUIRED_VALIDATOR)
+    submit = SubmitField('Сделать капитаном')
+
+
 ''' ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ '''
 
 

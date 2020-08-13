@@ -2,7 +2,10 @@
 
 {% block section %}
     {% if not is_teacher %}
-         <h3>Вступить в команду</h3>
+        <h3>Вступить в команду</h3>
+    {% else %}
+        <h3>Сделать капитаном</h3>
+    {% endif %}
     <form method="post" novalidate>
         <div>
             {{ form.csrf_token }}
@@ -28,13 +31,30 @@
                 {% endfor %}
             </div>
     </form>
-    {% endif %}
-    {% for team in teams %}
-        <h3>{{ team['title'] }} </h3>
-        <h4>{{ team['grade'] }} класс</h4>
-        {% for i in range(1, team['size'] + 1) %}
-            <h5>{{ i }}. {{ team['members'][i - 1]['name'] }} {{ team['members'][i - 1]['surname'] }}
-                {{ team['members'][i - 1]['last_name'] }}</h5>
+    <div>
+        {% for team in teams %}
+            <h3>{{ team['title'] }} </h3>
+            <h4>{{ team['grade'] }} класс</h4>
+            <h4>Капитан: {{ team['captain'] }}</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">№</th>
+                        <th scope="col">Логин</th>
+                        <th scope="col">ФИО</th>
+                    </tr>
+                </thead>
+                {% for i in range(1, team['size'] + 1) %}
+                    <tr>
+                        <td>{{ i }}</td>
+                        <td>{{ team['members'][i - 1]['login'] }}</td>
+                        <td>
+                            {{ team['members'][i - 1]['name'] }} {{ team['members'][i - 1]['surname'] }}
+                            {{ team['members'][i - 1]['last_name'] }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </table>
         {% endfor %}
-    {% endfor %}
+    </div>
 {% endblock %}

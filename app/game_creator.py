@@ -1,6 +1,6 @@
 from app.models import *
 from config import Constants as Consts
-
+from datetime import datetime
 # Во всём коде:
 # title - Название игры, string
 # grade - Класс, int
@@ -25,10 +25,46 @@ def create_game(title, grade, game_type, start_time, end_time, game_format, priv
     tasks_positions = Consts.GAMES_DEFAULT_TASKS_POSITIONS[game_type]
     game = Game(title, grade, game_type, start_time, end_time, game_format, privacy, info, author,
                 task_number, min_team_size, max_team_size, sets_number, tasks_positions)
-    create_tasks_table(title, task_number)
     author.authoring.append(game)
     db.session.add(game)
     db.session.commit()
+    create_tasks_tables(game.id, task_number)
+
+
+
+def get_game_status(game_title, time):
+    game = get_game(game_title)
+    if game == 'Not found':
+        return game
+    start_time = datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN)
+    end_time = datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN)
+    if (time < start_time):
+        return 'Not started'
+    elif (time > end_time):
+        return 'Ended'
+    else:
+        return 'In progress'
+
+
+# Зарегистрировать команду/игрока на игру
+def register_to_game(game_title, player_id):
+    game = get_game(game_title)
+    if game == "Not found":
+        return 'Game not found'
+    if game.game_format == 'team':
+        team = db.session.query(Team).filter(Team.id == player_id).first()
+        if team is None:
+            return "Team not found"
+        game.teams.append(team)
+        db.session.commit()
+        add_user_to_game_table(team.login, game.id)
+    elif game.game_format == 'personal':
+        player = db.session.query(User).filter(User.id == player_id).first()
+        if player is None:
+            return "Player not found"
+        game.players.append(player)
+        db.session.commit()
+        add_user_to_game_table(player.login, game.id)
 
 
 # Изменить общую информацию о игре
@@ -57,6 +93,11 @@ def update_game_tasks_info(title, tasks_number, sets_number):
         game.tasks_number = tasks_number
         game.sets_number = sets_number
         db.session.commit()
+        changes = {}
+        for i in range(1, game.tasks_number):
+            changes[f't{i}'] = dict()
+            changes[f't{i}']['number_of_sets'] = sets_number
+        update_tasks_info('numbers_of_sets', title, changes)
     return game
 
 
@@ -94,7 +135,7 @@ def update_game_authors_and_checkers_info(title, authors, checkers):
             if right_checker == 'Not found':
                 not_found_users.append(checker)
             else:
-                game.chechers.append(right_checker)
+                game.checkers.append(right_checker)
                 if game not in right_checker.checkering:
                     right_checker.append(game)
         db.session.commit()

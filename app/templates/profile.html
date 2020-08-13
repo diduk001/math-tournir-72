@@ -17,8 +17,10 @@
         <p>
             <b>{{ name }} {{ surname }} {{ last_name }}</b>
         </p>
-        <p>Школа: {{ school }}</p>
-        <p>{{ grade }} класс</p>
+        {% if not is_teacher %}
+            <p>Школа: {{ school }}</p>
+            <p>{{ grade }} класс</p>
+        {% endif %}
     </div>
     <div class="row">
         {% for right in rights %}
