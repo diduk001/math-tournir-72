@@ -72,7 +72,7 @@
                 now += 1000;
             }, 1000);
         </script>
-        <a href="../../results/{{ title }}"
+        <a href="../../results/{{ title }}">Результаты</a>
         <table class="domino_table_task">
             {% set rows = [0, 1, 2, 3] %}
             {% for row in rows %}
@@ -144,12 +144,11 @@
 
                             <script>
                                 send{{key}} = function() {
-                                    $.post('/domino/{{ title }}', {'picked': '{{task['name']}}'});
-                                    setTimeout(
-                                      function()
-                                      {
-                                         location.reload(true);
-                                      }, 500);
+                                    $.post('/domino/{{ title }}', {'picked': '{{task['name']}}'}).done(
+                                                                    function() {
+                                                                        window.location.reload()
+                                                                    });
+
                                 }
                                 document.getElementById('{{key}}').onclick = send{{key}};
                             </script>
@@ -189,12 +188,10 @@
                                 <script>
                                         send{{i}} = function() {
                                             let task_answer = document.getElementById('{{answer}}').value;
-                                            $.post('/domino/{{ title }}', {name: '{{task['name']}}', answer: task_answer});
-                                            setTimeout(
-                                              function()
-                                              {
-                                                 location.reload(true);
-                                            }, 500);
+                                            $.post('/domino/{{ title }}', {name: '{{task['name']}}', answer: task_answer}).done(
+                                                                    function() {
+                                                                        window.location.reload()
+                                                                    });
                                         }
                                         document.getElementById('{{submit}}').onclick = send{{i}};
                                     </script>
@@ -280,12 +277,10 @@
                                     $.post('/add_task_for_manual_checking', {game_title: "{{title}}",
                                                                              task: "{{task['name']}}",
                                                                              task_position: '{{ task['name'] }}',
-                                                                             result: new_result});
-                                    setTimeout(
-                                              function()
-                                              {
-                                                 location.reload(true);
-                                            }, 500);
+                                                                             result: new_result}).done(
+                                                                    function() {
+                                                                        window.location.reload()
+                                                                    });
                                 }
                                 document.getElementById('{{back}}').onclick = get_back{{i}};
                                 document.getElementById('{{canvas}}').onclick = writing{{i}};
@@ -309,12 +304,10 @@
                                     $.post('/add_task_for_manual_checking', {game_title: "{{title}}",
                                                                              task_id: "{{task['id']}}",
                                                                              task_position: '{{ task['name'] }}',
-                                                                             result: new_result});
-                                    setTimeout(
-                                              function()
-                                              {
-                                                 location.reload(true);
-                                            }, 500);
+                                                                             result: new_result}).done(
+                                                                    function() {
+                                                                        window.location.reload()
+                                                                    });
                                 }
                                 document.getElementById('{{submit}}').onclick = submit{{i}};
                             </script>

@@ -182,14 +182,11 @@ def profile(section):
                     else:
                         form = EnterTeamForm()
                         not_formatted_teams = current_user.teams
-                        print('yes')
                     if form.validate_on_submit():
-                        print('something')
                         if is_teacher:
                             player_login = request.form.get('login')
                             team_title = request.form.get('team_title')
                             team = db.session.query(Team).filter(Team.title == team_title).first()
-                            print('okey', player_login, team_title)
                             if team is None:
                                 return render_template('error.html',
                                                        message="Команды с таким названием не существует",
@@ -216,7 +213,6 @@ def profile(section):
                                 captain.captaining.delete(team)
                                 team.captain.delete(captain)
                             player.captaining.append(team)
-                            print(team.captain[0].login)
                             db.session.commit()
                             return render_template('success.html', last='../profile/user')
                         else:
@@ -396,7 +392,6 @@ def create_game_form():
                 game_format = request.form.get('game_format')
                 privacy = request.form.get('privacy')
                 if db.session.query(Game).filter(Game.title == title).first() is not None:
-                    print('hah')
                     return render_template('error.html', message='Игра с таким названием уже существует',
                                            last='/profile/author')
                 create_game(title, grade, game_type, start_time, end_time, game_format, privacy,
@@ -712,7 +707,6 @@ def domino(game_title):
                 if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in keys_of_picked_tasks:
                     result = tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].check_ans(request.form.get('answer'))
                     # Если пользователь решил задачу с первой попытки
-                    print('state' * 100, tasks[key]['state'])
                     if result and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(
                             sum(map(int, tasks[key]['name'].split('-')))) + 'af'
@@ -746,13 +740,10 @@ def domino(game_title):
                              'manual_check': tasks_positions[
                                  Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].manual_check,
                              'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].ans_picture})
-                    print('new_state' * 100, tasks[key]['state'])
 
-                    print('changes_tasks_states', changes_tasks_states)
                     if key not in changes_numbers_of_sets.keys():
                         changes_numbers_of_sets[key] = dict()
                     changes_numbers_of_sets[key]['number_of_sets'] = numbers_of_sets[key]['number_of_sets'] + 1
-                    print('changes_numbers_of_sets', changes_numbers_of_sets)
             update_tasks_info('states', game.id, changes_tasks_states, login=current_team.login)
             update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
         else:
@@ -812,7 +803,6 @@ def penalty(game_title):
             position, task_id = task_position.split(':')
             task = db.session.query(Task).filter(Task.id == int(task_id)).first()
             tasks_positions.append([position, task])
-            print(tasks_positions[-1])
         tasks_positions = dict(tasks_positions)
         tasks = {}
         tasks_states = get_tasks_info('states', game.id, login=current_team.login)
@@ -851,7 +841,6 @@ def penalty(game_title):
                         tasks[key]['state'] = '3' + 'as'
                 # Если пользователь сдал задачу неправильно
                 else:
-                    print('shit, he we go again')
                     tasks[key]['state'] = verdicts[
                         verdicts.index(get_state(tasks[key]['state'])) + 1]
                     if tasks[key]['state'] == 'ff':
@@ -929,7 +918,6 @@ def add_task_for_manual_checking():
     changes_tasks_states[key] = state
     update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
     update_tasks_info('states', game.id, changes_tasks_states, login=login)
-    print(params)
     add_task_for_manual_checking_db(game.id, params)
     return jsonify({'hah': 'hah'})
 
@@ -959,7 +947,6 @@ def manual_checking(game_title):
                                    answer=answer, game_title=game_title, not_task=False, ans_picture=ans_picture,
                                    time=time, task_id=task_id)
         elif request.method == "POST":
-            print('what?')
             login = request.form.get('login')
             task_id = request.form.get('task_id')
             task_position = request.form.get('task_position')
@@ -967,14 +954,10 @@ def manual_checking(game_title):
             time = request.form.get('time')
             result = True if request.form.get('result') == "true" else False
             verdicts = ['cf', 'ff', 'cs', 'fs']
-            print('a')
             tasks_info = get_tasks_info('states', game.id, login=login)
-            print('x')
             changes_numbers_of_sets = dict()
             changes_states = dict()
-            print('y')
             if game.game_type == 'domino':
-                print('e')
                 key = Consts.TASKS_KEYS_BY_POSITIONS['domino'][task_position]
                 task = {"state": get_state(tasks_info[key]), "position": task_position}
                 if get_state(task['state']) in ['cf', 'cs']:
@@ -999,7 +982,6 @@ def manual_checking(game_title):
                         if task['name'] == '0-0':
                             task['state'] = '0fs'
             else:
-                print('yes')
                 key = Consts.TASKS_KEYS_BY_POSITIONS['penalty'][task_position]
                 task = {"state": get_state(tasks_info[key]), "position": task_position}
                 tasks_numbers_of_sets_info = get_tasks_info('numbers_of_sets', game.id)
@@ -1028,8 +1010,6 @@ def manual_checking(game_title):
             # обновление бд
             changes_states[key] = task['state']
             index = get_current_manual_checking(game.id)[1]
-            print('index', index)
-            print('chnges_states', changes_states)
             if 't1' not in changes_numbers_of_sets.keys():
                 changes_numbers_of_sets['t1'] = dict()
             changes_numbers_of_sets['t1']['current_checking_id'] = index + 1
