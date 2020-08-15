@@ -318,7 +318,7 @@ def get_results(game_id):
         s = 0
         login = user_states.login
         if game.game_format == 'personal':
-            title = login
+            title = logn
         else:
             team = db.session.query(Team).filter(Team.login == login).first()
             title = team.title

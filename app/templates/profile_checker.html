@@ -1,0 +1,7 @@
+{% extends "profile.html" %}
+
+{% block section %}
+    {% for game in games %}
+        <a class="btn btn-primary" href="/checking/{{ game }}">Перейти к проверке '{{ game }}'</a>
+    {% endfor %}
+{% endblock %}

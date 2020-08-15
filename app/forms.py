@@ -79,6 +79,7 @@ class LoginForm(FlaskForm):
 class SignUpStudentForm(FlaskForm):
     login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
+    password_again = PasswordField('Повторите пароль*', validators=DATA_REQUIRED_VALIDATOR)
     email = StringField("Email*", validators=DATA_REQUIRED_VALIDATOR + EMAIL_VALIDATOR)
     name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
@@ -99,6 +100,7 @@ class SignUpStudentForm(FlaskForm):
 class SignUpTeacherForm(FlaskForm):
     login = StringField("Логин*", validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField("Пароль*", validators=DATA_REQUIRED_VALIDATOR)
+    password_again = PasswordField('Повторите пароль*', validators=DATA_REQUIRED_VALIDATOR)
     name = StringField("Имя*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     surname = StringField("Фамилия*", validators=DATA_REQUIRED_VALIDATOR + IS_NAME_VALIDATOR)
     last_name = StringField("Отчество (если отсутсвует пропустите это поле)")
@@ -251,6 +253,7 @@ class CreateTeamForm(FlaskForm):
     grade = SelectField('Класс', choices=[('5', '5'), ('6', '6'), ('7', '7')], coerce=str)
     login = StringField('Логин', validators=DATA_REQUIRED_VALIDATOR)
     password = PasswordField('Пароль', validators=DATA_REQUIRED_VALIDATOR)
+    password_again = PasswordField('Повторите пароль', validators=DATA_REQUIRED_VALIDATOR)
     submit = SubmitField('Зарегистрировать')
 
 

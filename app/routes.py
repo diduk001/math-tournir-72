@@ -28,6 +28,9 @@ def index():
             grade = request.form.get('grade')
             login = request.form.get('login')
             password = request.form.get('password')
+            password_again = request.form.get('password_again')
+            if password != password_again:
+                return render_template('error.html', message='Пароли не соовпадают', last='/')
             if db.session.query(Team).filter(Team.title == title).first() is not None:
                 return render_template('team_already_exists.html', attribute='названием', value=title, last='/')
             if db.session.query(Team).filter(Team.login == login).first() is not None:
@@ -99,6 +102,8 @@ def sign_up(role):
                  'work_place': request.form.get('work_place'),
                  'phone_number': request.form.get('phone_number')}
             )
+        if request.form.get('password') != request.form.get('password_again'):
+            return render_template('error.html', message='Пароли не совпадают', last=f'../../sign_up/{role}')
         user.set_password(request.form.get("password"))
         user.set_email(request.form.get("email"))
         # Добавление пользователя в базы данных
@@ -159,19 +164,20 @@ def profile(section):
             last_name = current_user.last_name
             school = current_user.school
             grade = current_user.grade
-            rights = current_user.rights.split()
             login = current_user.login
             is_teacher = current_user.is_teacher
             dict_of_rights = {'god': 'Выдать набор прав',
                               'moderator': 'Заблокировать/Разблокировать пользователя',
                               'author': 'Игры',
-                              'user': 'Команды'}
+                              'user': 'Команды',
+                              'checker': 'Проверка'}
+            rights = (current_user.rights + (' checker' if len(current_user.checkering) > 0 else ' ')).split()
             if section == 'common':
                 return render_template("profile.html", name=name, surname=surname, last_name=last_name, school=school,
                                        grade=grade, login=login, rights=rights, dict_of_rights=dict_of_rights,
                                        is_teacher=is_teacher)
             # Если пользователь перешёл в раздел в который ему можно перейти
-            elif section in current_user.rights.split():
+            elif section in rights:
                 # Если раздел "Пользователь" то возвращаем команды, в кототрых пользователь состоит/ которыми руководит
                 if section == 'user':
                     formatted_teams = []
@@ -329,6 +335,11 @@ def profile(section):
                     return render_template('profile_author.html', name=name, surname=surname, last_name=last_name,
                                            school=school, grade=grade, rights=rights, login=login,
                                            dict_of_rights=dict_of_rights, games=games, is_teacher=is_teacher)
+                elif section == 'checker':
+                    checkering_games = list(map(lambda x: x.title, current_user.checkering))
+                    return render_template('profile_checker.html', name=name, surname=surname, last_name=last_name,
+                                           school=school, grade=grade, rights=rights, login=login,
+                                           dict_of_rights=dict_of_rights, games=checkering_games, is_teacher=is_teacher)
                 else:
                     return render_template('what_are_you_doing_here.html')
             else:
@@ -607,6 +618,8 @@ def domino(game_title):
                     current_team = team
         if current_team is None:
             return render_template('error.html', message='Ваша команда не зарегистрирована на игру', last='../../')
+        if len(current_team.members) > game.max_team_size:
+            return render_template('error.html', message='Размер вашей команды больше допустимого игрой', last='../../')
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     time = datetime.now()
     status = get_game_status(game.id, time)
@@ -734,7 +747,8 @@ def domino(game_title):
                     changes_tasks_states[key] = tasks[key]['state']
                     for key in keys_of_picked_tasks:
                         picked_tasks.append(
-                            {'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
+                            {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id,
+                             'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
                              'condition': get_condition(
                                  tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id),
                              'manual_check': tasks_positions[
@@ -777,6 +791,8 @@ def penalty(game_title):
     if current_team is None:
         return render_template('error.html', message='Ваша команда не зарегистрирована на игру или Вы не являетесь её'
                                                      'капитаном', last='../../')
+    if len(current_team.members) > game.max_team_size:
+        return render_template('error.html', message='Размер вашей команды больше допустимого игрой', last='../../')
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     time = datetime.now()
     status = get_game_status(game.id, time)
@@ -862,10 +878,13 @@ def penalty(game_title):
 # Сдача задачи на ручную проверку
 @app.route("/add_task_for_manual_checking", methods=["POST"])
 def add_task_for_manual_checking():
+    print('hah')
     game_title = request.form['game_title']
     task_id = request.form['task_id']
     task_position = request.form['task_position']
+    print('')
     game = db.session.query(Game).filter(Game.title == game_title).first()
+    print('true')
     if game is None:
         return jsonify({'hah': 'hah'})
     task = db.session.query(Task).filter(Task.id == task_id).first()
@@ -907,8 +926,6 @@ def add_task_for_manual_checking():
     else:
         key = Consts.TASKS_KEYS_BY_POSITIONS['penalty'][task_position]
     # Отмечаем что задача проверяется
-
-
     state = tasks_info[key]
     if get_state(state) == 'ok':
         state = '0cf'
