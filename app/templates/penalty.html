@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% if state == 'not started' %}
+    {% if status == 'not started' %}
         <h1 id="timer"></h1>
         <script>
             // Set the date we're counting down to
@@ -28,14 +28,14 @@
                     + minutes + " мин " + seconds + " с";
                 document.getElementById("timer").innerHTML = message;
                 // If the count down is over, write some text
-                if (distance < 0) {
+                if (distance == 0) {
                     clearInterval(x);
-                    document.getElementById("timer").innerHTML = "Соревнование началось, обновите страницу";
+                    location.reload();
                 }
                 now += 1000;
             }, 1000);
         </script>
-    {% elif state == 'ended' %}
+    {% elif status == 'ended' %}
         <h1>Соревнование уже закончилось</h1>
     {% else %}
         <h1 id="timer"></h1>
@@ -66,9 +66,9 @@
                 + minutes + ":" + seconds;
                 document.getElementById("timer").innerHTML = message;
                 // If the count down is over, write some text
-                if (distance < 0) {
+                if (distance == 0) {
                     clearInterval(x);
-                    document.getElementById("timer").innerHTML = "Соревнование завершилось";
+                    document.location.href = "../../results/{{ title }}";
                 }
                 now += 1000;
             }, 1000);

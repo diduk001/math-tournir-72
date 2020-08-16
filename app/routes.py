@@ -622,8 +622,8 @@ def domino(game_title):
             return render_template('error.html', message='Размер вашей команды больше допустимого игрой', last='../../')
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     time = datetime.now()
-    status = get_game_status(game.id, time)
-    if status == 'not_started':
+    status = get_game_status(game_title, time)
+    if status == 'not started':
         start_time = datetime.strftime(datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN),
                                        Consts.TIME_FORMAT_FOR_JS)
         now_time = datetime.strftime(time, Consts.TIME_FORMAT_FOR_JS)
@@ -760,13 +760,10 @@ def domino(game_title):
                     changes_numbers_of_sets[key]['number_of_sets'] = numbers_of_sets[key]['number_of_sets'] + 1
             update_tasks_info('states', game.id, changes_tasks_states, login=current_team.login)
             update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
+            return jsonify({'hah':'hah'})
         else:
             return render_template('error.html', message='У вас нет прав на сдачу задач', last=f'../domino/{game_title}')
             # Обновление страницы
-        return render_template("domino.html", title="Домино ТЮМ72", block="", tasks=tasks,
-                               keys=Consts.TASKS_KEYS['domino'], picked_tasks=picked_tasks, message=message,
-                               state=status, end_time=end_time,
-                               number_of_picked_tasks=len(picked_tasks), now_time=now_time, is_member=is_member)
 
 
 # Страница пенальти
@@ -795,8 +792,9 @@ def penalty(game_title):
         return render_template('error.html', message='Размер вашей команды больше допустимого игрой', last='../../')
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     time = datetime.now()
-    status = get_game_status(game.id, time)
-    if status == 'not_started':
+    status = get_game_status(game_title, time)
+    print(status)
+    if status == 'not started':
         start_time = datetime.strftime(datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN),
                                        Consts.TIME_FORMAT_FOR_JS)
         now_time = datetime.strftime(time, Consts.TIME_FORMAT_FOR_JS)
@@ -867,12 +865,13 @@ def penalty(game_title):
                 changes_tasks_states[key] = tasks[key]['state']
                 update_tasks_info('states', game.id, changes_tasks_states, login=current_team.login)
                 update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
+                return jsonify({'hah':'hah'})
             else:
                 return render_template('error.html', message='У вас нет прав на сдачу задач', last=f'../penalty/{game_title}')
-        # отображение страницы
-        return render_template("penalty.html", title=f'{game_title}', tasks=tasks,
-                               keys=Consts.TASKS_KEYS['penalty'], state=status, end_time=end_time,
-                               now_time=now_time, info=numbers_of_sets, is_member=is_member)
+        else:
+            return render_template('penalty.html', title=f'{game_title}', block="", tasks=tasks,
+                                   keys=Consts.TASKS_KEYS['domino'], message=False, info=numbers_of_sets,
+                                   state=status, end_time=end_time, now_time=now_time, is_member=is_member)
 
 
 # Сдача задачи на ручную проверку
@@ -882,16 +881,14 @@ def add_task_for_manual_checking():
     game_title = request.form['game_title']
     task_id = request.form['task_id']
     task_position = request.form['task_position']
-    print('')
     game = db.session.query(Game).filter(Game.title == game_title).first()
-    print('true')
     if game is None:
         return jsonify({'hah': 'hah'})
     task = db.session.query(Task).filter(Task.id == task_id).first()
     if task is None:
         return jsonify({'hah': 'hah'})
     login = None
-    if game.game_type == 'personal':
+    if game.game_format == 'personal':
         login = current_user.login
     else:
         for team in current_user.captaining:
@@ -914,11 +911,11 @@ def add_task_for_manual_checking():
     # Если Домино то возвращаем задачу на "игровой стол"
     changes_numbers_of_sets = dict()
     changes_tasks_states = dict()
-    tasks_info = get_tasks_info('states', game.id, login=current_user.login)
-    if game == "domino":
+    tasks_info = get_tasks_info('states', game.id, login=login)
+    if game.game_type == "domino":
         key = Consts.TASKS_KEYS_BY_POSITIONS['domino'][task_position]
         numbers_of_sets = get_tasks_info('numbers_of_sets', game.id)
-        picked_tasks = tasks_info['picked_tasks'].split()
+        picked_tasks = tasks_info['picked_tasks']
         picked_tasks.remove(key)
         changes_tasks_states['picked_tasks'] = ' '.join(picked_tasks)
         changes_numbers_of_sets[key] = dict()

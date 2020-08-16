@@ -71,12 +71,10 @@ class Task(db.Model):
     # Установить ответ
 
     def set_ans(self, ans):
-        print('new_ans', ans, generate_password_hash(ans))
         if self.hashed_answer is None:
             self.hashed_answer = generate_password_hash(ans)
         else:
             self.hashed_answer += '|' + generate_password_hash(ans)
-        print('result', self.hashed_answer)
     # Проверить ответ
 
     def check_ans(self, ans):
@@ -173,7 +171,7 @@ def create_tasks_tables(game_id, tasks_number):
                                        sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
                                        sqlalchemy.Column('login', sqlalchemy.String),
                                        sqlalchemy.Column('picked_tasks', sqlalchemy.String),
-                                       *[sqlalchemy.Column('t' + str(i), sqlalchemy.Integer) for i in
+                                       *[sqlalchemy.Column('t' + str(i), sqlalchemy.String) for i in
                                          range(1, tasks_number + 1)]
                                        )
         numbers_of_sets_table = sqlalchemy.Table(f"{game_id}_numbers_of_sets", metadata,
@@ -187,7 +185,7 @@ def create_tasks_tables(game_id, tasks_number):
         state_table = sqlalchemy.Table(f"{game_id}_states", metadata,
                                        sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
                                        sqlalchemy.Column('login', sqlalchemy.String),
-                                       *[sqlalchemy.Column('t' + str(i), sqlalchemy.Integer) for i in
+                                       *[sqlalchemy.Column('t' + str(i), sqlalchemy.String) for i in
                                        range(1, tasks_number + 1)]
                                        )
         numbers_of_sets_table = sqlalchemy.Table(f"{game_id}_numbers_of_sets", metadata,
@@ -202,11 +200,9 @@ def create_tasks_tables(game_id, tasks_number):
     class Tasks(object):
         def __init__(self, dict_of_attrs):
             for item in dict_of_attrs.items():
-                print(item[0], item[1])
                 setattr(self, item[0], item[1])
 
     metadata.create_all(engine)
-    print('what?')
     orm.mapper(Tasks, numbers_of_sets_table)
     _session = orm.sessionmaker(bind=engine)
     session = _session()
@@ -264,7 +260,6 @@ def add_task_for_manual_checking_db(game_id, attrs, is_result=False):
     session = _session()
     if is_result:
 
-        print('attrs', attrs)
         result = ResultTask(attrs)
         session.add(result)
     else:
@@ -318,14 +313,13 @@ def get_results(game_id):
         s = 0
         login = user_states.login
         if game.game_format == 'personal':
-            title = logn
+            title = login
         else:
             team = db.session.query(Team).filter(Team.login == login).first()
             title = team.title
         new_result.append(title)
         for i in range(1, game.tasks_number + 1):
             new_result.append(getattr(user_states, f't{i}'))
-            print(user_states)
             s += int(new_result[-1][:-2])
         new_result.append(s)
         result.append(new_result)
@@ -370,7 +364,6 @@ def update_tasks_info(table_title, game_id, changes, login=None):
     orm.mapper(UserTasks, table)
     _session = orm.sessionmaker(bind=engine)
     session = _session()
-    print(table, game_id, changes)
     if login is not None:
         user_states = session.query(UserTasks).filter(UserTasks.login == login).first()
         for state in changes.items():
@@ -379,11 +372,7 @@ def update_tasks_info(table_title, game_id, changes, login=None):
     else:
         for change in changes.items():
             task = session.query(UserTasks).filter(UserTasks.key == change[0]).first()
-            print('change', change)
-            print('change[1]', change[1])
-            print(task.cost, task.key, task.id)
             for attr in change[1].items():
-                print('attr', attr)
                 setattr(task, attr[0], attr[1])
             session.commit()
 

@@ -37,13 +37,14 @@ def get_game_status(game_title, time):
     if game == 'Not found':
         return game
     start_time = datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN)
-    end_time = datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN)
-    if (time < start_time):
-        return 'Not started'
-    elif (time > end_time):
-        return 'Ended'
+    end_time = datetime.strptime(game.end_time, Consts.TIME_FORMAT_FOR_HUMAN)
+    print(time, start_time, end_time)
+    if time < start_time:
+        return 'not started'
+    elif time > end_time:
+        return 'ended'
     else:
-        return 'In progress'
+        return 'in progress'
 
 
 # Зарегистрировать команду/игрока на игру
