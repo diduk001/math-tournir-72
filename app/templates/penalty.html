@@ -113,7 +113,7 @@
                                 <div class="form-group">
                                     <input id="{{answer}}" class="form-control" type="text" placeholder="Введите Ваш ответ" name="answer">
                                 </div>
-                                {% if task['state'][-2:] not in ['af', 'fs', 'as'] %}
+                                {% if task['state'][-2:] not in ['fs', 'as'] %}
                                     <button id="{{submit}}" class="btn btn-primary">Отправить</button>
                                 {% endif %}
                                 <script>

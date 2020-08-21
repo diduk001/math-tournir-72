@@ -855,7 +855,7 @@ def penalty(game_title):
                         tasks[key]['state'] = '3' + 'as'
                 # Если пользователь сдал задачу неправильно
                 else:
-                    tasks[key]['state'] = verdicts[get_state(tasks[key])]
+                    tasks[key]['state'] = verdicts[get_state(tasks[key]['state'])]
                     if tasks[key]['state'] == 'ff':
                         tasks[key]['state'] = '0' + 'ff'
                     else:
