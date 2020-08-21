@@ -661,6 +661,7 @@ def domino(game_title):
             tasks[key] = {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].id,
                           'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
                           'state': tasks_states[key],
+                          'condition': get_condition(tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].id),
                           'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].manual_check,
                           'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].ans_picture}
         # Формируем информацию о задачах, которые сейчас "на руках" у пользователя
