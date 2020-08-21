@@ -110,13 +110,23 @@
                                         <button class="btn btn-warning btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
                                     </div>
                                 {% endif %}
-                            {% elif task['state'][-2:] == 'af' or task['state'][-2:] == 'as' %}
+                            {% elif task['state'][-2:] == 'af' %}
                                 {% if is_member %}
-                                    <div class="accepted_task" title="Вы решили эту задачу">
+                                    <div class="accepted_task" title="Вы решили эту задачу, но у вас осталась ещё 1 попытка">
                                         <button class="btn btn-success btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
                                     </div>
                                 {% else %}
-                                    <div class="accepted_task" title="Вы решили эту задачу">
+                                    <div class="accepted_task" title="Вы решили эту задачу, но у вас осталась ещё 1 попытка">
+                                        <button class="btn btn-success btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
+                                    </div>
+                                {% endif %}
+                            {% elif task['state'][-2:] == 'as' %}
+                                {% if is_member %}
+                                    <div class="accepted_task" title="Вы решили эту задачу и у вас закончились попытки">
+                                        <button class="btn btn-success btn-lg btn-block" id="{{key}}" disabled>{{task['name']}}</button>
+                                    </div>
+                                {% else %}
+                                    <div class="accepted_task" title="Вы решили эту задачу и у вас закончились попытки">
                                         <button class="btn btn-success btn-lg btn-block" id="{{key}}">{{task['name']}}</button>
                                     </div>
                                 {% endif %}

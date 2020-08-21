@@ -12,6 +12,8 @@ from app.forms import *
 from app.game_creator import *
 from config import Config, Constants
 
+from random import choice as random_choice, seed as random_seed
+
 
 # Главная страница
 @app.route('/', methods=['GET', 'POST'])
@@ -387,6 +389,7 @@ def profile(section):
 #                                  }
 #             return render_template('game_news.html', game=new_formated_game)
 
+
 # Создание игры
 @app.route('/create_game_form/', methods=['POST', 'GET'])
 def create_game_form():
@@ -460,8 +463,8 @@ def update_game(game_title, block):
 
 
 # Добавить задачу
-@app.route('/add_task/<game_title>/<task_position>/<current_value>', methods=['GET', 'POST'])
-def add_task(game_title, task_position, current_value):
+@app.route('/add_task/<game_title>/<task_position>', methods=['GET', 'POST'])
+def add_task(game_title, task_position):
     if is_auth() and 'author' in current_user.rights.split():
         add_task_form = AddTaskForm()
         params = dict()
@@ -529,7 +532,9 @@ def add_task(game_title, task_position, current_value):
                         if image.filename:
                             image.save(os.path.join(condition_directory, image.filename))
             tasks_positions = list(map(lambda x: x.split(':'), game.tasks_positions.split('|')))
-            tasks_positions[tasks_positions.index([task_position, current_value])] = (task_position, str(task.id))
+            for i in range(len(tasks_positions)):
+                if tasks_positions[i][0] == task_position:
+                    tasks_positions[i][1] = str(task.id)
             game.tasks_positions = '|'.join(list(map(lambda x: ':'.join(x), tasks_positions)))
             db.session.commit()
             params["success"] = True
@@ -642,9 +647,10 @@ def domino(game_title):
         # Формируем информацию о состоянии задач у пользователя
         tasks_positions = []
         for task_position in game.tasks_positions.split('|'):
-            position, task_id = task_position.split(':')
+            position, task_id, dishonest = task_position.split(':')
             task = db.session.query(Task).filter(Task.id == int(task_id)).first()
-            tasks_positions.append([position, task])
+            dishonest = bool(int(dishonest))
+            tasks_positions.append([position, {'task': task, 'dishonest': dishonest}])
         tasks_positions = dict(tasks_positions)
         tasks = {}
         tasks_states = get_tasks_info('states', game.id, login=current_team.login)
@@ -652,33 +658,25 @@ def domino(game_title):
         changes_numbers_of_sets = dict()
         changes_tasks_states = dict()
         for key in Consts.TASKS_KEYS['domino']:
-            tasks[key] = {'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
+            tasks[key] = {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].id,
+                          'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
                           'state': tasks_states[key],
-                          'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].manual_check,
-                          'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].ans_picture}
-        # Обновляем состояние задач, которые закончились/появились на "игровом столе"
-        for key in Consts.TASKS_KEYS['domino']:
-            if get_state(tasks[key]['state']) == 'ok' and numbers_of_sets[key]['number_of_sets'] == 0:
-                tasks[key]['state'] = '0bo'
-            elif get_state(tasks[key]['state']) == 'ff' and numbers_of_sets[key]['number_of_sets'] == 0:
-                tasks[key]['state'] = '0bf'
-            elif get_state(tasks[key]['state']) == 'bo' and numbers_of_sets[key]['number_of_sets'] > 0:
-                tasks[key]['state'] = '0ok'
-            elif get_state(tasks[key]['state']) == 'bf' and numbers_of_sets[key]['number_of_sets'] > 0:
-                tasks[key]['state'] = '0ff'
+                          'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].manual_check,
+                          'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].ans_picture}
         # Формируем информацию о задачах, которые сейчас "на руках" у пользователя
         keys_of_picked_tasks = tasks_states['picked_tasks']
         picked_tasks = []
         for key in keys_of_picked_tasks:
-            picked_tasks.append(
-                {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id,
-                 'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
-                 'condition': get_condition(tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id),
-                 'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].manual_check,
-                 'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].ans_picture})
+            picked_tasks.append(tasks[key])
 
         # Если пользователь просто загрузил страницу игры то показывает её ему
         if request.method == "GET":
+            # Обновляем состояние задач, которые закончились/появились на "игровом столе"
+            for key in Consts.TASKS_KEYS['domino']:
+                if get_state(tasks[key]['state']) == 'ok' and numbers_of_sets[key]['number_of_sets'] == 0:
+                    tasks[key]['state'] = '0bo'
+                elif get_state(tasks[key]['state']) == 'ff' and numbers_of_sets[key]['number_of_sets'] == 0:
+                    tasks[key]['state'] = '0bf'
             return render_template("domino.html", title=f'{game_title}', block="", tasks=tasks,
                                    keys=Consts.TASKS_KEYS['domino'], picked_tasks=picked_tasks, message=False,
                                    state=status, end_time=end_time, now_time=now_time,
@@ -697,15 +695,15 @@ def domino(game_title):
                 elif key in keys_of_picked_tasks:
                     message = Consts.MESSAGES['domino']['full']
                 # Пользователь может взять задачу, выдаём её
-                elif get_state(tasks[key]['state']) in ['ff', 'ok']:
+                elif get_state(tasks[key]['state']) in ['ff', 'af', 'ok']:
                     keys_of_picked_tasks.append(key)
                     changes_tasks_states['picked_tasks'] = ' '.join(keys_of_picked_tasks)
                     picked_tasks.append(
-                        {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id,
-                         'name':Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
-                         'condition': get_condition(tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id),
-                         'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].manual_check,
-                         'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].ans_picture})
+                        {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].id,
+                         'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
+                         'condition': get_condition(tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].id),
+                         'manual_check': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].manual_check,
+                         'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].ans_picture})
                     if key not in changes_numbers_of_sets.keys():
                         changes_numbers_of_sets[key] = dict()
                     changes_numbers_of_sets[key]['number_of_sets'] = numbers_of_sets[key]['number_of_sets'] - 1
@@ -715,10 +713,12 @@ def domino(game_title):
             # Пользователь сдаёт задачу
             elif request.form.get('answer') and not is_member:
                 key = Consts.TASKS_KEYS_BY_POSITIONS['domino'][request.form.get('name')]
-                verdicts = ['ok', 'ff', 'fs']
+                verdicts = {'ok':'ff', 'af':'fs', 'ff':'fs'}
                 # Если всё нормально и пользователь не попытался багануть сайт
-                if get_state(tasks[key]['state']) in ['ok', 'ff'] and key in keys_of_picked_tasks:
-                    result = tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].check_ans(request.form.get('answer'))
+                if get_state(tasks[key]['state']) in ['ok', 'af', 'ff'] and key in keys_of_picked_tasks:
+                    true_result = tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]]['task'].check_ans(request.form.get('answer'))
+                    result = get_result(true_result, tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino']
+                    [key]]['dishonest'])
                     # Если пользователь решил задачу с первой попытки
                     if result and get_state(tasks[key]['state']) == 'ok':
                         tasks[key]['state'] = str(
@@ -731,8 +731,7 @@ def domino(game_title):
                             max(map(int, tasks[key]['name'].split('-')))) + 'as'
                     # Если пользователь решил задачу неправильно
                     else:
-                        tasks[key]['state'] = verdicts[
-                            verdicts.index(get_state(tasks[key]['state'])) + 1]
+                        tasks[key]['state'] = verdicts[get_state(tasks[key]['state'])]
                         if tasks[key]['state'] == 'ff':
                             tasks[key]['state'] = '0ff'
                         else:
@@ -745,22 +744,21 @@ def domino(game_title):
                     picked_tasks = []
                     changes_tasks_states['picked_tasks'] = ' '.join(keys_of_picked_tasks)
                     changes_tasks_states[key] = tasks[key]['state']
-                    for key in keys_of_picked_tasks:
-                        picked_tasks.append(
-                            {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id,
-                             'name': Consts.TASKS_POSITIONS_BY_KEYS['domino'][key],
-                             'condition': get_condition(
-                                 tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].id),
-                             'manual_check': tasks_positions[
-                                 Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].manual_check,
-                             'ans_picture': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['domino'][key]].ans_picture})
-
+                    for cur_key in keys_of_picked_tasks:
+                        picked_tasks.append(tasks[cur_key])
                     if key not in changes_numbers_of_sets.keys():
                         changes_numbers_of_sets[key] = dict()
                     changes_numbers_of_sets[key]['number_of_sets'] = numbers_of_sets[key]['number_of_sets'] + 1
+                    params = {'login': current_team.login,
+                              'task_id': tasks[key]['id'],
+                              'position': tasks[key]['name'],
+                              'answer': request.form.get('answer'),
+                              'time': time,
+                              'result': true_result}
+                    add_task_for_manual_checking_db(game.id, params, is_result=True)
             update_tasks_info('states', game.id, changes_tasks_states, login=current_team.login)
             update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
-            return jsonify({'hah':'hah'})
+            return jsonify({'hah': 'hah'})
         else:
             return render_template('error.html', message='У вас нет прав на сдачу задач', last=f'../domino/{game_title}')
             # Обновление страницы
@@ -793,7 +791,6 @@ def penalty(game_title):
     # Если игра ещё не началась, то мы показывает отсчёт до начала
     time = datetime.now()
     status = get_game_status(game_title, time)
-    print(status)
     if status == 'not started':
         start_time = datetime.strftime(datetime.strptime(game.start_time, Consts.TIME_FORMAT_FOR_HUMAN),
                                        Consts.TIME_FORMAT_FOR_JS)
@@ -814,9 +811,10 @@ def penalty(game_title):
         # Формируем информацию о состоянии задач пользователя
         tasks_positions = []
         for task_position in game.tasks_positions.split('|'):
-            position, task_id = task_position.split(':')
+            position, task_id, dishonest = task_position.split(':')
             task = db.session.query(Task).filter(Task.id == int(task_id)).first()
-            tasks_positions.append([position, task])
+            dishonest = bool(int(dishonest))
+            tasks_positions.append([position, {'task': task, 'dishonest': dishonest}])
         tasks_positions = dict(tasks_positions)
         tasks = {}
         tasks_states = get_tasks_info('states', game.id, login=current_team.login)
@@ -824,20 +822,21 @@ def penalty(game_title):
         changes_numbers_of_sets = dict()
         changes_tasks_states = dict()
         for key in Consts.TASKS_KEYS['penalty']:
-            tasks[key] = {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['penalty'][key]].id,
+            tasks[key] = {'id': tasks_positions[Consts.TASKS_POSITIONS_BY_KEYS['penalty'][key]]['task'].id,
                           'name': key[1:],
                           'state': tasks_states[key],
-                          'condition': get_condition(tasks_positions[key[1:]].id),
-                          'manual_check': tasks_positions[key[1:]].manual_check,
-                          'ans_picture': tasks_positions[key[1:]].ans_picture
+                          'condition': get_condition(tasks_positions[key[1:]]['task'].id),
+                          'manual_check': tasks_positions[key[1:]]['task'].manual_check,
+                          'ans_picture': tasks_positions[key[1:]]['task'].ans_picture
                           }
         # Если пользователь сдал задачу
         if request.method == "POST":
             key = 't' + request.form.get('name')
-            verdicts = ['ok', 'ff', 'fs']
+            verdicts = {'ok':'ff', 'af':'fs', 'ff':'fs'}
             # Если пользователь не попытался багануть сайт
-            if get_state(tasks[key]['state']) in ['ok', 'ff'] and not is_member:
-                result = tasks_positions[key[1:]].check_ans(request.form.get('answer'))
+            if get_state(tasks[key]['state']) in ['ok', 'af', 'ff'] and not is_member:
+                true_result = tasks_positions[key[1:]]['task'].check_ans(request.form.get('answer'))
+                result = get_result(true_result, tasks_positions[key[1:]]['dishonest'])
                 # Если пользователь сдал задачу правильно
                 if result:
                     # Если пользователь сдал задачу правильно с первой попытки
@@ -855,8 +854,7 @@ def penalty(game_title):
                         tasks[key]['state'] = '3' + 'as'
                 # Если пользователь сдал задачу неправильно
                 else:
-                    tasks[key]['state'] = verdicts[
-                        verdicts.index(get_state(tasks[key]['state'])) + 1]
+                    tasks[key]['state'] = verdicts[get_state(tasks[key])]
                     if tasks[key]['state'] == 'ff':
                         tasks[key]['state'] = '0' + 'ff'
                     else:
@@ -865,6 +863,13 @@ def penalty(game_title):
                 changes_tasks_states[key] = tasks[key]['state']
                 update_tasks_info('states', game.id, changes_tasks_states, login=current_team.login)
                 update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
+                params = {'login': current_team.login,
+                          'task_id': tasks[key]['id'],
+                          'position': tasks[key]['name'],
+                          'answer': request.form.get('answer'),
+                          'time': time,
+                          'result': true_result}
+                add_task_for_manual_checking_db(game.id, params, is_result=True)
                 return jsonify({'hah':'hah'})
             else:
                 return render_template('error.html', message='У вас нет прав на сдачу задач', last=f'../penalty/{game_title}')
@@ -877,7 +882,6 @@ def penalty(game_title):
 # Сдача задачи на ручную проверку
 @app.route("/add_task_for_manual_checking", methods=["POST"])
 def add_task_for_manual_checking():
-    print('hah')
     game_title = request.form['game_title']
     task_id = request.form['task_id']
     task_position = request.form['task_position']
@@ -963,27 +967,35 @@ def manual_checking(game_title):
         elif request.method == "POST":
             login = request.form.get('login')
             task_id = request.form.get('task_id')
-            task_position = request.form.get('task_position')
+            checking_task_position = request.form.get('task_position')
             answer = request.form.get('answer')
             time = request.form.get('time')
-            result = True if request.form.get('result') == "true" else False
+            tasks_positions = []
+            for task_position in game.tasks_positions.split('|'):
+                position, task_id, dishonest = task_position.split(':')
+                task = db.session.query(Task).filter(Task.id == int(task_id)).first()
+                dishonest = bool(int(dishonest))
+                tasks_positions.append([position, {'task': task, 'dishonest': dishonest}])
+            tasks_positions = dict(tasks_positions)
+            true_result = True if request.form.get('result') == "true" else False
+            result = get_result(true_result, tasks_positions[checking_task_position]['dishonest'])
             verdicts = ['cf', 'ff', 'cs', 'fs']
             tasks_info = get_tasks_info('states', game.id, login=login)
             changes_numbers_of_sets = dict()
             changes_states = dict()
             if game.game_type == 'domino':
-                key = Consts.TASKS_KEYS_BY_POSITIONS['domino'][task_position]
-                task = {"state": get_state(tasks_info[key]), "position": task_position}
+                key = Consts.TASKS_KEYS_BY_POSITIONS['domino'][checking_task_position]
+                task = {"state": get_state(tasks_info[key]), "position": checking_task_position}
                 if get_state(task['state']) in ['cf', 'cs']:
                     if result and get_state(task['state']) == 'cf':
                         task['state'] = str(
-                            sum(map(int, task_position.split('-')))) + 'af'
-                        if task['name'] == '0-0':
+                            sum(map(int, checking_task_position.split('-')))) + 'af'
+                        if task['position'] == '0-0':
                             task['state'] = '10af'
                     # Если пользователь решил задачу со второй попытки
                     elif result:
                         task['state'] = str(
-                            max(map(int, task_position.split('-')))) + 'as'
+                            max(map(int, checking_task_position.split('-')))) + 'as'
                     # Если пользователь решил задачу неправильно
                     else:
                         task['state'] = verdicts[
@@ -992,12 +1004,12 @@ def manual_checking(game_title):
                             task['state'] = '0ff'
                         else:
                             task['state'] = str(
-                                -min(map(int, task_position.split('-')))) + 'fs'
-                        if task['name'] == '0-0':
+                                -min(map(int, checking_task_position.split('-')))) + 'fs'
+                        if task['position'] == '0-0':
                             task['state'] = '0fs'
             else:
-                key = Consts.TASKS_KEYS_BY_POSITIONS['penalty'][task_position]
-                task = {"state": get_state(tasks_info[key]), "position": task_position}
+                key = Consts.TASKS_KEYS_BY_POSITIONS['penalty'][checking_task_position]
+                task = {"state": get_state(tasks_info[key]), "position": checking_task_position}
                 tasks_numbers_of_sets_info = get_tasks_info('numbers_of_sets', game.id)
                 if get_state(task['state']) in ['cf', 'cs']:
                     # Если пользователь сдал задачу правильно
@@ -1007,9 +1019,10 @@ def manual_checking(game_title):
                             task['state'] = str(tasks_numbers_of_sets_info[key]['cost']) + 'af'
                             changes_numbers_of_sets[key] = dict()
                             changes_numbers_of_sets[key]['number_of_sets'] = tasks_numbers_of_sets_info[key]['number_of_sets'] - 1
-                            if changes_numbers_of_sets[key]['number_of_sets'] == 0:
-                                changes_numbers_of_sets[key]['cost'] = tasks_numbers_of_sets_info[key]['cost'] - 1
-                                changes_numbers_of_sets[key]['number_of_sets'] = game.sets_number
+                            if tasks_numbers_of_sets_info[key]['cost'] > 5:
+                                if changes_numbers_of_sets[key]['number_of_sets'] == 0:
+                                    changes_numbers_of_sets[key]['cost'] = tasks_numbers_of_sets_info[key]['cost'] - 1
+                                    changes_numbers_of_sets[key]['number_of_sets'] = game.sets_number
                         # Если пользователь сдал задачу правильно со второй попытки
                         else:
                             task['state'] = '3' + 'as'
@@ -1031,12 +1044,110 @@ def manual_checking(game_title):
             update_tasks_info('numbers_of_sets', game.id, changes_numbers_of_sets)
             params = {'login': login,
                       'task_id': task_id,
-                      'position': task_position,
+                      'position': checking_task_position,
                       'answer': answer,
                       'time': time,
-                      'result': result}
+                      'result': true_result}
             add_task_for_manual_checking_db(game.id, params, is_result=True)
         return jsonify({'hah': 'hah'})
+
+
+@app.route('/change_dishonest/<game_title>/<position>')
+def change_dishonest(game_title, position):
+    game = db.session.query(Game).filter(Game.title == game_title).first()
+    if game is None:
+        return render_template('error.html', message='Игра не была найдена', last='../../profile/author')
+    if not is_auth() or game not in current_user.authoring:
+        return render_template('what_are_you_doing_here.html')
+    tasks_positions = []
+    for task_position in game.tasks_positions.split('|'):
+        task_position, task_id, dishonest = task_position.split(':')
+        task = db.session.query(Task).filter(Task.id == int(task_id)).first()
+        dishonest = bool(int(dishonest))
+        tasks_positions.append([task_position, {'task': task, 'dishonest': dishonest}])
+    tasks_positions = dict(tasks_positions)
+    tasks_positions[position]['dishonest'] = 1 - tasks_positions[position]['dishonest']
+    new_tasks_positions = []
+    for new_position in tasks_positions.items():
+
+        new_tasks_positions.append(':'.join([new_position[0], str(new_position[1]['task'].id), str(int(new_position[1]['dishonest']))]))
+    game.tasks_positions = '|'.join(new_tasks_positions)
+    db.session.commit()
+
+    class TasksResult(object):
+        pass
+
+    engine = sqlalchemy.create_engine('sqlite:///' + os.path.join(basedir, 'databases', 'tasks_states.db'))
+    metadata = sqlalchemy.MetaData(engine)
+    table = sqlalchemy.Table(f"{game.id}_result_manual_check", metadata, autoload=True)
+    orm.mapper(TasksResult, table)
+    _session = orm.sessionmaker(bind=engine)
+    session = _session()
+    tasks = session.query(TasksResult).filter(TasksResult.position == position).order_by(TasksResult.id)
+    states = dict()
+    for task in tasks:
+        key = Consts.TASKS_KEYS_BY_POSITIONS[game.game_type][position]
+        if task.login not in states.keys():
+            states[task.login] = '0ok'
+            current_state = get_tasks_info('states', game.id, login=task.login)[key]
+            if get_state(current_state)[0] == 'c':
+                states[task.login] = current_state
+        verdicts = ['ok', 'ff', 'fs']
+        if get_state(states[task.login]) not in ['cf', 'cs']:
+            if game.game_type == 'domino':
+                if task.result and get_state(states[task.login]) == 'ok':
+                    states[task.login] = str(
+                        sum(map(int, position.split('-')))) + 'af'
+                    if position == '0-0':
+                        states[task.login] = '10af'
+                # Если пользователь решил задачу со второй попытки
+                elif task.result:
+                    states[task.login] = str(
+                        max(map(int, position.split('-')))) + 'as'
+                # Если пользователь решил задачу неправильно
+                else:
+                    if get_state(states[task.login]) != 'af':
+                        states[task.login] = verdicts[
+                            verdicts.index(get_state(states[task.login])) + 1]
+                    if states[task.login] == 'ff':
+                        states[task.login] = '0ff'
+                    else:
+                        states[task.login] = str(
+                            -min(map(int, position.split('-')))) + 'fs'
+                    if position == '0-0':
+                        states[task.login] = '0fs'
+            else:
+                # Если пользователь сдал задачу правильно
+                if task.result:
+                    # Если пользователь сдал задачу правильно с первой попытки
+                    if get_state(states[task.login]) == 'ok':
+                        states[task.login] = 'af'
+                    # Если пользователь сдал задачу правильно со второй попытки
+                    else:
+                        states[task.login] = '3' + 'as'
+                # Если пользователь сдал задачу неправильно
+                else:
+                    if get_state(states[task.login]) != 'af':
+                        states[task.login] = verdicts[
+                            verdicts.index(get_state(states[task.login])) + 1]
+                    if states[task.login] == 'ff':
+                        states[task.login] = '0' + 'ff'
+                    else:
+                        states[task.login] = '-2' + 'fs'
+    if game.game_type == 'penalty':
+        tasks_numbers_of_sets_info = get_tasks_info('numbers_of_sets', game.id)
+        for task in tasks:
+            if states[task.login] == 'af':
+                states[task.login] = str(tasks_numbers_of_sets_info[key]['cost']) + 'af'
+                tasks_numbers_of_sets_info[key]['number_of_sets'] -= 1
+                if tasks_numbers_of_sets_info[key]['cost'] > 5:
+                    if tasks_numbers_of_sets_info[key]['number_of_sets'] == 0:
+                        tasks_numbers_of_sets_info[key]['cost'] -= 1
+                        tasks_numbers_of_sets_info[key]['number_of_sets'] = game.sets_number
+        update_tasks_info('numbers_of_sets', game.id, tasks_numbers_of_sets_info)
+    for state in states.items():
+        update_tasks_info('states', game.id, {key: state[1]}, login=state[0])
+    return render_template('success.html', last='../../profile/author')
 
 
 # Результаты
@@ -1121,6 +1232,15 @@ def get_extension(filename):
         return ""
 
     return filename.rsplit('.', 1)[1].lower()
+
+
+def get_result(result, is_dishonest):
+    if is_dishonest:
+        #random_seed()
+        #return random_choice([True, False])
+        return True
+    else:
+        return result
 
 
 @login_manager.user_loader

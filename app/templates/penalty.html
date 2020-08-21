@@ -83,14 +83,17 @@
             {% set name = "name" + i %}
             {% set submit = "submit_" + i %}
                 <div>
-                    {% if task['state'][-2:] in ['af', 'as'] %}
-                        <p class="accepted">{{task['name']}}. Вы уже решили эту задачу</p>
+                    {% if task['state'][-2:] == 'as' %}
+                        <p class="accepted">{{task['name']}}. Вы уже решили эту задачу и у вас закончились попытки</p>
                     {% elif task['state'][-2:] in ['cf', 'cs'] %}
                         <p>{{task['name']}}. Задача проверяется</p>
                     {% elif task['state'][-2:] == 'fs' %}
                         <p class="failed">{{task['name']}}. У вас закончились попытки на сдачу этой задачи</p>
                     {% else %}
-                        {% if task['state'][-2:] == 'ff' %}
+                        {%  if task['state'][-2:] == 'af' %}
+                            <label class="accepted">{{task['name']}}. Вы решили эту задачу, но у Вас осталась одна попытка на сдачу
+                                этой задачи.</label>
+                        {% elif task['state'][-2:] == 'ff' %}
                             <label class="first_try_failed">{{task['name']}}. У Вас осталась одна попытка на сдачу
                                 этой задачи. Эта задача стоит для Вас 3 б.</label>
                         {% else %}
@@ -104,7 +107,7 @@
                         </p>
                     </div>
                     <br>
-                    {% if task['state'][-2:] not in ['af', 'as', 'cf', 'cs', 'fs'] %}
+                    {% if task['state'][-2:] not in ['as', 'cf', 'cs', 'fs'] %}
                         {% if not is_member %}
                             {% if not task['manual_check'] %}
                                 <div class="form-group">

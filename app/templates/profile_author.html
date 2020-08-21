@@ -58,6 +58,7 @@
                 <thead>
                     <th scope="col">Позиция</th>
                     <th scope="col">Текущая задача</th>
+                    <th scope="col">Засуживается</th>
                     <th scope="col">Изменить/добавить задачу</th>
                 </thead>
                 <tbody>
@@ -72,8 +73,17 @@
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% if task[2] == '1' %}
+                                        <a class="btn btn-primary" href="/change_dishonest/{{ game['common'][0][1] }}/{{ task[0] }}">
+                                            Да(нажмите чтобы изменить)</a>
+                                    {% else %}
+                                        <a class="btn btn-primary" href="/change_dishonest/{{ game['common'][0][1] }}/{{ task[0] }}">
+                                            Нет(нажмите чтобы изменить)</a>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <a class="btn btn-primary"
-                                       href="/add_task/{{  game['common'][0][1]  }}/{{ task[0] }}/{{ task[1] }}">
+                                       href="/add_task/{{  game['common'][0][1]  }}/{{ task[0] }}">
                                         Изменить/добавить новую задачу
                                     </a>
                                 </td>

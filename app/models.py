@@ -213,6 +213,7 @@ def create_tasks_tables(game_id, tasks_number):
         task = Tasks(new_dict_of_attrs)
         session.add(task)
     session.commit()
+    session.close()
 
 
 def get_current_manual_checking(game_id):
@@ -229,6 +230,7 @@ def get_current_manual_checking(game_id):
     _session = orm.sessionmaker(bind=engine)
     session = _session()
     checking_answer = session.query(WorkingTask).filter(WorkingTask.id == task_id).first()
+    session.close()
     if checking_answer is None:
         return 'Not found'
     else:
@@ -266,6 +268,7 @@ def add_task_for_manual_checking_db(game_id, attrs, is_result=False):
         working_task = WorkingTask(attrs)
         session.add(working_task)
     session.commit()
+    session.close()
 
 
 # Добавить пользователя в таблицу состояний задач игры
@@ -285,7 +288,7 @@ def add_user_to_game_table(login, game_id):
     _session = orm.sessionmaker(bind=engine)
     session = _session()
     game = db.session.query(Game).filter(Game.id == game_id).first()
-    dict_of_attr = {'login': login}
+    dict_of_attr = {'login': login, "checking_tasks": ''}
     if game.game_type == 'domino':
         dict_of_attr['picked_tasks'] = ''
     for i in range(1, game.tasks_number + 1):
@@ -293,6 +296,7 @@ def add_user_to_game_table(login, game_id):
     user = UserTasks(dict_of_attr)
     session.add(user)
     session.commit()
+    session.close()
 
 
 def get_results(game_id):
@@ -324,6 +328,7 @@ def get_results(game_id):
         new_result.append(s)
         result.append(new_result)
     result.sort(key=lambda x: -x[-1])
+    session.close()
     return result
 
 
@@ -340,6 +345,7 @@ def get_tasks_info(table_title, game_id, login=None):
     game = db.session.query(Game).filter(Game.id == game_id).first()
     result = dict()
     if login is not None:
+        print(login)
         user_states = session.query(UserTasks).filter(UserTasks.login == login).first()
         if game.game_type == 'domino':
             result['picked_tasks'] = getattr(user_states, 'picked_tasks').split()
@@ -352,6 +358,7 @@ def get_tasks_info(table_title, game_id, login=None):
             result[task.key]['current_checking_id'] = task.current_checking_id
             if (game.game_type == 'penalty'):
                 result[task.key]['cost'] = task.cost
+    session.close()
     return result
 
 
@@ -375,6 +382,7 @@ def update_tasks_info(table_title, game_id, changes, login=None):
             for attr in change[1].items():
                 setattr(task, attr[0], attr[1])
             session.commit()
+    session.close()
 
 
 class User(db.Model, UserMixin):
